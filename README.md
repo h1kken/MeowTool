@@ -11,7 +11,8 @@
 1. Если у Вас не установлен Python на компьютере, то скачать его можно c [официального сайта](https://www.python.org/)
 2. Скачайте `MeowTool.py` и `requirements.txt` с [MeowTool GitHub](https://github.com/h1kken/MeowTool)
 3. В папке, где у Вас находится `requirements.txt`, в поисковой строке введите `cmd` и нажмите `Enter`
-   ![Enter cmd in search line](https://github.com/user-attachments/assets/4f50ac1a-dc6c-438f-95dd-348676983df5)
+   ![Enter cmd in search line](https://github.com/user-attachments/assets/7f7761ed-86b5-4ddf-9431-923b1434e5dd)
+
 4. В открывшейся консоли введите `pip install -r requirements.txt`
 
 ## Основные возможности
