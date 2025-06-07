@@ -1,0 +1,9 @@
+tomlkit==0.13.3
+PySocks==1.7.1
+requests==2.32.3
+aiohttp==3.12.11
+aiohttp_socks==0.10.1
+aiofiles==24.1.0
+emoji==2.14.1
+columnar==1.4.1
+colorama==0.4.6
