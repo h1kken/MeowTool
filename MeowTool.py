@@ -4967,7 +4967,7 @@ async def mainMenu():
 
                                                                 config['Roblox']['CookieChecker']['CustomPlaces'][settingsRCCCustomPlaceAdd] = [False, int(settingsRCCCustomPlaceAdd), [normalPlaceName, str(requestCustomPlaceInfo['data'][0]['name']).strip(), abbreviatedPlaceName.upper()]]
                                                                 if requestCustomPlaceGamepasses['data']: config['Roblox']['CookieChecker']['CustomPlaces'][f'{settingsRCCCustomPlaceAdd}_Gamepasses'] = [[gamepass['id'], str(gamepass['name']).strip(), False] for gamepass in requestCustomPlaceGamepasses['data']]
-                                                                if requestCustomPlaceBadges['data']:     config['Roblox']['CookieChecker']['CustomPlaces'][f'{settingsRCCCustomPlaceAdd}_Badges']     = [[badge['id'],    str(badge['name']).strip(),    False] for badge in requestCustomPlaceBadges['data']]
+                                                                if requestCustomPlaceBadges['data']:     config['Roblox']['CookieChecker']['CustomPlaces'][f'{settingsRCCCustomPlaceAdd}_Badges']     = [[badge['id'],    str(badge['name']).strip(),    False] for badge    in requestCustomPlaceBadges['data']]
 
                                                                 await AutoSaveConfig()
 
@@ -4975,6 +4975,8 @@ async def mainMenu():
                                                         elif settingsRCCCustomPlacesTab.upper() in ('S', 'Ы'):
                                                             config['Roblox']['CookieChecker']['CustomPlaces']['Show_Game_ID_Next_To_The_Name'] = not config['Roblox']['CookieChecker']['CustomPlaces']['Show_Game_ID_Next_To_The_Name']
                                                             await AutoSaveConfig()
+                                                        elif settingsRCCCustomPlacesTab.upper() in ('R', 'К'):
+                                                            loadConfig(configLoader['Loader']['Current_Config'])
 
                                                         await cls()
                                                         await lableASCII()
