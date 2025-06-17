@@ -181,9 +181,10 @@ class ANSI:
 ### Переводы
 
 def translateMT(language: str):
-    global MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Incorrect_Number_Of_Threads, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Error, MT_50_Cookies_In_Once, MT_50_Cookies_In_60_Seconds, MT_Send_Some_Requests_Through_RoProxy, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_Characters_Such_As, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_All_Warnings, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_History_Manual, MT_Save_Cookies_Checked_By_Checker, MT_History_Checker, MT_Cookie_Control_Panel, MT_Start_Refresher, MT_Wait, MT_Waiting, MT_Can_Continue, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie1, MT_Enter_A_Cookie2, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_The_Parameter_Can_Only_Be_A_Number, MT_Add_A_Parameter, MT_Create_Backups, MT_Save_To_A_File, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_To_Start_Checking, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_ID_20, MT_Incorrect_Length_Of_Parameter_20, MT_Incorrect_Length_Of_Name_50, MT_Incorrect_Length_Of_Config_Name_60, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Parsing, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_Bundle, MT_Add_ID_Place, MT_Enter_Something, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Parameter_With_This_Value_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_File_Name, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Finish_Checking_File, MT_Start_Parsing_File, MT_Finish_Parsing_File, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Parser, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta
+    global MT_No_Cookies_Found, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Incorrect_Number_Of_Threads, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Error, MT_50_Cookies_In_Once, MT_50_Cookies_In_60_Seconds, MT_Send_Some_Requests_Through_RoProxy, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_Characters_Such_As, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_All_Warnings, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_History_Manual, MT_Save_Cookies_Checked_By_Checker, MT_History_Checker, MT_Cookie_Control_Panel, MT_Start_Refresher, MT_Wait, MT_Waiting, MT_Can_Continue, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie1, MT_Enter_A_Cookie2, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_The_Parameter_Can_Only_Be_A_Number, MT_Add_A_Parameter, MT_Create_Backups, MT_Save_To_A_File, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_To_Start_Checking, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_ID_20, MT_Incorrect_Length_Of_Parameter_20, MT_Incorrect_Length_Of_Name_50, MT_Incorrect_Length_Of_Config_Name_60, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Parsing, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_Bundle, MT_Add_ID_Place, MT_Enter_Something, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Parameter_With_This_Value_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_File_Name, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Finish_Checking_File, MT_Start_Parsing_File, MT_Finish_Parsing_File, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Parser, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta
     match str(language).upper():
         case 'EN':
+            MT_No_Cookies_Found                         = 'No cookies found'
             MT_Number_Of_Threads_For_Valid_Checker      = 'Number of threads for valid checker'
             MT_Number_Of_Threads_For_Main_Checker       = 'Number of threads for main checker'
             MT_Incorrect_Number_Of_Threads              = 'Do not exceed the 500 thread limit'
@@ -349,6 +350,7 @@ def translateMT(language: str):
             MT_Cookie_Refresher                         = 'Cookie Refresher'
             MT_Beta                                     = '[BETA]'
         case _: # 'RU'
+            MT_No_Cookies_Found                         = 'Куки не найдены'
             MT_Number_Of_Threads_For_Valid_Checker      = 'Количество потоков на чек валидности'
             MT_Number_Of_Threads_For_Main_Checker       = 'Количество потоков на основной чекер'
             MT_Incorrect_Number_Of_Threads              = 'Не превышай ограничение на 500 потоков'
@@ -3700,7 +3702,7 @@ async def mainMenu():
                             whileTrueStage2 = True
                             await removeLines(11)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Checker}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ cookies {amountOfLines('Roblox\\Cookie Checker', 'cookies')}\n  ┃\n [{ANSI.FG.YELLOW}U{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Checker}\n\n {ANSI.CLEAR}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ cookies {amountOfLines('Roblox\\Cookie Checker', 'cookies')}\n  ┃\n [{ANSI.FG.YELLOW}U{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 robloxCookieCheckerTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 match robloxCookieCheckerTab.upper():
                                     case '1':
@@ -3788,60 +3790,71 @@ async def mainMenu():
                                                         async def refresherMassModeOnly50Cookie():
                                                             if config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] != '' and (datetime.datetime.strptime(config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'], '%H:%M:%S') + datetime.timedelta(minutes=1)).time() > datetime.datetime.now().time():
                                                                 return await errorOrCorrectHandler(True, 8, f'{MT_Wait} {str(int((datetime.datetime.strptime(datetime.datetime.now().strftime('%H:%M:%S'), '%H:%M:%S') - (datetime.datetime.strptime(config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'], '%H:%M:%S') + datetime.timedelta(minutes=1))).total_seconds()))[1:]} {MT_Seconds}.', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
+                                                            if not os.path.exists('Roblox\\Cookie Refresher\\Mass Mode\\cookies.txt'):
+                                                                return await errorOrCorrectHandler(True, 8, f'{MT_No_Cookies_Found}', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
 
-                                                            await removeLines(7)
-                                                            sys.stdout.write(f'\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINE1}cookies.txt{ANSI.CLEAR + ANSI.DECOR.BOLD}\':\n')
-                                                            
                                                             dateOfMassMode1Refreshing     = datetime.datetime.now()
                                                             dateOfMassMode1RefreshingStrf = dateOfMassMode1Refreshing.strftime('%d.%m.%Y - %H.%M.%S')
-                                                            
+
                                                             refreshTasks = []
-                                                            for cookie in open(f'Roblox\\Cookie Refresher\\Mass Mode\\outputs\\cookies.txt', 'r', encoding='UTF-8').readlines():
+                                                            for cookie in open('Roblox\\Cookie Refresher\\Mass Mode\\cookies.txt', 'r', encoding='UTF-8').readlines():
+                                                                if not search(COOKIE_PATTERN, cookie): continue
                                                                 refreshTask = asyncio.create_task(startMassModeRCR(cookie.strip(), dateOfMassMode1RefreshingStrf))
                                                                 refreshTasks.append(refreshTask)
                                                                 if len(refreshTasks) >= 50: break
-                                                            
+
+                                                            if not refreshTasks:
+                                                                return await errorOrCorrectHandler(True, 8, f'{MT_No_Cookies_Found}', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
+
+                                                            await removeLines(7)
+                                                            sys.stdout.write(f'\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINE1}cookies.txt{ANSI.CLEAR + ANSI.DECOR.BOLD}\':\n')
+
                                                             await asyncio.gather(*refreshTasks)
 
                                                             config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = dateOfMassMode1Refreshing.strftime('%H:%M:%S')
                                                             await AutoSaveConfig()
                                                             sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Finish_Checking_File}\n\n [{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.DECOR.FLASHING1}{MT_Press_Any_Key_To_Continue if config['General']['Press_Any_Key_To_Continue'] else MT_Press_Enter_To_Continue}...{ANSI.CLEAR}')
                                                             await waitingInput()
-                                                            
+
                                                         await refresherMassModeOnly50Cookie()
                                                     case '2':
                                                         async def refresherMassModeMore50Cookie():
                                                             if config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] != '' and (datetime.datetime.strptime(config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'], '%H:%M:%S') + datetime.timedelta(minutes=1)).time() > datetime.datetime.now().time():
                                                                 return await errorOrCorrectHandler(True, 8, f'{MT_Wait} {str(int((datetime.datetime.strptime(datetime.datetime.now().strftime('%H:%M:%S'), '%H:%M:%S') - (datetime.datetime.strptime(config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'], '%H:%M:%S') + datetime.timedelta(minutes=1))).total_seconds()))[1:]} {MT_Seconds}.', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
+                                                            if not os.path.exists('Roblox\\Cookie Refresher\\Mass Mode\\cookies.txt'):
+                                                                return await errorOrCorrectHandler(True, 8, f'{MT_No_Cookies_Found}', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
 
-                                                            await removeLines(7)
-                                                            sys.stdout.write(f'\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINE1}cookies.txt{ANSI.CLEAR + ANSI.DECOR.BOLD}\':\n')
-                                                            
-                                                            dateOfMassMode2Refreshing     = datetime.datetime.now()
-                                                            dateOfMassMode2RefreshingStrf = dateOfMassMode2Refreshing.strftime('%d.%m.%Y - %H.%M.%S')
-                                                            
-                                                            cookieListAll = []
+                                                            correctedCookieList = []
                                                             for cookie in open(f'Roblox\\Cookie Refresher\\Mass Mode\\cookies.txt', 'r', encoding='UTF-8').readlines():
                                                                 cookie = cookie.strip()
                                                                 if search(COOKIE_PATTERN, cookie):
-                                                                    cookieListAll.append(cookie)
+                                                                    correctedCookieList.append(cookie)
+
+                                                            if not correctedCookieList:
+                                                                return await errorOrCorrectHandler(True, 8, f'{MT_No_Cookies_Found}', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
+
+                                                            dateOfMassMode2Refreshing     = datetime.datetime.now()
+                                                            dateOfMassMode2RefreshingStrf = dateOfMassMode2Refreshing.strftime('%d.%m.%Y - %H.%M.%S')
+
+                                                            await removeLines(7)
+                                                            sys.stdout.write(f'\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINE1}cookies.txt{ANSI.CLEAR + ANSI.DECOR.BOLD}\':\n')
 
                                                             while True:
                                                                 refreshTasks = []
-                                                                while len(cookieListAll) and len(refreshTasks) < 50:
-                                                                    refreshTask = asyncio.create_task(startMassModeRCR(cookieListAll[0], dateOfMassMode2RefreshingStrf))
+                                                                while len(correctedCookieList) and len(refreshTasks) < 50:
+                                                                    refreshTask = asyncio.create_task(startMassModeRCR(correctedCookieList[0], dateOfMassMode2RefreshingStrf))
                                                                     refreshTasks.append(refreshTask)
-                                                                    cookieListAll.remove(cookieListAll[0])
+                                                                    correctedCookieList.remove(correctedCookieList[0])
                                                                 await asyncio.gather(*refreshTasks)
 
                                                                 config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = dateOfMassMode2Refreshing.strftime('%H:%M:%S')
                                                                 await AutoSaveConfig()
                                                                 
-                                                                if not len(cookieListAll):
+                                                                if not correctedCookieList:
                                                                     break
                                                             
                                                                 sys.stdout.write(f'\r {ANSI.DECOR.BOLD}[{ANSI.FG.RED}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Rate_Limit_Has_Been_Reached}. {MT_Waiting} 60 {MT_Seconds}... :<{ANSI.CLEAR}\n')
-                                                                time.sleep(60)
+                                                                await asyncio.sleep(60)
                                                                 await removeLines(1)
 
                                                             config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = dateOfMassMode2Refreshing.strftime('%H:%M:%S')
@@ -3978,7 +3991,7 @@ async def mainMenu():
                                             if not miscRobloxParseGamepassesTab.isdigit():
                                                 return await errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID,          f'{MT_Roblox}\\{MT_Misc}\\{MT_Gamepasses_Parser_From_The_Place}')
                                             if len(miscRobloxParseGamepassesTab) > 20:
-                                                return await errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_ID_20,  f'{MT_Roblox}\\{MT_Misc}\\{MT_Gamepasses_Parser_From_The_Place}')
+                                                return await errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_ID_20,   f'{MT_Roblox}\\{MT_Misc}\\{MT_Gamepasses_Parser_From_The_Place}')
 
                                             requestUniverseId = requests.get(f'https://apis.roblox.com/universes/v1/places/{miscRobloxParseGamepassesTab}/universe').json()['universeId']
 
@@ -4020,19 +4033,19 @@ async def mainMenu():
                                         async def parseRobloxBadges():
                                             if miscRobloxParseBadgesTab == '0': return
                                             if not miscRobloxParseBadgesTab.isdigit():
-                                                return await errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID,         f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
+                                                return await errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID,        f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
                                             if len(miscRobloxParseBadgesTab) > 20:
                                                 return await errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_ID_20, f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
 
                                             requestUniverseId = requests.get(f'https://apis.roblox.com/universes/v1/places/{miscRobloxParseBadgesTab}/universe').json()['universeId']
 
                                             if requestUniverseId == None:
-                                                return await errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID,         f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
+                                                return await errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID,        f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
 
                                             requestBadgesInfo = requests.get(f'https://badges.roblox.com/v1/universes/{requestUniverseId}/badges?limit=100&sortOrder=Asc').json()
 
                                             if not requestBadgesInfo['data']:
-                                                return await errorOrCorrectHandler(True, 5, MT_The_Place_Has_No_Badges,    f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
+                                                return await errorOrCorrectHandler(True, 5, MT_The_Place_Has_No_Badges,   f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
 
                                             requestGameInfo = requests.get(f'https://games.roblox.com/v1/games?universeIds={requestUniverseId}').json()
                                             placeNameWithoutSpecial = removeTwoSpaces(sub(r'[\/:*?"<>|]', '', removeBracketsAndIn(replace_emoji(requestGameInfo['data'][0]['name'], replace=''), True, True))).strip()
