@@ -2452,9 +2452,12 @@ async def robloxCookieChecker(file):
         return await errorOrCorrectHandler(True, 8, MT_Enable_Something_To_Start_Checking, f'{MT_Roblox}\\{MT_Cookie_Checker}')
 
     if config['Roblox']['CookieChecker']['General']['Proxy']['Use_Proxy']:
-        proxiesFromFile = list({proxy.strip() for proxy in open('Roblox\\Cookie Checker\\proxies.txt', 'r', encoding='UTF-8').readlines()
-                                if '@' in proxy and len(proxy.split(':')) in (3, 4)})
-        if not proxiesFromFile:
+        try:
+            proxiesFromFile = list({proxy.strip() for proxy in open('Roblox\\Cookie Checker\\proxies.txt', 'r', encoding='UTF-8').readlines()
+                                    if '@' in proxy and len(proxy.split(':')) in (3, 4)})
+            if not proxiesFromFile:
+                return await errorOrCorrectHandler(True, 8, MT_No_Proxy_Was_Found, f'{MT_Roblox}\\{MT_Cookie_Checker}')
+        except FileNotFoundError:
             return await errorOrCorrectHandler(True, 8, MT_No_Proxy_Was_Found, f'{MT_Roblox}\\{MT_Cookie_Checker}')
 
     await removeLines(7)
