@@ -2,9 +2,17 @@
 
 **MeowTool** — это скрипт с консольным интерфейсом, содержащий в себе полезные инструменты для работы с прокси и куки роблокс.
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/f1a395c3-b3bf-4d9d-a33a-62a900d2baf8"/>
-</p>
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/f1a395c3-b3bf-4d9d-a33a-62a900d2baf8">
+</div>
+
+## 🎬 Показ работы скрипта
+
+<div align="center">
+  <a href="https://www.youtube.com/live/j6Xplen0PPw">
+    <img src="https://github.com/user-attachments/assets/e52e6e7e-b118-44ed-863e-007df56810f7" height=48 width=48>
+  </a>
+</div>
 
 ## 🚀 Как запустить
 
