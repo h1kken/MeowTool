@@ -2536,7 +2536,7 @@ async def robloxCookieChecker(file):
     if config['Roblox']['CookieChecker']['Sorting']['Sort']:
         sortListCategories = {}
         categories = getCookieDataForSort()
-        await removeDuplicatedSortValues(categories[1])
+        await removeIncorrectSortValues(categories[1])
         for category in categories[0]:
             if categories[0][category] == int and config['Roblox']['CookieChecker']['Sorting'][category][0] or categories[0][category] == bool and config['Roblox']['CookieChecker']['Sorting'][category]:
                 sortListCategories[category] = categories[0][category]
@@ -2638,7 +2638,7 @@ async def robloxCookieChecker(file):
                 async def isSortingCookiesFunc(category: str, value: int | str, dateOfCheck: str):
                     newNameOfCategory = ' '.join(category.split('_'))
                     if type(value) == int and str(value) != '0':
-                        sortValues = await getSortValuesFromCategory(category)
+                        sortValues = await getSortValuesFromCategory(category, True)
                         if not sortValues: return
 
                         os.makedirs(f'Roblox\\Cookie Checker\\outputs\\{dateOfCheck}\\Sort\\{newNameOfCategory}', exist_ok=True)
@@ -3045,15 +3045,22 @@ def printSortCategories(categories: list):
     for index, category in enumerate(categories):
         sys.stdout.write(f' {ANSI.DECOR.BOLD}{f'[{ANSI.FG.PINK}{index + 1}{ANSI.CLEAR + ANSI.DECOR.BOLD}]'.rjust(len(str(len(categories))) + 15)} ┃ {f'{ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if categories[category] == int and config['Roblox']['CookieChecker']['Sorting'][category][0] or categories[category] == bool and config['Roblox']['CookieChecker']['Sorting'][category] else f'{ANSI.DECOR.BOLD}[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {' '.join(str(category).split('_'))}\n')
 
-async def getSortValuesFromCategory(category: str):
+async def getSortValuesFromCategory(category: str, isCookieChecker: bool = False) -> list:
     listOfValues = config['Roblox']['CookieChecker']['Sorting'][category][1]
+
+    if isCookieChecker:
+        sortValuesForChecker = set()
+        for i in range(len(listOfValues)):
+            if listOfValues[i][1] and str(listOfValues[i][0]).isdigit(): sortValuesForChecker.add(int(listOfValues[i][0]))
+        return sortValuesForChecker
+
     newSortValues = set()
     i = 0
+
     while len(listOfValues) > i:
-        if int(listOfValues[i][0]) not in newSortValues and str(listOfValues[i][0]).isdigit():
+        if str(listOfValues[i][0]).isdigit() and int(listOfValues[i][0]) not in newSortValues:
             newSortValues.add(int(listOfValues[i][0]))
-            try: config['Roblox']['CookieChecker']['Sorting'][category][1][i][0] = int(listOfValues[i][0])
-            except TypeError: pass
+            config['Roblox']['CookieChecker']['Sorting'][category][1][i][0] = int(listOfValues[i][0])
             i += 1
         else:
             config['Roblox']['CookieChecker']['Sorting'][category][1].pop(i)
@@ -3061,7 +3068,7 @@ async def getSortValuesFromCategory(category: str):
     await AutoSaveConfig()
     return sorted(newSortValues)
 
-async def removeDuplicatedSortValues(categories):
+async def removeIncorrectSortValues(categories):
     for category in categories:
         listValues = config['Roblox']['CookieChecker']['Sorting'][category][1]
         i = 0
@@ -4535,7 +4542,7 @@ async def mainMenu():
                                                                         sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
                                                                         settingsRCCGeneralSortParameterAdd = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_The_Parameter_Value}:{ANSI.CLEAR} ')
 
-                                                                        async def sortParameterAdd():
+                                                                        async def addSortParameter():
                                                                             if settingsRCCGeneralSortParameterAdd == '0': return
                                                                             if not settingsRCCGeneralSortParameterAdd.isdigit():
                                                                                 return await errorOrCorrectHandler(True, 5, MT_The_Parameter_Can_Only_Be_A_Number,       f'{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}')
@@ -4547,7 +4554,7 @@ async def mainMenu():
                                                                             config['Roblox']['CookieChecker']['Sorting'][list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1]][1].append([int(settingsRCCGeneralSortParameterAdd), False])
                                                                             await AutoSaveConfig()
 
-                                                                        await sortParameterAdd()
+                                                                        await addSortParameter()
                                                                     elif settingsRCCGeneralSortCategoryTab.upper() in ('C', 'С'):
                                                                         config['Roblox']['CookieChecker']['Sorting'][list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1]][0] = not config['Roblox']['CookieChecker']['Sorting'][list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1]][0]
                                                                         await AutoSaveConfig()
