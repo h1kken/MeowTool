@@ -86,6 +86,7 @@
 ## 🔗 Контактные данные
 - Discord: h1kken
 - Telegram: [L1feeK](https://t.me/L1feeK)
+- Но лучше отправлять ошибки в предназначенный для этого [раздел](https://github.com/h1kken/MeowTool/issues) 🐾
 
 ## ⚖️ Лицензирование
 Проект распространяется на условиях лицензии [MIT](https://github.com/h1kken/MeowTool/blob/main/LICENSE)
