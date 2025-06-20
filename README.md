@@ -9,7 +9,7 @@
 ## 🎬 Показ работы скрипта
 
 <div align="center">
-  <a href="https://www.youtube.com/live/j6Xplen0PPw">
+  <a href="https://www.youtube.com/live/S_BODxV5vXk">
     <img src="https://github.com/user-attachments/assets/e52e6e7e-b118-44ed-863e-007df56810f7" height=48 width=48>
   </a>
 </div>
