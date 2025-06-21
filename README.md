@@ -92,6 +92,6 @@
 Проект распространяется на условиях лицензии [MIT](https://github.com/h1kken/MeowTool/blob/main/LICENSE)
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/077df3c9-86dd-4595-8557-f13075a7b1b3" height="48" width="48" border-bottom="1px solid #FA7186">
+  <img src="https://github.com/user-attachments/assets/077df3c9-86dd-4595-8557-f13075a7b1b3" height="48" width="48">
   <p>Только добра.</p>
 </div>
