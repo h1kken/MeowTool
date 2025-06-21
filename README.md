@@ -10,7 +10,7 @@
 
 <div align="center">
   <a href="https://www.youtube.com/live/S_BODxV5vXk">
-    <img src="https://github.com/user-attachments/assets/e52e6e7e-b118-44ed-863e-007df56810f7" height=48 width=48>
+    <img src="https://github.com/user-attachments/assets/e52e6e7e-b118-44ed-863e-007df56810f7" height="48" width="48">
   </a>
 </div>
 
@@ -90,3 +90,8 @@
 
 ## ⚖️ Лицензирование
 Проект распространяется на условиях лицензии [MIT](https://github.com/h1kken/MeowTool/blob/main/LICENSE)
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/077df3c9-86dd-4595-8557-f13075a7b1b3" height="48" width="48" border-bottom="1px solid #FA7186">
+  <p>Только добра.</p>
+</div>
