@@ -129,7 +129,7 @@ class ANSI:
 ### Переводы
 
 def translateMT(language: str):
-    global MT_Current, MT_Check_For_Updates, MT_No_Cookies_Found, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Incorrect_Number_Of_Threads, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Error, MT_50_Cookies_In_Once, MT_50_Cookies_In_60_Seconds, MT_Send_Some_Requests_Through_RoProxy, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_Characters_Such_As, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_All_Warnings, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_History_Manual, MT_Save_Cookies_Checked_By_Checker, MT_History_Checker, MT_Cookie_Control_Panel, MT_Start_Refresher, MT_Wait, MT_Waiting, MT_Can_Continue, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie1, MT_Enter_A_Cookie2, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_The_Parameter_Can_Only_Be_A_Number, MT_Add_A_Parameter, MT_Create_Backups, MT_Save_To_A_File, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_To_Start_Checking, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_ID_20, MT_Incorrect_Length_Of_Parameter_20, MT_Incorrect_Length_Of_Name_50, MT_Incorrect_Length_Of_Config_Name_60, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Parsing, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_Bundle, MT_Add_ID_Place, MT_Enter_Something, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Parameter_With_This_Value_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_File_Name, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Finish_Checking_File, MT_Start_Parsing_File, MT_Finish_Parsing_File, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Parser, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta
+    global MT_Current, MT_Check_For_Updates, MT_No_Cookies_Found, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Incorrect_Number_Of_Threads, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Error, MT_50_Cookies_In_Once, MT_50_Cookies_In_60_Seconds, MT_Send_Some_Requests_Through_RoProxy, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_Characters_Such_As, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_All_Warnings, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_History_Manual, MT_Save_Cookies_Checked_By_Checker, MT_History_Checker, MT_Cookie_Control_Panel, MT_Start_Refresher, MT_Wait, MT_Waiting, MT_Can_Continue, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie1, MT_Enter_A_Cookie2, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_The_Parameter_Can_Only_Be_A_Number, MT_Add_A_Parameter, MT_Create_Backups, MT_Save_To_A_File, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_To_Start_Checking, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_ID_20, MT_Incorrect_Length_Of_Parameter_20, MT_Incorrect_Length_Of_Name_50, MT_Incorrect_Length_Of_Config_Name_60, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Parsing, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_A_Bundle_By_ID, MT_Add_A_Place_By_ID, MT_Enter_Something, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Parameter_With_This_Value_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_File_Name, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Finish_Checking_File, MT_Start_Parsing_File, MT_Finish_Parsing_File, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Parser, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta
     match str(language).upper():
         case 'EN':
             MT_Current                                  = 'Current'
@@ -262,8 +262,8 @@ def translateMT(language: str):
             MT_Update_List                              = 'Update list'
             MT_Back                                     = 'Back'
             MT_Close_Program                            = 'Close the program'
-            MT_Add_Bundle                               = 'Add a bundle\'s ID'
-            MT_Add_ID_Place                             = 'Add a place\'s ID'
+            MT_Add_A_Bundle_By_ID                       = 'Add a bundle by ID'
+            MT_Add_A_Place_By_ID                        = 'Add a place by ID'
             MT_Enter_Something                          = 'Enter something'
             MT_Create_Config                            = 'Create config'
             MT_Cancel                                   = 'Cancel'
@@ -430,8 +430,8 @@ def translateMT(language: str):
             MT_Update_List                              = 'Обновить список'
             MT_Back                                     = 'Назад'
             MT_Close_Program                            = 'Закрыть программу'
-            MT_Add_Bundle                               = 'Добавить ID бандла'
-            MT_Add_ID_Place                             = 'Добавить ID плейса'
+            MT_Add_A_Bundle_By_ID                       = 'Добавить бандл по ID'
+            MT_Add_A_Place_By_ID                        = 'Добавить плейс по ID'
             MT_Enter_Something                          = 'Введи что-то'
             MT_Create_Config                            = 'Создать конфиг'
             MT_Cancel                                   = 'Отмена'
@@ -2840,7 +2840,7 @@ async def printRCCCustomPlaces():
 async def customPlaceContextMenu(indexPlace: int):
     listOfCustomPlacesTimed = [str(customPlace) for customPlace in config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places']
                                if str(customPlace).isdigit() and str(customPlace) in config['Roblox']['CookieChecker']['CustomPlaces']]
-    
+
     async def removeLinesCustomPlaces():
         if f'{listOfCustomPlacesTimed[indexPlace]}_Gamepasses' in config['Roblox']['CookieChecker']['CustomPlaces'] and f'{listOfCustomPlacesTimed[indexPlace]}_Badges' in config['Roblox']['CookieChecker']['CustomPlaces']:
             await removeLines(10)
@@ -2850,7 +2850,7 @@ async def customPlaceContextMenu(indexPlace: int):
     async def printCustomPlaceGamepasses():
         for index, gamepass in enumerate(config['Roblox']['CookieChecker']['CustomPlaces'][f'{listOfCustomPlacesTimed[indexPlace]}_Gamepasses']):
             sys.stdout.write(f' {ANSI.DECOR.BOLD}{f'[{ANSI.FG.PINK}{index + 1}{ANSI.CLEAR + ANSI.DECOR.BOLD}]'.rjust(len(str(len(config['Roblox']['CookieChecker']['CustomPlaces'][f'{listOfCustomPlacesTimed[indexPlace]}_Gamepasses']))) + 15)} ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if gamepass[2] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {gamepass[1]}{ANSI.CLEAR}\n')
-    
+
     async def openCustomPlaceGamepasses():
         whileTrueStage5 = True
         await removeLinesCustomPlaces()
@@ -2985,9 +2985,6 @@ async def customPlaceContextMenu(indexPlace: int):
             case 'F' | 'А':
                 await cls()
                 await lableASCII()
-            case 'R' | 'К':
-                loadConfig(configLoader['Loader']['Current_Config'])
-                await removeLinesCustomPlaces()
             case _:
                 await removeLinesCustomPlaces()
 
@@ -4725,7 +4722,7 @@ async def mainMenu():
                                                             while whileTrueStage4:
                                                                 sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Main}\\Favorite Places\n\n{ANSI.CLEAR}')
                                                                 RCCGeneralFavPlaces(True)
-                                                                sys.stdout.write(f'{ANSI.DECOR.BOLD}{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['CookieChecker']['Main']['Favorite_Places_IDs'] else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Add_ID_Place}\n [{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Main']['Favorite_Places'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                                sys.stdout.write(f'{ANSI.DECOR.BOLD}{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['CookieChecker']['Main']['Favorite_Places_IDs'] else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Add_A_Place_By_ID}\n [{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Main']['Favorite_Places'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                 settingsRCCGeneralFavPlacesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                                 if settingsRCCGeneralFavPlacesTab == '0': whileTrueStage4 = False
                                                                 elif settingsRCCGeneralFavPlacesTab.isdigit() and int(settingsRCCGeneralFavPlacesTab) <= len(config['Roblox']['CookieChecker']['Main']['Favorite_Places_IDs']):
@@ -4827,7 +4824,7 @@ async def mainMenu():
                                                             while whileTrueStage4:
                                                                 sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Main}\\Bundles\n\n{ANSI.CLEAR}')
                                                                 RCCGeneralBundles(True)
-                                                                sys.stdout.write(f'{ANSI.DECOR.BOLD}{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['CookieChecker']['Main']['Bundles_IDs'] else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Add_Bundle}\n [{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Main']['Bundles'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                                sys.stdout.write(f'{ANSI.DECOR.BOLD}{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['CookieChecker']['Main']['Bundles_IDs'] else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Add_A_Bundle_By_ID}\n [{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Main']['Bundles'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                 settingsRCCGeneralBundlesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                                 if settingsRCCGeneralBundlesTab == '0': whileTrueStage4 = False
                                                                 elif settingsRCCGeneralBundlesTab.isdigit() and int(settingsRCCGeneralBundlesTab) <= len(config['Roblox']['CookieChecker']['Main']['Bundles_IDs']):
@@ -4962,21 +4959,11 @@ async def mainMenu():
                                                     while whileTrueStage4:
                                                         sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n')
                                                         await printRCCCustomPlaces()
-                                                        sys.stdout.write(f'{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places'] else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Add_ID_Place}\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['CustomPlaces']['Show_Game_ID_Next_To_The_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Place_ID_Next_To_The_Name}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                        sys.stdout.write(f'{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places'] else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Add_A_Place_By_ID}\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['CustomPlaces']['Show_Game_ID_Next_To_The_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Place_ID_Next_To_The_Name}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsRCCCustomPlacesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                         if settingsRCCCustomPlacesTab == '0': whileTrueStage4 = False
                                                         elif settingsRCCCustomPlacesTab.isdigit() and int(settingsRCCCustomPlacesTab) <= len(config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places']):
                                                             await customPlaceContextMenu(int(settingsRCCCustomPlacesTab) - 1)
-                                                        elif settingsRCCCustomPlacesTab in ('+', '='):
-                                                            for place in config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places']:
-                                                                try: config['Roblox']['CookieChecker']['CustomPlaces'][str(place)][0] = True
-                                                                except Exception: pass
-                                                            await AutoSaveConfig()
-                                                        elif settingsRCCCustomPlacesTab in ('-', '_'):
-                                                            for place in config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places']:
-                                                                try: config['Roblox']['CookieChecker']['CustomPlaces'][str(place)][0] = False
-                                                                except Exception: pass
-                                                            await AutoSaveConfig()
                                                         elif settingsRCCCustomPlacesTab.upper() in ('A', 'Ф'):
                                                             await cls()
                                                             await lableASCII()
@@ -5023,6 +5010,16 @@ async def mainMenu():
                                                                 await AutoSaveConfig()
 
                                                             await addCustomPlace()
+                                                        elif settingsRCCCustomPlacesTab in ('+', '='):
+                                                            for place in config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places']:
+                                                                try: config['Roblox']['CookieChecker']['CustomPlaces'][str(place)][0] = True
+                                                                except Exception: pass
+                                                            await AutoSaveConfig()
+                                                        elif settingsRCCCustomPlacesTab in ('-', '_'):
+                                                            for place in config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places']:
+                                                                try: config['Roblox']['CookieChecker']['CustomPlaces'][str(place)][0] = False
+                                                                except Exception: pass
+                                                            await AutoSaveConfig()
                                                         elif settingsRCCCustomPlacesTab.upper() in ('S', 'Ы'):
                                                             config['Roblox']['CookieChecker']['CustomPlaces']['Show_Game_ID_Next_To_The_Name'] = not config['Roblox']['CookieChecker']['CustomPlaces']['Show_Game_ID_Next_To_The_Name']
                                                             await AutoSaveConfig()
