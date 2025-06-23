@@ -1,8 +1,8 @@
 import os
 import sys
-import time
 import random
 import asyncio
+import webbrowser
 from shutil import copyfile, rmtree
 import datetime
 from re import compile, sub, search
@@ -22,64 +22,6 @@ from msvcrt import getch
 # MeowTool
 
 '''
-<|> TO DO
-
-    [*] - задача
-    [!] - высокий приоритет
-    [~] - код для 'Ctrl + F'
-    [?] - отложено на неопределённый срок
-
-    [*] Detect Libraries (if not: install)
-
-    Fixes
-      Roblox
-        [~] fix_it_1 - Нормальная проверка на валид в рефрешере
-        [~] fix_it_2 - Работать с датой вида: XX.XX.XXXX XX:XX:XX, а не XX:XX:XX или, если время >60 секунд - сбрасывать таймер, но тогда возникнет ситуация, когда рефреш будет в 23:59:59, то таймер сбросится и следующий рефреш провалится
-            Вывод в основном чекере почему-то происходит при условии, что все задачи выполнены
-        [~] fix_it_3 - Общий вывод может проспамиться несколько раз
-            Редкая ошибка, когда при сохранении информации в файл определённая часть куки переносится на новую строку
-
-    Updates
-      Roblox
-        [*] [?] Нет проверки валидности в функциях проверки данных - возможен краш
-        [*] Улучшить функции с while
-        [*] Оптимизация основного чекера
-        [*] Переписать автоматическое завершение сессий (async with) на ручное (из-за проблем с прокси, а именно 'Session is closed' без причины)
-        [*] В массовором рефрешере настройка для удаления рефрешнутых куки из файла (сохранять файл после каждых 50 рефрешнутых куков)
-        [*] Исправить поиск кастомных геймпассов когда он не имеет смысла при выводе количества, а не названий + количества
-        [*] [?] Выгрузить все классы игр с бейджами и геймпассами в .json на GitHub и загружать файл от туда
-        [*] [?] Парсер разных видов прокси (возможно, дать пользователю самому выбрать вид прокси из предложенных или сделать конструктор вида прокси)
-        [*] [?] Поддержка публичных IPv4 прокси (HTTP, HTTPS, SOCKS4, SOCKS5)
-        [*] Подсчёт потраченных робуксов в каждом плейсе отдельно [Примеры: Adopt Me: (99 (Может быть писать тут кол-во геймпассов), 9999R$ (А тут их общую ценность)), Murder Mystery 2: (234 (Может быть писать тут кол-во геймпассов), 298526R$ (А тут их общую ценность))]
-        [*] Сделать выбор для параметров, которые могут выводить данные в виде массива, а не только числа
-        [*] [?] Сортировка с промежуточными значениями [Примеры: 100-200, >99 & <201, >=100 & <=200] (Учесть невозможность использования [<, >] в названиях файлов и папок)
-        [*] [?] Режим чекера с топ-N куков (обновление каждые N куков + последний)
-        [*] [?] Массовый парсинг бейджей и геймпассов при вводе нескольких айдишников плейсов через запятую/пробел, в случае ввода одного - вывести данные в консоль и сохранить
-        [*] [?] Отправка итоговых данных в [Telegram, Discord]
-        [*] [?] Возможность сохранения данных в [Excel (CSV, XLS(X)), Access (MDB, ACCDB)]
-        [>] [?] Панель управления куками
-          [*] Состояние валидности
-          [*] Обновление всех данных
-        [*] [?] Log:Pass чекер
-        [*] [?] Снятие почты
-
-      Configs
-        [*] [?] Переписать систему создания и написать проверку целостности при запуске и там, где это нужно
-
-      Proxy
-        [*] Раздел нуждается в полном рерайте на библиотеках aiohttp(_socks), asyncio, aiofiles (а также в нормальном коде, а не то, что сейчас)
-        [*] Парсер разных видов прокси (возможно, дать пользователю самому выбрать вид прокси из предложенных или сделать конструктор вида прокси)
-        [*] Асинхронность
-        [*] Многозадачность
-        [*] Записывать все прокси из файла в память и там менять
-
-    Global Updates
-      [*] [?] Полный рерайт скрипта + интерфейс
-      [*] [?] Нормальная система конфигов с проверкой целостности
-      [*] [?] Нормальная система переводов в отдельном файле
-
-
-
 <|> MAYBE USEFUL INFORMATION
 
     Roblox
@@ -127,6 +69,12 @@ from msvcrt import getch
         [C-] [G]             Roblox Badges:          https://accountinformation.roblox.com/v1/users/{UserId}/roblox-badges
         [C+] [P]             X-CSRF-Token:           https://auth.roblox.com/v2/logout
 '''
+
+### Версии
+
+VERSIONS = {
+    'MeowTool': 'v1.0.8'
+}
 
 ### ANSI коды
 
@@ -181,9 +129,11 @@ class ANSI:
 ### Переводы
 
 def translateMT(language: str):
-    global MT_No_Cookies_Found, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Incorrect_Number_Of_Threads, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Error, MT_50_Cookies_In_Once, MT_50_Cookies_In_60_Seconds, MT_Send_Some_Requests_Through_RoProxy, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_Characters_Such_As, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_All_Warnings, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_History_Manual, MT_Save_Cookies_Checked_By_Checker, MT_History_Checker, MT_Cookie_Control_Panel, MT_Start_Refresher, MT_Wait, MT_Waiting, MT_Can_Continue, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie1, MT_Enter_A_Cookie2, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_The_Parameter_Can_Only_Be_A_Number, MT_Add_A_Parameter, MT_Create_Backups, MT_Save_To_A_File, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_To_Start_Checking, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_ID_20, MT_Incorrect_Length_Of_Parameter_20, MT_Incorrect_Length_Of_Name_50, MT_Incorrect_Length_Of_Config_Name_60, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Parsing, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_Bundle, MT_Add_ID_Place, MT_Enter_Something, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Parameter_With_This_Value_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_File_Name, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Finish_Checking_File, MT_Start_Parsing_File, MT_Finish_Parsing_File, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Parser, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta
+    global MT_Current, MT_Check_For_Updates, MT_No_Cookies_Found, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Incorrect_Number_Of_Threads, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Error, MT_50_Cookies_In_Once, MT_50_Cookies_In_60_Seconds, MT_Send_Some_Requests_Through_RoProxy, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_Characters_Such_As, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_All_Warnings, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_History_Manual, MT_Save_Cookies_Checked_By_Checker, MT_History_Checker, MT_Cookie_Control_Panel, MT_Start_Refresher, MT_Wait, MT_Waiting, MT_Can_Continue, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie1, MT_Enter_A_Cookie2, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_The_Parameter_Can_Only_Be_A_Number, MT_Add_A_Parameter, MT_Create_Backups, MT_Save_To_A_File, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_To_Start_Checking, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_ID_20, MT_Incorrect_Length_Of_Parameter_20, MT_Incorrect_Length_Of_Name_50, MT_Incorrect_Length_Of_Config_Name_60, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Parsing, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_Bundle, MT_Add_ID_Place, MT_Enter_Something, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Parameter_With_This_Value_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_File_Name, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Finish_Checking_File, MT_Start_Parsing_File, MT_Finish_Parsing_File, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Parser, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta
     match str(language).upper():
         case 'EN':
+            MT_Current                                  = 'Current'
+            MT_Check_For_Updates                        = 'Check for updates'
             MT_No_Cookies_Found                         = 'No cookies found'
             MT_Number_Of_Threads_For_Valid_Checker      = 'Number of threads for valid checker'
             MT_Number_Of_Threads_For_Main_Checker       = 'Number of threads for main checker'
@@ -350,6 +300,8 @@ def translateMT(language: str):
             MT_Cookie_Refresher                         = 'Cookie Refresher'
             MT_Beta                                     = '[BETA]'
         case _: # 'RU'
+            MT_Current                                  = 'Текущая'
+            MT_Check_For_Updates                        = 'Проверять обновления'
             MT_No_Cookies_Found                         = 'Куки не найдены'
             MT_Number_Of_Threads_For_Valid_Checker      = 'Количество потоков на чек валидности'
             MT_Number_Of_Threads_For_Main_Checker       = 'Количество потоков на основной чекер'
@@ -366,10 +318,10 @@ def translateMT(language: str):
             MT_Any                                      = 'Любая'
             MT_Key_To_Continue                          = 'Клавиша для продолжения'
             MT_File_Is_Missing                          = 'Файл куда-то пропал, странно...'
-            MT_Incorrect_Cookies_Removed                = 'Удалено некорректных куков'
+            MT_Incorrect_Cookies_Removed                = 'Удалено некорректных куки'
             MT_Error                                    = 'Ошибка'
-            MT_50_Cookies_In_Once                       = '50 куков за раз'
-            MT_50_Cookies_In_60_Seconds                 = '50 куков в 60 секунд'
+            MT_50_Cookies_In_Once                       = '50 куки за раз'
+            MT_50_Cookies_In_60_Seconds                 = '50 куки в 60 секунд'
             MT_Send_Some_Requests_Through_RoProxy       = 'Отправлять некоторые запросы через RoProxy'
             MT_Rate_Limit_Has_Been_Reached              = 'Достигнут Rate-Limit'
             MT_Checker                                  = 'Чекер'
@@ -424,8 +376,8 @@ def translateMT(language: str):
             MT_Id                                       = 'Айди'
             MT_Name                                     = 'Название'
             MT_Link                                     = 'Ссылка'
-            MT_Duplicated_Cookies_Removed               = 'Удалено одинаковых куков'
-            MT_Unique_Cookies_Found                     = 'Найдено уникальных куков'
+            MT_Duplicated_Cookies_Removed               = 'Удалено одинаковых куки'
+            MT_Unique_Cookies_Found                     = 'Найдено уникальных куки'
             MT_Successfully_Uploaded_In                 = 'Успешно выгружено в'
             MT_Place_ID                                 = 'ID плейса'
             MT_Place_Name                               = 'Название плейса'
@@ -518,23 +470,35 @@ def translateMT(language: str):
 
 ### Основные функции
 
-async def lableASCII(start=False):
-    # MeowTool + by h1kken :3
-    if start: await cls()
-    if config['General']['Show_Lable_MeowTool'] or config['General']['Show_Lable_by_h1kken']:
-        ASCII_MeowTool = r'''  __    __     ______     ______     __     __     ______     ______     ______     __
- /\ "-./  \   /\  ___\   /\  __ \   /\ \  _ \ \   /\__  _\   /\  __ \   /\  __ \   /\ \
- \ \ \-./\ \  \ \  __\   \ \ \ \ \  \ \ \/ ".\ \  \/_/\ \/   \ \ \ \ \  \ \ \ \ \  \ \ \____
-  \ \ \ \ \ \  \ \    ‾\  \ \ ‾‾  \  \ \  /". \ \    \ \ \    \ \ ‾‾  \  \ \ ‾‾  \  \ \     \
-   \/‾/  \/‾/   \/‾‾‾‾‾/   \/‾‾‾‾‾/   \/‾/   \/‾/     \/‾/     \/‾‾‾‾‾/   \/‾‾‾‾‾/   \/‾‾‾‾‾/
-    ‾‾    ‾‾     ‾‾‾‾‾‾     ‾‾‾‾‾‾     ‾‾     ‾‾       ‾‾       ‾‾‾‾‾‾     ‾‾‾‾‾‾     ‾‾‾‾‾‾'''
-        by_h1kken = r''' /‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾\ by h1kken :3 /‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾\
- ‾‾‾ ‾ ‾‾  ‾‾  ‾‾  ‾‾‾  ‾‾  ‾‾  ‾‾ ‾ ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ ‾ ‾‾  ‾‾  ‾‾  ‾‾‾  ‾‾  ‾‾  ‾‾ ‾ ‾‾‾'''
-        sys.stdout.write(f'\r{f'{ANSI.FG.PINK + ANSI.DECOR.BOLD + ASCII_MeowTool + ANSI.CLEAR}\n' if config['General']['Show_Lable_MeowTool'] else ''}{f'{'\n' if not config['General']['Show_Lable_MeowTool'] else ''}{ANSI.FG.RED + ANSI.DECOR.BOLD + by_h1kken + ANSI.CLEAR}\n' if config['General']['Show_Lable_by_h1kken'] else ''}')
+async def lableASCII():
+    # Надпись 'MeowTool'
+    if config['General']['Show_Lable_MeowTool']:
+        ASCII_MeowTool = [
+            r'  __    __     ______     ______     __     __     ______     ______     ______     __        ',
+            r' /\ "-./  \   /\  ___\   /\  __ \   /\ \  _ \ \   /\__  _\   /\  __ \   /\  __ \   /\ \       ',
+            r' \ \ \-./\ \  \ \  __\   \ \ \ \ \  \ \ \/ ".\ \  \/_/\ \/   \ \ \ \ \  \ \ \ \ \  \ \ \____  ',
+            r'  \ \ \ \ \ \  \ \    ‾\  \ \ ‾‾  \  \ \  /". \ \    \ \ \    \ \ ‾‾  \  \ \ ‾‾  \  \ \     \ ',
+            r'   \/‾/  \/‾/   \/‾‾‾‾‾/   \/‾‾‾‾‾/   \/‾/   \/‾/     \/‾/     \/‾‾‾‾‾/   \/‾‾‾‾‾/   \/‾‾‾‾‾/ ',
+            r'    ‾‾    ‾‾     ‾‾‾‾‾‾     ‾‾‾‾‾‾     ‾‾     ‾‾       ‾‾       ‾‾‾‾‾‾     ‾‾‾‾‾‾     ‾‾‾‾‾‾  '
+        ]
+        sys.stdout.write(ANSI.FG.PINK + ANSI.DECOR.BOLD)
+        for string in ASCII_MeowTool:
+            sys.stdout.write(f'{string}\n')
+        sys.stdout.write(ANSI.CLEAR)
     else:
         sys.stdout.write('\n')
-    sys.stdout.flush()
-        
+
+    # Надпись 'by h1kken :3'
+    if config['General']['Show_Lable_by_h1kken']:
+        by_h1kken = [
+                r' /‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾\ by h1kken :3 /‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾\ ',
+                r' ‾‾‾ ‾ ‾‾  ‾‾  ‾‾  ‾‾‾  ‾‾  ‾‾  ‾‾ ‾ ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾ ‾ ‾‾  ‾‾  ‾‾  ‾‾‾  ‾‾  ‾‾  ‾‾ ‾ ‾‾‾ '
+            ]
+        sys.stdout.write(ANSI.FG.RED + ANSI.DECOR.BOLD)
+        for string in by_h1kken:
+            sys.stdout.write(f'{string}\n')
+        sys.stdout.write(ANSI.CLEAR)
+
 async def cls():
     if os.name == 'nt': os.system('cls')
     else: os.system('clear')
@@ -619,7 +583,7 @@ async def proxyChecker(file: str): # http, https, socks4, socks5
         
     for proxy in proxyList:
         if 'http://' in proxy or 'https://' in proxy: # http / https
-            proxy = proxy.lower().replace('http://', '').replace('https://', '')
+            proxy = proxy.replace('http://', '').replace('https://', '')
             
             try:
                 if len(proxy.split(':')) == 4:
@@ -654,7 +618,7 @@ async def proxyChecker(file: str): # http, https, socks4, socks5
             except Exception:
                 pass
         elif 'socks4://' in proxy: # socks4
-            proxy = proxy.lower().replace('socks4://', '')
+            proxy = proxy.replace('socks4://', '')
             try:
                 if len(proxy.split(':')) == 4:
                     ip, port, login, password = proxy.strip().split(':')
@@ -681,7 +645,7 @@ async def proxyChecker(file: str): # http, https, socks4, socks5
             except Exception:
                 pass
         elif 'socks5://' in proxy: # socks5
-            proxy = proxy.lower().replace('socks5://', '')
+            proxy = proxy.replace('socks5://', '')
             try:
                 if len(proxy.split(':')) == 4:
                     ip, port, login, password = proxy.strip().split(':')
@@ -2329,7 +2293,7 @@ async def isXCSRFTokenFunc(session: ClientSession, isControlPanel=False):
         except (KeyError, TypeError, ContentTypeError):
             await asyncio.sleep(2)
 
-def getGlobalsCheckListGamepasses():
+def getGlobalCheckListGamepasses():
     global checkListGamepasses; checkListGamepasses = []
     for place in listOfPlaces:
         if config['Roblox']['CookieChecker']['Places'][place.placeNames[1]] and getattr(place, 'Gamepasses', False):
@@ -2342,7 +2306,7 @@ def getGlobalsCheckListGamepasses():
                 if gamepass[2]:
                     checkListGamepasses.append(gamepass[0])
 
-def getGlobalsCheckListBadges():
+def getGlobalCheckListBadges():
     global checkListBadges; checkListBadges = []
     for place in listOfPlaces:
         if config['Roblox']['CookieChecker']['Places'][place.placeNames[1]] and getattr(place, 'Badges', False):
@@ -2527,8 +2491,8 @@ async def robloxCookieChecker(file):
             sys.stdout.write(f'{label}\n')
             sys.stdout.flush()
 
-    if config['Roblox']['CookieChecker']['Main']['Gamepasses']:        getGlobalsCheckListGamepasses()
-    if config['Roblox']['CookieChecker']['Main']['Badges']:            getGlobalsCheckListBadges()
+    if config['Roblox']['CookieChecker']['Main']['Gamepasses']:        getGlobalCheckListGamepasses()
+    if config['Roblox']['CookieChecker']['Main']['Badges']:            getGlobalCheckListBadges()
     if config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']: getGlobalCheckListCustomGamepasses()
     if config['Roblox']['CookieChecker']['Main']['Favorite_Places']:   getGlobalCheckListFavoritePlaces()
     if config['Roblox']['CookieChecker']['Main']['Bundles']:           getGlobalCheckListBundles()
@@ -3023,8 +2987,7 @@ async def customPlaceContextMenu(indexPlace: int):
                 await lableASCII()
             case 'R' | 'К':
                 loadConfig(configLoader['Loader']['Current_Config'])
-                await cls()
-                await lableASCII()
+                await removeLinesCustomPlaces()
             case _:
                 await removeLinesCustomPlaces()
 
@@ -3184,8 +3147,8 @@ async def cookieControlPanel(category: str, key: str, path: str):
                                         isID = isAccountInformation['UserId']
 
                                         # нужно переделать
-                                        getGlobalsCheckListGamepasses()
-                                        getGlobalsCheckListBadges()
+                                        getGlobalCheckListGamepasses()
+                                        getGlobalCheckListBadges()
                                         getGlobalCheckListCustomGamepasses()
                                         getGlobalCheckListFavoritePlaces()
                                         getGlobalCheckListBundles()
@@ -3287,7 +3250,7 @@ def neededFoldersAndFiles():
     for file in files:
         if not os.path.exists(file): open(file, 'w')
 
-def loadConfigLoader():
+async def loadConfigLoader():
     os.makedirs('Settings\\Configs', exist_ok=True)
     try:
         global configLoader; configLoader = loads(open('Settings\\Configs\\.Loader.toml', 'r', encoding='UTF-8').read())
@@ -3300,6 +3263,8 @@ def loadConfigLoader():
             configLoader['Loader']['Load_Config'] = 'default'
             open('Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
             return loadConfig('default')
+
+        await checkUpdates()
 
         if nameConfig in configFiles():
             return loadConfig(nameConfig)
@@ -3318,14 +3283,86 @@ def loadConfigLoader():
         configLoader['Loader']['Current_Config'] = 'default'
         configLoader.add('Saver', table())
         configLoader['Saver']['Auto_Save_Changes'] = False
+        configLoader.add('Updater', table())
+        configLoader['Updater']['Check_For_Updates'] = True
         
         open('Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
+        await checkUpdates()
         return loadConfig('default')
 
-def loadConfig(name):
+async def checkUpdates():
+    try:
+        if configLoader['Updater']['Check_For_Updates']:
+            while True:
+                sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Проверяем твою трендовость... >:3     {ANSI.CLEAR}\r')
+                try:
+                    response = requests.get('https://raw.githubusercontent.com/h1kken/MeowTool/refs/heads/meow/version.txt', timeout=3)
+                    response.raise_for_status()
+                    latestVersion = response.text.strip()
+                    if latestVersion == VERSIONS['MeowTool']:
+                        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Ура! У тебя последняя версия... >:3{ANSI.CLEAR}\r')
+                        return
+                    else:
+                        while True:
+                            sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Ух-ты! Доступна новая версия, будем качать? >:3\n\n  [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] Текущая версия: {VERSIONS['MeowTool']}\n  [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] Последняя версия: {latestVersion}\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Да, хочу \'.py\' версию\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Да, хочу \'.exe\' версию\n  [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Нет, как-нибудь потом{ANSI.CLEAR}\n\n')
+                            newUpdateAvailable = input(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] Введи что-то:{ANSI.CLEAR} ')
+                            match newUpdateAvailable:
+                                case '1':
+                                    await removeLines(10)
+                                    while True:
+                                        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Добываем данные для обновления... >:3{ANSI.CLEAR}\r')
+                                        try:
+                                            response = requests.get('https://raw.githubusercontent.com/h1kken/MeowTool/refs/heads/meow/MeowTool.py', timeout=5)
+                                            response.raise_for_status()
+                                            data = response.text.replace('\r', '')
+                                            open('MeowTool.py', 'w', encoding='UTF-8').write(data)
+                                            if sys.platform == 'win32': os.startfile('MeowTool.py')
+                                            sys.exit()
+                                        except Exception:
+                                            while True:
+                                                sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Не смогли скачать обновление, возможно нестабильный интернет. Что будем делать? >:3\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Попробуем ещё раз\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Продолжить запуск{ANSI.CLEAR}\n\n')
+                                                couldNotDownloadUpdate = input(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] Введи что-то:{ANSI.CLEAR} ')
+                                                match couldNotDownloadUpdate:
+                                                    case '1':
+                                                        await removeLines(6)
+                                                        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Пытаемся ещё раз... >:3{ANSI.CLEAR}\r')
+                                                        break
+                                                    case '2':
+                                                        await removeLines(6)
+                                                        return
+                                                    case _:
+                                                        await removeLines(6)
+                                case '2':
+                                    webbrowser.open(f'https://github.com/h1kken/MeowTool/releases/download/{latestVersion}/MeowTool.exe')
+                                    sys.exit()
+                                case '3':
+                                    await removeLines(10)
+                                    return
+                                case _:
+                                    await removeLines(10)
+                except Exception:
+                    while True:
+                        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Не смогли проверить, возможно нестабильный интернет. Что будем делать? >:3\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Проверим ещё раз\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Продолжить запуск{ANSI.CLEAR}\n\n')
+                        couldNotCheckUpdate = input(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] Введи что-то:{ANSI.CLEAR} ')
+                        match couldNotCheckUpdate:
+                            case '1':
+                                await removeLines(6)
+                                break
+                            case '2':
+                                await removeLines(6)
+                                return
+                            case _:
+                                await removeLines(6)
+    except KeyError:
+        configLoader.add('Updater', table())
+        configLoader['Updater']['Check_For_Updates'] = True
+        open('Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
+        checkUpdates()
+
+def loadConfig(configName):
     global config
     os.makedirs('Settings\\Configs', exist_ok=True)
-    if not os.path.exists(f'Settings\\Configs\\{name}.toml'):
+    if not os.path.exists(f'Settings\\Configs\\{configName}.toml'):
         config = document()
         config.add(nl())
         config.add(comment('Meow >:3'))
@@ -3491,21 +3528,19 @@ def loadConfig(name):
         config['Roblox']['Misc']['BadgesParser']['Remove_Round_Brackets_And_In_From_Name'] = False
         config['Roblox']['Misc']['BadgesParser']['Remove_Square_Brackets_And_In_From_Name'] = False
 
-        open(f'Settings\\Configs\\{name}.toml', 'w', encoding='UTF-8').write(dumps(config))
+        open(f'Settings\\Configs\\{configName}.toml', 'w', encoding='UTF-8').write(dumps(config))
 
-    configLoader['Loader']['Current_Config'] = name
+    configLoader['Loader']['Current_Config'] = configName
     open('Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
-    config = loads(open(f'Settings\\Configs\\{name}.toml', 'r', encoding='UTF-8').read())
+    config = loads(open(f'Settings\\Configs\\{configName}.toml', 'r', encoding='UTF-8').read())
 
-def configFiles():
-    configs = []
-    for file in os.listdir('Settings\\Configs'):
-        if len(file) <= 65 and file.strip() not in ('.Loader.toml', '.toml') and file.endswith('.toml'):
-            configs.append(file[:-5])
+def configFiles() -> list:
+    configs = {str(file[:-5]) for file in os.listdir('Settings\\Configs')
+               if len(file) <= 65 and file.strip() not in ('.Loader.toml', '.toml') and file.endswith('.toml')}
     if not configs:
         loadConfig('default')
-        configs.append('default')
-    return configs
+        configs.add('default')
+    return list(configs)
 
 def printConfigs(configs):
     for index, config in enumerate(configs):
@@ -3514,7 +3549,7 @@ def printConfigs(configs):
 async def configContextMenu(indexConfig: int):
     whileTrueStage3 = True
     choosedConfig = configFiles()[indexConfig]
-    errorDeleteConfig = {str(file).lower() for file in configFiles()}
+    listOfExistsConfigs = {str(file).lower() for file in configFiles()}
     await cls()
     await lableASCII()
     while whileTrueStage3:
@@ -3544,7 +3579,7 @@ async def configContextMenu(indexConfig: int):
                     return await errorOrCorrectHandler(True, 5, MT_Incorrect_File_Name,                f'{MT_Settings}\\{MT_Configs}\\{choosedConfig}')
                 if not os.path.exists(f'Settings\\Configs\\{choosedConfig}.toml'):
                     return await errorOrCorrectHandler(True, 5, MT_File_Is_Missing,                    f'{MT_Settings}\\{MT_Configs}\\{choosedConfig}')
-                if newNameOfConfig.lower() in errorDeleteConfig and newNameOfConfig != choosedConfig:
+                if newNameOfConfig.lower() in listOfExistsConfigs:
                     return await errorOrCorrectHandler(True, 5, MT_File_With_This_Name_Already_Exists, f'{MT_Settings}\\{MT_Configs}\\{choosedConfig}')
 
                 os.rename(f'Settings\\Configs\\{choosedConfig}.toml', f'Settings\\Configs\\{newNameOfConfig}.toml')
@@ -3589,7 +3624,7 @@ async def configContextMenu(indexConfig: int):
                             case 'Y' | 'Н':
                                 whileTrueStage3 = False
                                 whileTrueStage4 = False
-                                try: os.remove(f'Settings\\Configs\\{choosedConfig + '.toml'}')
+                                try: os.remove(f'Settings\\Configs\\{choosedConfig}.toml')
                                 except Exception: pass
                                 if configLoader['Loader']['Current_Config'] not in configFiles() or len(configFiles()) == 0: loadConfig('default')
                                 await removeLines(8)
@@ -3600,7 +3635,7 @@ async def configContextMenu(indexConfig: int):
                                 await removeLines(8)
                 else:
                     whileTrueStage3 = False
-                    try: os.remove(f'Settings\\Configs\\{choosedConfig + '.toml'}')
+                    try: os.remove(f'Settings\\Configs\\{choosedConfig}.toml')
                     except Exception: pass
                     if configLoader['Loader']['Current_Config'] not in configFiles() or len(configFiles()) == 0: loadConfig('default')
                     await removeLines(13)
@@ -3621,7 +3656,8 @@ async def mainMenu():
     else:
         os.system(f'title {config['General']['Console_Title']}')
 
-    await lableASCII(True)
+    await cls()
+    await lableASCII()
 
     while True:
         # Главное меню
@@ -3661,8 +3697,7 @@ async def mainMenu():
                                         await lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                        await cls()
-                                        await lableASCII()
+                                        await removeLines(16)
                                     case _:   
                                         await removeLines(16)
                         case '0':
@@ -3673,8 +3708,7 @@ async def mainMenu():
                             await lableASCII()
                         case 'R' | 'К':
                             loadConfig(configLoader['Loader']['Current_Config'])
-                            await cls()
-                            await lableASCII()
+                            await removeLines(7)
                         case _:   
                             await removeLines(7)
             # Роблокс
@@ -3703,8 +3737,7 @@ async def mainMenu():
                                         await lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                        await cls()
-                                        await lableASCII()
+                                        await removeLines(7)
                                     case _:
                                         await removeLines(7)
                         # Роблокс Куки Чекер
@@ -3725,8 +3758,7 @@ async def mainMenu():
                                         await lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                        await cls()
-                                        await lableASCII()
+                                        await removeLines(8)
                                     case _:
                                         await removeLines(8)
                         # Роблокс Куки Рефрешер
@@ -3883,13 +3915,14 @@ async def mainMenu():
                                                         await lableASCII()
                                                     case 'R' | 'К':
                                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                                        await cls()
-                                                        await lableASCII()
+                                                        await removeLines(8)
                                                     case _:
                                                         await removeLines(8)
                                             except ValueError:
                                                 config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = ''
                                                 await AutoSaveConfig()
+                                    case 'R' | 'К':
+                                        loadConfig(configLoader['Loader']['Current_Config'])
                                     case '0':
                                         whileTrueStage2 = False
                                 await cls()
@@ -3926,8 +3959,8 @@ async def mainMenu():
 
                                             isID = isAccountInformation['UserId']
 
-                                            getGlobalsCheckListGamepasses()
-                                            getGlobalsCheckListBadges()
+                                            getGlobalCheckListGamepasses()
+                                            getGlobalCheckListBadges()
                                             getGlobalCheckListCustomGamepasses()
                                             getGlobalCheckListFavoritePlaces()
                                             getGlobalCheckListBundles()
@@ -3954,6 +3987,8 @@ async def mainMenu():
                                             if cookieControlPanelCookieManualHistoryFinderTab == '0': whileTrueStage3 = False
                                             elif cookieControlPanelCookieManualHistoryFinderTab.isdigit() and int(cookieControlPanelCookieManualHistoryFinderTab) <= len(config['Roblox']['CookieControlPanel']['CookieControlPanelHistory']):
                                                 await cookieControlPanel('CookieControlPanelHistory', list(config['Roblox']['CookieControlPanel']['CookieControlPanelHistory'])[int(cookieControlPanelCookieManualHistoryFinderTab) - 1], f'{MT_Cookie_Control_Panel}\\{MT_History_Manual}')
+                                            elif cookieControlPanelCookieManualHistoryFinderTab.upper() in ('R', 'К'):
+                                                loadConfig(configLoader['Loader']['Current_Config'])
 
                                             await cls()
                                             await lableASCII()
@@ -3967,6 +4002,8 @@ async def mainMenu():
                                             if cookieControlPanelCookieCheckerHistoryFinderTab == '0': whileTrueStage3 = False
                                             elif cookieControlPanelCookieCheckerHistoryFinderTab.isdigit() and int(cookieControlPanelCookieCheckerHistoryFinderTab) <= len(config['Roblox']['CookieControlPanel']['RobloxCookieCheckerHistory']):
                                                 await cookieControlPanel('RobloxCookieCheckerHistory', list(config['Roblox']['CookieControlPanel']['RobloxCookieCheckerHistory'])[int(cookieControlPanelCookieCheckerHistoryFinderTab) - 1], f'{MT_Cookie_Control_Panel}\\{MT_History_Checker}')
+                                            elif cookieControlPanelCookieManualHistoryFinderTab.upper() in ('R', 'К'):
+                                                loadConfig(configLoader['Loader']['Current_Config'])
 
                                             await cls()
                                             await lableASCII()
@@ -3978,8 +4015,7 @@ async def mainMenu():
                                         await lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                        await cls()
-                                        await lableASCII()
+                                        await removeLines(9)
                                     case _:
                                         await removeLines(9)
                         # Разное
@@ -4104,8 +4140,7 @@ async def mainMenu():
                                         await lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                        await cls()
-                                        await lableASCII()
+                                        await removeLines(9)
                                     case _:
                                         await removeLines(9)
                         case '0':
@@ -4116,8 +4151,7 @@ async def mainMenu():
                             await lableASCII()
                         case 'R' | 'К':
                             loadConfig(configLoader['Loader']['Current_Config'])
-                            await cls()
-                            await lableASCII()
+                            await removeLines(11)
                         case _:
                             await removeLines(11)
             # Настройки
@@ -4133,13 +4167,13 @@ async def mainMenu():
                             whileTrueStage2 = True
                             await removeLines(10)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_General}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Language}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Console_Title}: {config['General']['Console_Title'][:50]}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Show_Lable_MeowTool'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Lable_MeowTool}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Show_Lable_by_h1kken'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Lable_by_h1kken}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Key_To_Continue}: {MT_Any if config['General']['Press_Any_Key_To_Continue'] else 'Enter'}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Disable_All_Warnings'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Disable_All_Warnings}\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Fix_Console} ({MT_Bind}: F)\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_General}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Language}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if configLoader['Updater']['Check_For_Updates'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check_For_Updates} ({MT_Current}: {VERSIONS['MeowTool']})\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Console_Title}: {config['General']['Console_Title'][:50]}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Show_Lable_MeowTool'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Lable_MeowTool}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Show_Lable_by_h1kken'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Lable_by_h1kken}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Key_To_Continue}: {MT_Any if config['General']['Press_Any_Key_To_Continue'] else 'Enter'}\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Disable_All_Warnings'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Disable_All_Warnings}\n [{ANSI.FG.PINK}8{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Fix_Console} ({MT_Bind}: F)\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 settingsGeneralTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 match settingsGeneralTab.upper():
                                     # Общие - Язык
                                     case '1':
                                         whileTrueStage3 = True
-                                        await removeLines(13)
+                                        await removeLines(14)
                                         while whileTrueStage3:
                                             sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_General}\\{MT_Language}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if str(config['General']['Language']).upper() == 'RU' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} Русский\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if str(config['General']['Language']).upper() == 'EN' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} English\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                             settingsLanguageTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -4162,12 +4196,15 @@ async def mainMenu():
                                                     await lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
-                                                    await cls()
-                                                    await lableASCII()
+                                                    await removeLines(8)
                                                 case _:
                                                     await removeLines(8)
                                     case '2':
-                                        await removeLines(11)
+                                        configLoader['Updater']['Check_For_Updates'] = not configLoader['Updater']['Check_For_Updates']
+                                        open(f'Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
+                                        await removeLines(14)
+                                    case '3':
+                                        await removeLines(12)
                                         sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_Not_Use_Characters_Such_As}: >, <, |, ^, &\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}\n\n')
                                         settingsTitleEnter = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_A_New_Title}:{ANSI.CLEAR} ')
                                         
@@ -4186,36 +4223,35 @@ async def mainMenu():
                                             await removeLines(7)
                                         
                                         await changeConsoleTitle()
-                                    case '3':
+                                    case '4':
                                         config['General']['Show_Lable_MeowTool'] = not config['General']['Show_Lable_MeowTool']
                                         await AutoSaveConfig()
                                         await cls()
                                         await lableASCII()
-                                    case '4':
+                                    case '5':
                                         config['General']['Show_Lable_by_h1kken'] = not config['General']['Show_Lable_by_h1kken']
                                         await AutoSaveConfig()
                                         await cls()
                                         await lableASCII()
-                                    case '5':
+                                    case '6':
                                         config['General']['Press_Any_Key_To_Continue'] = not config['General']['Press_Any_Key_To_Continue']
                                         await AutoSaveConfig()
-                                        await removeLines(13)
-                                    case '6':
+                                        await removeLines(14)
+                                    case '7':
                                         config['General']['Disable_All_Warnings'] = not config['General']['Disable_All_Warnings']
                                         await AutoSaveConfig()
-                                        await removeLines(13)
-                                    case '7' | 'F' | 'А':
+                                        await removeLines(14)
+                                    case '8' | 'F' | 'А':
                                         await cls()
                                         await lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                        await cls()
-                                        await lableASCII()
+                                        await removeLines(14)
                                     case '0':
                                         whileTrueStage2 = False
-                                        await removeLines(13)
+                                        await removeLines(14)
                                     case _:
-                                        await removeLines(13)
+                                        await removeLines(14)
                         # Прокси
                         case '2':
                             whileTrueStage2 = True
@@ -4265,8 +4301,7 @@ async def mainMenu():
                                                     await lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
-                                                    await cls()
-                                                    await lableASCII()
+                                                    await removeLines(9)
                                                 case _:
                                                     await removeLines(9)
                                     case '0':
@@ -4277,8 +4312,7 @@ async def mainMenu():
                                         await lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                        await cls()
-                                        await lableASCII()
+                                        await removeLines(7)
                                     case _:
                                         await removeLines(7)
                         # Роблокс
@@ -4321,8 +4355,7 @@ async def mainMenu():
                                                     await lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
-                                                    await cls()
-                                                    await lableASCII()
+                                                    await removeLines(7)
                                                 case _:
                                                     await removeLines(7)
                                     # Роблокс Куки Чекер (RCC)
@@ -4401,8 +4434,7 @@ async def mainMenu():
                                                                 await lableASCII()
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
-                                                                await cls()
-                                                                await lableASCII()
+                                                                await removeLines(11)
                                                             case _:
                                                                 await removeLines(11)
                                                 # Прокси
@@ -4412,7 +4444,7 @@ async def mainMenu():
                                                     while whileTrueStage4:
                                                         sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Proxy}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['General']['Proxy']['Use_Proxy'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Use_Proxy}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Auto_Protocol_If_Not_Specified}: {config['Roblox']['CookieChecker']['General']['Proxy']['Auto_Protocol_If_Not_Specified'] if config['Roblox']['CookieChecker']['General']['Proxy']['Auto_Protocol_If_Not_Specified'] in ('http', 'socks4', 'socks5') else 'http'}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsRCCProxyTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
-                                                        match settingsRCCProxyTab.lower():
+                                                        match settingsRCCProxyTab.upper():
                                                             case '1':
                                                                 config['Roblox']['CookieChecker']['General']['Proxy']['Use_Proxy'] = not config['Roblox']['CookieChecker']['General']['Proxy']['Use_Proxy']
                                                                 await AutoSaveConfig()
@@ -4423,7 +4455,7 @@ async def mainMenu():
                                                                 while whileTrueStage5:
                                                                     sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Proxy}\\{MT_Auto_Protocol}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['General']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'http' or config['Roblox']['CookieChecker']['General']['Proxy']['Auto_Protocol_If_Not_Specified'] not in ('http', 'socks4', 'socks5') else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} http\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['General']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'socks4' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} socks4\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['General']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'socks5' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} socks5\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                     settingsRCCProxyAutoProtocolTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
-                                                                    match settingsRCCProxyAutoProtocolTab.lower():
+                                                                    match settingsRCCProxyAutoProtocolTab.upper():
                                                                         case '1':
                                                                             config['Roblox']['CookieChecker']['General']['Proxy']['Auto_Protocol_If_Not_Specified'] = 'http'
                                                                             await AutoSaveConfig()
@@ -4455,6 +4487,7 @@ async def mainMenu():
                                                                 await lableASCII()
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
+                                                                await removeLines(8)
                                                             case _:
                                                                 await removeLines(8)
                                                 # Сортировка
@@ -4520,10 +4553,6 @@ async def mainMenu():
                                                                                     whileTrueStage6 = False
                                                                                     await removeLines(7)
                                                                                 case 'F' | 'А':
-                                                                                    await cls()
-                                                                                    await lableASCII()
-                                                                                case 'R' | 'К':
-                                                                                    loadConfig(configLoader['Loader']['Current_Config'])
                                                                                     await cls()
                                                                                     await lableASCII()
                                                                                 case _:
@@ -4650,8 +4679,7 @@ async def mainMenu():
                                                                                 await lableASCII()
                                                                             case 'R' | 'К':
                                                                                 loadConfig(configLoader['Loader']['Current_Config'])
-                                                                                await cls()
-                                                                                await lableASCII()
+                                                                                await removeLines(7)
                                                                             case _:
                                                                                 await removeLines(7)
                                                                 elif settingsRCCGeneralCustomGamepassesTab.upper() in ('A', 'Ф'):
@@ -4745,8 +4773,7 @@ async def mainMenu():
                                                                                 await lableASCII()
                                                                             case 'R' | 'К':
                                                                                 loadConfig(configLoader['Loader']['Current_Config'])
-                                                                                await cls()
-                                                                                await lableASCII()
+                                                                                await removeLines(7)
                                                                             case _:
                                                                                 await removeLines(7)
                                                                 elif settingsRCCGeneralFavPlacesTab.upper() in ('A', 'Ф'):
@@ -4848,8 +4875,7 @@ async def mainMenu():
                                                                                 await lableASCII()
                                                                             case 'R' | 'К':
                                                                                 loadConfig(configLoader['Loader']['Current_Config'])
-                                                                                await cls()
-                                                                                await lableASCII()
+                                                                                await removeLines(7)
                                                                             case _:
                                                                                 await removeLines(7)
                                                                 elif settingsRCCGeneralBundlesTab.upper() in ('A', 'Ф'):
@@ -4901,6 +4927,8 @@ async def mainMenu():
                                                             for i in range(len(cookieData.listOfCookieData)):
                                                                 config['Roblox']['CookieChecker']['Main'][cookieData.listOfCookieData[i][1]] = False
                                                             await AutoSaveConfig()
+                                                        elif settingsRCCMainTab.upper() in ('R', 'К'):
+                                                            loadConfig(configLoader['Loader']['Current_Config'])
 
                                                         await cls()
                                                         await lableASCII()
@@ -5011,8 +5039,7 @@ async def mainMenu():
                                                     await lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
-                                                    await cls()
-                                                    await lableASCII()
+                                                    await removeLines(12)
                                                 case _:
                                                     await removeLines(12)
                                     # Роблокс Куки Рефрешер (RCR)
@@ -5059,8 +5086,7 @@ async def mainMenu():
                                                                 await lableASCII()
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
-                                                                await cls()
-                                                                await lableASCII()
+                                                                await removeLines(9)
                                                             case _:
                                                                 await removeLines(9)
                                                 case '2':
@@ -5103,8 +5129,7 @@ async def mainMenu():
                                                                 await lableASCII()
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
-                                                                await cls()
-                                                                await lableASCII()
+                                                                await removeLines(10)
                                                             case _:
                                                                 await removeLines(10)
                                                 case '0':
@@ -5115,8 +5140,7 @@ async def mainMenu():
                                                     await lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
-                                                    await cls()
-                                                    await lableASCII()
+                                                    await removeLines(8)
                                                 case _:
                                                     await removeLines(8)
                                     # Панель управления куком
@@ -5140,8 +5164,7 @@ async def mainMenu():
                                                     await lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
-                                                    await cls()
-                                                    await lableASCII()
+                                                    await removeLines(8)
                                                 case '0':
                                                     whileTrueStage3 = False
                                                     await removeLines(8)
@@ -5179,8 +5202,7 @@ async def mainMenu():
                                                                 await lableASCII()
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
-                                                                await cls()
-                                                                await lableASCII()
+                                                                await removeLines(9)
                                                             case '0':
                                                                 whileTrueStage4 = False
                                                                 await removeLines(9)
@@ -5210,8 +5232,7 @@ async def mainMenu():
                                                                 await lableASCII()
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
-                                                                await cls()
-                                                                await lableASCII()
+                                                                await removeLines(9)
                                                             case '0':
                                                                 whileTrueStage4 = False
                                                                 await removeLines(9)
@@ -5225,8 +5246,7 @@ async def mainMenu():
                                                     await lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
-                                                    await cls()
-                                                    await lableASCII()
+                                                    await removeLines(8)
                                                 case _:
                                                     await removeLines(8)
                                     case '0':
@@ -5237,8 +5257,7 @@ async def mainMenu():
                                         await lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                        await cls()
-                                        await lableASCII()
+                                        await removeLines(11)
                                     case _:
                                         await removeLines(11)
                         # Настройки - Конфиги
@@ -5263,7 +5282,7 @@ async def mainMenu():
                                         if nameOfNewConfig == '0': return
                                         if len(nameOfNewConfig) > 60:
                                             return await errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Config_Name_60, f'{MT_Settings}\\{MT_Configs}')
-                                        if f'{nameOfNewConfig.lower()}' in {str(file).lower() for file in configFiles()}:
+                                        if nameOfNewConfig.lower() in {str(file).lower() for file in configFiles()}:
                                             return await errorOrCorrectHandler(True, 5, MT_File_With_This_Name_Already_Exists, f'{MT_Settings}\\{MT_Configs}')
                                         if any(char in nameOfNewConfig for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|']):
                                             return await errorOrCorrectHandler(True, 5, MT_Incorrect_File_Name,                f'{MT_Settings}\\{MT_Configs}')
@@ -5276,7 +5295,6 @@ async def mainMenu():
                                 elif configsTab.upper() in ('S', 'Ы'):
                                     configLoader['Saver']['Auto_Save_Changes'] = not configLoader['Saver']['Auto_Save_Changes']
                                     open(f'Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
-                                    await AutoSaveConfig()
                                 elif configsTab.upper() in ('R', 'К'):
                                     loadConfig(configLoader['Loader']['Current_Config'])
 
@@ -5290,8 +5308,7 @@ async def mainMenu():
                             await lableASCII()
                         case 'R' | 'К':
                             loadConfig(configLoader['Loader']['Current_Config'])
-                            await cls()
-                            await lableASCII()
+                            await removeLines(10)
                         case _:
                             await removeLines(10)
             # Закрыть программу
@@ -5317,19 +5334,18 @@ async def mainMenu():
                 await lableASCII()
             case 'R' | 'К':
                 loadConfig(configLoader['Loader']['Current_Config'])
-                await cls()
-                await lableASCII()
+                await removeLines(9)
             case _:
                 await removeLines(9)
 
 if __name__ == '__main__':
-    sys.stdout.write('\r Настраиваемся к комфорту и уюту... >:3')
+    sys.stdout.write(f'\n  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Настраиваемся к комфорту и уюту... >:3{ANSI.CLEAR}\r')
     if sys.platform == 'win32': asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-    sys.stdout.write('\r Сортируем папки по полочкам... >:3    ')
+    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Сортируем папки по полочкам... >:3    {ANSI.CLEAR}\r')
     neededFoldersAndFiles()
-    sys.stdout.write('\r Мило просим у конфига настройки... >:3')
-    loadConfigLoader()
-    sys.stdout.write('\r Надеемся на честность переводов... >:3')
+    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Мило просим у конфига настройки... >:3{ANSI.CLEAR}\r')
+    asyncio.run(loadConfigLoader())
+    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Надеемся на честность переводов... >:3{ANSI.CLEAR}\r')
     translateMT(config['General']['Language'])
-    sys.stdout.write('\r Почти готово, ещё парочку часов... >:3')
+    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Почти готово, ещё парочку часов... >:3{ANSI.CLEAR}\r')
     asyncio.run(mainMenu())
