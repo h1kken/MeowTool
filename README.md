@@ -85,7 +85,7 @@
 
 ## 🔗 Контактные данные
 - Discord: h1kken
-- Telegram: [L1feeK](https://t.me/L1feeK)
+- Telegram: ЛС: [L1feeK](https://t.me/L1feeK) | ТГК: [LonelyBit](https://t.me/L0nelyBit)
 - Но лучше отправлять ошибки в предназначенный для этого [раздел](https://github.com/h1kken/MeowTool/issues) 🐾
 
 ## ⚖️ Лицензирование
