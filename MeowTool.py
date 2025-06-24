@@ -73,7 +73,7 @@ from msvcrt import getch
 ### Версии
 
 VERSIONS = {
-    'MeowTool': 'v1.0.8'
+    'MeowTool': 'v1.0.9'
 }
 
 ### ANSI коды
@@ -1898,7 +1898,7 @@ async def isBillingFunc(session: ClientSession, isControlPanel=False):
 
 async def isTransactionsForYearFunc(session: ClientSession, isID, sendRequestsThrough: str, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Pending'] and not config['Roblox']['CookieChecker']['Main']['Donate'] and not isControlPanel:
-        return '', '', ''
+        return '', '', '', ''
     while True:
         try:
             async with session.get(f'https://economy.{sendRequestsThrough}.com/v2/users/{isID}/transaction-totals?timeFrame=Year&transactionType=summary', timeout=3, ssl=False) as response:
@@ -1916,7 +1916,7 @@ async def isTransactionsForYearFunc(session: ClientSession, isID, sendRequestsTh
 
 async def isPurchasesFunc(session: ClientSession, isID, sendRequestsThrough: str, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Purchases'] and not config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses'] and not isControlPanel:
-        return '', '', ''
+        return '', '', '', '', '', ''
     maxPages = max(config['Roblox']['CookieChecker']['Main']['Purchases_Max_Check_Pages'], config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'])
     isPurchases = 0
     pageCurrentCount = 1
@@ -1992,7 +1992,7 @@ async def isCardFunc(session: ClientSession, isControlPanel=False):
 
 async def isPremiumFunc(isAccountInformation, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Premium'] and not isControlPanel:
-        return '', '', ''
+        return '', '', '', ''
     isPremium = isAccountInformation['IsPremium']
     return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Premium:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}Yes' if isPremium else f'{ANSI.FG.RED}No'}{ANSI.CLEAR} | ', f'Premium: {'Yes' if isPremium else 'No'} | ', 'Yes' if isPremium else 'No', isPremium
 
