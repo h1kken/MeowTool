@@ -6,7 +6,8 @@ import webbrowser
 from shutil import copyfile, rmtree
 import datetime
 from re import compile, sub, search
-from tomlkit import loads, dumps, document, nl, comment, table
+from tomlkit import loads, dumps, document, nl, comment, table, TOMLDocument
+from tomlkit.items import Bool, Table, Item
 import requests # ‾\
 import socks    #  | в планах на удаление
 import socket   # _/
@@ -73,7 +74,7 @@ from msvcrt import getch
 ### Версии
 
 VERSIONS = {
-    'MeowTool': 'v1.0.9'
+    'MeowTool': 'v1.1.0'
 }
 
 ### ANSI коды
@@ -129,10 +130,19 @@ class ANSI:
 ### Переводы
 
 def translateMT(language: str):
-    global MT_Current, MT_Check_For_Updates, MT_No_Cookies_Found, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Incorrect_Number_Of_Threads, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Error, MT_50_Cookies_In_Once, MT_50_Cookies_In_60_Seconds, MT_Send_Some_Requests_Through_RoProxy, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_Characters_Such_As, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_All_Warnings, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_History_Manual, MT_Save_Cookies_Checked_By_Checker, MT_History_Checker, MT_Cookie_Control_Panel, MT_Start_Refresher, MT_Wait, MT_Waiting, MT_Can_Continue, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie1, MT_Enter_A_Cookie2, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_The_Parameter_Can_Only_Be_A_Number, MT_Add_A_Parameter, MT_Create_Backups, MT_Save_To_A_File, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_To_Start_Checking, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_ID_20, MT_Incorrect_Length_Of_Parameter_20, MT_Incorrect_Length_Of_Name_50, MT_Incorrect_Length_Of_Config_Name_60, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Parsing, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_A_Bundle_By_ID, MT_Add_A_Place_By_ID, MT_Enter_Something, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Parameter_With_This_Value_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_File_Name, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Finish_Checking_File, MT_Start_Parsing_File, MT_Finish_Parsing_File, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Parser, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta
+    global MT_U_Added_Validation_Of_Config_Settings, MT_U_Added_Information_About_The_Program, MT_U_Minor_Fixes_And_Improvements, MT_Open_MeowTool_On_GitHub, MT_You_Are_Using_Version_Of_Program, MT_Open_Showcase_On_YouTube, MT_Open_PM_With_Developer_In_Telegram, MT_Telegram, MT_Latest_Update_Changes, MT_About_The_Program, MT_Check_For_Updates, MT_No_Cookies_Found, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Incorrect_Number_Of_Threads, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Error, MT_50_Cookies_In_Once, MT_50_Cookies_In_60_Seconds, MT_Send_Some_Requests_Through_RoProxy, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_Characters_Such_As, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_All_Warnings, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_History_Manual, MT_Save_Cookies_Checked_By_Checker, MT_History_Checker, MT_Cookie_Control_Panel, MT_Start_Refresher, MT_Wait, MT_Waiting, MT_Can_Continue, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie1, MT_Enter_A_Cookie2, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_The_Parameter_Can_Only_Be_A_Number, MT_Add_A_Parameter, MT_Create_Backups, MT_Save_To_A_File, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_To_Start_Checking, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_ID_20, MT_Incorrect_Length_Of_Parameter_20, MT_Incorrect_Length_Of_Name_50, MT_Incorrect_Length_Of_Config_Name_60, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Parsing, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_A_Bundle_By_ID, MT_Add_A_Place_By_ID, MT_Enter_Something, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Parameter_With_This_Value_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_File_Name, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Finish_Checking_File, MT_Start_Parsing_File, MT_Finish_Parsing_File, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Parser, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta
     match str(language).upper():
         case 'EN':
-            MT_Current                                  = 'Current'
+            MT_U_Added_Validation_Of_Config_Settings    = 'Added validation of config settings'
+            MT_U_Added_Information_About_The_Program    = 'Added_Information about the program'
+            MT_U_Minor_Fixes_And_Improvements           = 'Minor fixes and improvements'
+            MT_Open_MeowTool_On_GitHub                  = 'Open MeowTool on GitHub'
+            MT_You_Are_Using_Version_Of_Program         = 'You are using {} version of program'.format(VERSIONS['MeowTool'])
+            MT_Open_Showcase_On_YouTube                 = 'Open showcase on YouTube'
+            MT_Open_PM_With_Developer_In_Telegram       = 'Open PM with developer in Telegram'
+            MT_Telegram                                 = 'Telegram', 'TG'
+            MT_Latest_Update_Changes                    = 'Latest update changes'
+            MT_About_The_Program                        = 'About the program'
             MT_Check_For_Updates                        = 'Check for updates'
             MT_No_Cookies_Found                         = 'No cookies found'
             MT_Number_Of_Threads_For_Valid_Checker      = 'Number of threads for valid checker'
@@ -300,7 +310,16 @@ def translateMT(language: str):
             MT_Cookie_Refresher                         = 'Cookie Refresher'
             MT_Beta                                     = '[BETA]'
         case _: # 'RU'
-            MT_Current                                  = 'Текущая'
+            MT_U_Added_Validation_Of_Config_Settings    = 'Добавлена валидация настроек конфига'
+            MT_U_Added_Information_About_The_Program    = 'Добавлена информация о программе'
+            MT_U_Minor_Fixes_And_Improvements           = 'Небольшие исправления и улучшения'
+            MT_Open_MeowTool_On_GitHub                  = 'Открыть MeowTool на GitHub'
+            MT_You_Are_Using_Version_Of_Program         = 'Ты используешь {} версию программы'.format(VERSIONS['MeowTool'])
+            MT_Open_Showcase_On_YouTube                 = 'Открыть демонстрацию на YouTube'
+            MT_Open_PM_With_Developer_In_Telegram       = 'Открыть ЛС с разработчиком в Телеграм'
+            MT_Telegram                                 = 'Телеграм', 'ТГ'
+            MT_Latest_Update_Changes                    = 'Изменения последнего обновления'
+            MT_About_The_Program                        = 'О программе'
             MT_Check_For_Updates                        = 'Проверять обновления'
             MT_No_Cookies_Found                         = 'Куки не найдены'
             MT_Number_Of_Threads_For_Valid_Checker      = 'Количество потоков на чек валидности'
@@ -3247,14 +3266,116 @@ def neededFoldersAndFiles():
     for file in files:
         if not os.path.exists(file): open(file, 'w')
 
+async def checkUpdates():
+    if configLoader['Updater']['Check_For_Updates']:
+        while True:
+            sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Проверяем твою трендовость... >:3     {ANSI.CLEAR}\r')
+            try:
+                response = requests.get('https://raw.githubusercontent.com/h1kken/MeowTool/refs/heads/meow/version.txt', timeout=3)
+                response.raise_for_status()
+                latestVersion = response.text.strip()
+                if latestVersion == VERSIONS['MeowTool']:
+                    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Ура! У тебя последняя версия... >:3{ANSI.CLEAR}\r')
+                    return
+                else:
+                    while True:
+                        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Ух-ты! Доступна новая версия, будем качать? >:3\n\n  [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] Текущая версия: {VERSIONS['MeowTool']}\n  [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] Последняя версия: {latestVersion}\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Да, хочу \'.py\' версию\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Да, хочу \'.exe\' версию\n  [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Нет, как-нибудь потом{ANSI.CLEAR}\n\n')
+                        newUpdateAvailable = input(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] Введи что-то:{ANSI.CLEAR} ')
+                        match newUpdateAvailable:
+                            case '1':
+                                await removeLines(10)
+                                while True:
+                                    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Добываем данные для обновления... >:3{ANSI.CLEAR}\r')
+                                    try:
+                                        response = requests.get('https://raw.githubusercontent.com/h1kken/MeowTool/refs/heads/meow/MeowTool.py', timeout=5)
+                                        response.raise_for_status()
+                                        data = response.text.replace('\r', '')
+                                        open('MeowTool.py', 'w', encoding='UTF-8').write(data)
+                                        if sys.platform == 'win32': os.startfile('MeowTool.py')
+                                        sys.exit()
+                                    except Exception:
+                                        while True:
+                                            sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Не смогли скачать обновление, возможно нестабильный интернет. Что будем делать? >:3\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Попробуем ещё раз\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Продолжить запуск{ANSI.CLEAR}\n\n')
+                                            couldNotDownloadUpdate = input(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] Введи что-то:{ANSI.CLEAR} ')
+                                            match couldNotDownloadUpdate:
+                                                case '1':
+                                                    await removeLines(6)
+                                                    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Пытаемся ещё раз... >:3{ANSI.CLEAR}\r')
+                                                    break
+                                                case '2':
+                                                    await removeLines(6)
+                                                    return
+                                                case _:
+                                                    await removeLines(6)
+                            case '2':
+                                webbrowser.open(f'https://github.com/h1kken/MeowTool/releases/download/{latestVersion}/MeowTool.exe')
+                                sys.exit()
+                            case '3':
+                                await removeLines(10)
+                                return
+                            case _:
+                                await removeLines(10)
+            except Exception:
+                while True:
+                    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Не смогли проверить, возможно нестабильный интернет. Что будем делать? >:3\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Проверим ещё раз\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Продолжить запуск{ANSI.CLEAR}\n\n')
+                    couldNotCheckUpdate = input(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] Введи что-то:{ANSI.CLEAR} ')
+                    match couldNotCheckUpdate:
+                        case '1':
+                            await removeLines(6)
+                            break
+                        case '2':
+                            await removeLines(6)
+                            return
+                        case _:
+                            await removeLines(6)
+
+def validateConfigSettings(userConfig: TOMLDocument, defaultConfig: TOMLDocument, path=''):
+    if isinstance(defaultConfig, (Table, TOMLDocument)):
+        for key in defaultConfig.keys():
+            fullPath = f'{path}.{key}' if path else key
+
+            if key not in userConfig:
+                userConfig[key] = defaultConfig[key]
+                continue
+
+            currentValue = userConfig[key]
+            defaultValue = defaultConfig[key]
+
+            if isinstance(defaultValue, (Table, TOMLDocument)):
+                validateConfigSettings(currentValue, defaultValue, fullPath)
+            elif isinstance(defaultValue, Item):
+                if type(currentValue.unwrap()) is not type(defaultValue.unwrap()):
+                    try:
+                        commentText = currentValue.comment
+                        userConfig[key] = defaultValue
+                        if commentText: userConfig[key].comment(commentText)
+                    except AttributeError:
+                        userConfig[key] = defaultValue
+
+def defaultConfigLoader() -> TOMLDocument:
+    configLoader = document()
+    configLoader.add(nl())
+    configLoader.add(comment('Meow >:3'))
+    configLoader.add(nl())
+    configLoader.add('Loader', table())
+    configLoader['Loader']['Load_Config'] = 'default'
+    configLoader['Loader']['Load_Config'].comment('name of config for load on launch')
+    configLoader['Loader']['Current_Config'] = 'default'
+    configLoader.add('Saver', table())
+    configLoader['Saver']['Auto_Save_Changes'] = False
+    configLoader.add('Updater', table())
+    configLoader['Updater']['Check_For_Updates'] = True
+    return configLoader
+
 async def loadConfigLoader():
     os.makedirs('Settings\\Configs', exist_ok=True)
     try:
         global configLoader; configLoader = loads(open('Settings\\Configs\\.Loader.toml', 'r', encoding='UTF-8').read())
+        validateConfigSettings(configLoader, defaultConfigLoader())
 
         try:
-            nameConfig = str(configLoader['Loader']['Load_Config'])
-            configLoader['Loader']['Current_Config'] = nameConfig
+            configName = str(configLoader['Loader']['Load_Config'])
+            configLoader['Loader']['Current_Config'] = configName
             open('Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
         except Exception:
             configLoader['Loader']['Load_Config'] = 'default'
@@ -3263,273 +3384,188 @@ async def loadConfigLoader():
 
         await checkUpdates()
 
-        if nameConfig in configFiles():
-            return loadConfig(nameConfig)
+        if configName in configFiles():
+            return loadConfig(configName)
         else:
             configLoader['Loader']['Load_Config'] = 'default'
             open('Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
             return loadConfig('default')
     except Exception:
-        configLoader = document()
-        configLoader.add(nl())
-        configLoader.add(comment('Meow >:3'))
-        configLoader.add(nl())
-        configLoader.add('Loader', table())
-        configLoader['Loader']['Load_Config'] = 'default'
-        configLoader['Loader']['Load_Config'].comment('name of config for load on launch')
-        configLoader['Loader']['Current_Config'] = 'default'
-        configLoader.add('Saver', table())
-        configLoader['Saver']['Auto_Save_Changes'] = False
-        configLoader.add('Updater', table())
-        configLoader['Updater']['Check_For_Updates'] = True
-        
+        configLoader = defaultConfigLoader()
         open('Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
         await checkUpdates()
         return loadConfig('default')
 
-async def checkUpdates():
-    try:
-        if configLoader['Updater']['Check_For_Updates']:
-            while True:
-                sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Проверяем твою трендовость... >:3     {ANSI.CLEAR}\r')
-                try:
-                    response = requests.get('https://raw.githubusercontent.com/h1kken/MeowTool/refs/heads/meow/version.txt', timeout=3)
-                    response.raise_for_status()
-                    latestVersion = response.text.strip()
-                    if latestVersion == VERSIONS['MeowTool']:
-                        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Ура! У тебя последняя версия... >:3{ANSI.CLEAR}\r')
-                        return
-                    else:
-                        while True:
-                            sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Ух-ты! Доступна новая версия, будем качать? >:3\n\n  [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] Текущая версия: {VERSIONS['MeowTool']}\n  [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] Последняя версия: {latestVersion}\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Да, хочу \'.py\' версию\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Да, хочу \'.exe\' версию\n  [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Нет, как-нибудь потом{ANSI.CLEAR}\n\n')
-                            newUpdateAvailable = input(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] Введи что-то:{ANSI.CLEAR} ')
-                            match newUpdateAvailable:
-                                case '1':
-                                    await removeLines(10)
-                                    while True:
-                                        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Добываем данные для обновления... >:3{ANSI.CLEAR}\r')
-                                        try:
-                                            response = requests.get('https://raw.githubusercontent.com/h1kken/MeowTool/refs/heads/meow/MeowTool.py', timeout=5)
-                                            response.raise_for_status()
-                                            data = response.text.replace('\r', '')
-                                            open('MeowTool.py', 'w', encoding='UTF-8').write(data)
-                                            if sys.platform == 'win32': os.startfile('MeowTool.py')
-                                            sys.exit()
-                                        except Exception:
-                                            while True:
-                                                sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Не смогли скачать обновление, возможно нестабильный интернет. Что будем делать? >:3\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Попробуем ещё раз\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Продолжить запуск{ANSI.CLEAR}\n\n')
-                                                couldNotDownloadUpdate = input(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] Введи что-то:{ANSI.CLEAR} ')
-                                                match couldNotDownloadUpdate:
-                                                    case '1':
-                                                        await removeLines(6)
-                                                        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Пытаемся ещё раз... >:3{ANSI.CLEAR}\r')
-                                                        break
-                                                    case '2':
-                                                        await removeLines(6)
-                                                        return
-                                                    case _:
-                                                        await removeLines(6)
-                                case '2':
-                                    webbrowser.open(f'https://github.com/h1kken/MeowTool/releases/download/{latestVersion}/MeowTool.exe')
-                                    sys.exit()
-                                case '3':
-                                    await removeLines(10)
-                                    return
-                                case _:
-                                    await removeLines(10)
-                except Exception:
-                    while True:
-                        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Не смогли проверить, возможно нестабильный интернет. Что будем делать? >:3\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Проверим ещё раз\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Продолжить запуск{ANSI.CLEAR}\n\n')
-                        couldNotCheckUpdate = input(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] Введи что-то:{ANSI.CLEAR} ')
-                        match couldNotCheckUpdate:
-                            case '1':
-                                await removeLines(6)
-                                break
-                            case '2':
-                                await removeLines(6)
-                                return
-                            case _:
-                                await removeLines(6)
-    except KeyError:
-        configLoader.add('Updater', table())
-        configLoader['Updater']['Check_For_Updates'] = True
-        open('Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
-        checkUpdates()
+def defaultConfig() -> TOMLDocument:
+    config = document()
+    config.add(nl())
+    config.add(comment('Meow >:3'))
+    config.add(nl())
 
-def loadConfig(configName):
+    # General
+    config.add('General', table())
+    config['General']['Console_Title'] = 'MeowTool... Meow :3'
+    config['General']['Language'] = 'RU'
+    config['General']['Language'].comment('RU or EN')
+    config['General']['Show_Lable_MeowTool'] = True
+    config['General']['Show_Lable_by_h1kken'] = False
+    config['General']['Press_Any_Key_To_Continue'] = True
+    config['General']['Disable_All_Warnings'] = False
+    
+    # Proxy
+    config.add('Proxy', table())
+    
+    # Proxy - Checker
+    config['Proxy'].add('Checker', table())
+    config['Proxy']['Checker']['Timeout'] = 1
+    config['Proxy']['Checker']['Timeout'].comment('maximum wait for a response from a proxy (in seconds)')
+    config['Proxy']['Checker']['Save_In_Custom_Folder'] = False
+    config['Proxy']['Checker']['Save_Without_Protocol'] = False
+
+    # Roblox
+    config.add('Roblox', table())
+
+    # Roblox - Cookie Parser
+    config['Roblox'].add('CookieParser', table())
+    config['Roblox']['CookieParser']['Create_Backups'] = True
+    config['Roblox']['CookieParser']['Save_To_A_File'] = 'outputs'
+
+    # Roblox - Cookie Checker
+    config['Roblox'].add('CookieChecker', table())
+
+    # Roblox - Cookie Checker - General
+    config['Roblox']['CookieChecker'].add('General', table())
+    config['Roblox']['CookieChecker']['General']['First_Check_All_Cookies_For_Valid'] = False
+    config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker'] = 5
+    config['Roblox']['CookieChecker']['General']['Send_Some_Requests_Through_RoProxy'] = False
+    config['Roblox']['CookieChecker']['General']['Output_Total'] = True
+    config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker'] = 5
+
+    # Roblox - Cookie Checker - Sorting
+    config['Roblox']['CookieChecker'].add('Sorting', table())
+    config['Roblox']['CookieChecker']['Sorting']['Sort'] = False
+    config['Roblox']['CookieChecker']['Sorting'].add(comment('Categories'))
+    for category in cookieData.listOfCookieData:
+        if   category[3] == int:  config['Roblox']['CookieChecker']['Sorting'][category[1]] = [False, []]
+        elif category[3] == bool: config['Roblox']['CookieChecker']['Sorting'][category[1]] = False
+
+    # Roblox - Cookie Checker - Proxy
+    config['Roblox']['CookieChecker']['General'].add('Proxy', table())
+    config['Roblox']['CookieChecker']['General']['Proxy']['Use_Proxy'] = False
+    config['Roblox']['CookieChecker']['General']['Proxy']['Auto_Protocol_If_Not_Specified'] = 'http'
+    config['Roblox']['CookieChecker']['General']['Proxy']['Auto_Protocol_If_Not_Specified'].comment('if protocol is not specified - it will be this (available: http, https, socks4, socks5)')
+
+    # Roblox - Cookie Checker - Main
+    config['Roblox']['CookieChecker'].add('Main', table())
+    for data in cookieData.listOfCookieData:
+        config['Roblox']['CookieChecker']['Main'][data[1]] = False
+        match data[1]:
+            case 'Purchases' | 'Rap' | 'Gamepasses' | 'Badges':
+                config['Roblox']['CookieChecker']['Main'][f'{data[1]}_Max_Check_Pages'] = 0
+                config['Roblox']['CookieChecker']['Main'][f'{data[1]}_Max_Check_Pages'].comment('0 - All')
+            case 'Custom_Gamepasses':
+                config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Names'] = [
+                    ['Fly A Pet Potion',  False],
+                    ['Ride-A-Pet Potion', False]
+                ]
+                config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'] = 0
+                config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'].comment('0 - All')
+            case 'Favorite_Places':
+                config['Roblox']['CookieChecker']['Main']['Favorite_Places_IDs'] = [
+                    [920587237,  'Adopt Me',         False],
+                    [142823291,  'Murder Mystery 2', False],
+                    [8737899170, 'Pet Simulator 99', False]
+                ]
+                config['Roblox']['CookieChecker']['Main']['Favorite_Places_Max_Check_Pages'] = 0
+                config['Roblox']['CookieChecker']['Main']['Favorite_Places_Max_Check_Pages'].comment('0 - All')
+            case 'Bundles':
+                config['Roblox']['CookieChecker']['Main']['Bundles_IDs'] = [
+                    [192, 'Korblox Deathspeaker', False],
+                    [201, 'Headless Horseman',    False]
+                ]
+                config['Roblox']['CookieChecker']['Main']['Bundles_Max_Check_Pages'] = 0
+                config['Roblox']['CookieChecker']['Main']['Bundles_Max_Check_Pages'].comment('0 - All')
+            case 'Sessions':
+                config['Roblox']['CookieChecker']['Main']['Sessions_Max_Check_Pages'] = 1
+                config['Roblox']['CookieChecker']['Main']['Sessions_Max_Check_Pages'].comment('0 - All, 1 - Must be good to avoid long wait for this \'https://imgur.com/a/TrBIdCu\'')
+
+    # Roblox - Cookie Checker - Places
+    config['Roblox']['CookieChecker'].add('Places', table())
+    for place in listOfPlaces:
+        config['Roblox']['CookieChecker']['Places'][place.placeNames[1]] = False
+    
+    # Roblox - Cookie Checker - Places - Gamepasses and Badges
+    for place in listOfPlaces:
+        config['Roblox']['CookieChecker'].add(place.__name__, table())
+        if getattr(place, 'Gamepasses', False):
+            config['Roblox']['CookieChecker'][place.__name__].add(comment('Gamepasses'))
+            for gamepass in place.Gamepasses.listOfGamepasses:
+                config['Roblox']['CookieChecker'][place.__name__][gamepass[2]] = False
+        if getattr(place, 'Badges', False):
+            config['Roblox']['CookieChecker'][place.__name__].add(comment('Badges'))
+            for badge in place.Badges.listOfBadges:
+                config['Roblox']['CookieChecker'][place.__name__][badge[2]] = False
+
+    # Roblox - Cookie Checker - Custom Places
+    config['Roblox']['CookieChecker'].add('CustomPlaces', table())
+    config['Roblox']['CookieChecker']['CustomPlaces']['Show_Game_ID_Next_To_The_Name'] = False
+    config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places'] = []
+    config['Roblox']['CookieChecker']['CustomPlaces'].add(comment('Custom Places'))
+
+    # Roblox - Cookie Refresher
+    config['Roblox'].add('CookieRefresher', table())
+
+    # Roblox - Cookie Refresher - Single Mode
+    config['Roblox']['CookieRefresher'].add('SingleMode', table())
+    config['Roblox']['CookieRefresher']['SingleMode']['Cookie_Save_Mode'] = [1]
+    config['Roblox']['CookieRefresher']['SingleMode']['Cookie_Save_Mode'].comment('Modes: 1, 2, 3 | Examples: [1, 2, 3] / [1, 2] / [1, 3] etc.')
+    
+    # Roblox - Cookie Refresher - Mass Mode
+    config['Roblox']['CookieRefresher'].add('MassMode', table())
+    config['Roblox']['CookieRefresher']['MassMode']['Cookie_Save_Mode'] = [1]
+    config['Roblox']['CookieRefresher']['MassMode']['Cookie_Save_Mode'].comment('Modes: 1, 2, 3 | Examples: [1, 2, 3] / [1, 2] / [1, 3] etc.')
+    config['Roblox']['CookieRefresher']['MassMode']['Save_Invalid_Cookies'] = False
+    config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = ''
+    
+    # Roblox - Cookie Control Panel
+    config['Roblox'].add('CookieControlPanel', table())
+    config['Roblox']['CookieControlPanel']['Save_Cookies_Added_Manually'] = False
+    config['Roblox']['CookieControlPanel']['Save_Cookies_Checked_By_Checker'] = False
+    
+    # Roblox - Cookie Control Panel - Cookie Control Panel History
+    config['Roblox']['CookieControlPanel'].add('CookieControlPanelHistory', table())
+    
+    # Roblox - Cookie Control Panel - Roblox Cookie Checker History
+    config['Roblox']['CookieControlPanel'].add('RobloxCookieCheckerHistory', table())
+    
+    # Roblox - Misc
+    config['Roblox'].add('Misc', table())
+    
+    # Roblox - Misc - Gamepasses Parser
+    config['Roblox']['Misc'].add('GamepassesParser', table())
+    config['Roblox']['Misc']['GamepassesParser']['Remove_Emojies_From_Name'] = False
+    config['Roblox']['Misc']['GamepassesParser']['Remove_Round_Brackets_And_In_From_Name'] = False
+    config['Roblox']['Misc']['GamepassesParser']['Remove_Square_Brackets_And_In_From_Name'] = False
+    
+    # Roblox - Misc - Badges Parser
+    config['Roblox']['Misc'].add('BadgesParser', table())
+    config['Roblox']['Misc']['BadgesParser']['Remove_Emojies_From_Name'] = False
+    config['Roblox']['Misc']['BadgesParser']['Remove_Round_Brackets_And_In_From_Name'] = False
+    config['Roblox']['Misc']['BadgesParser']['Remove_Square_Brackets_And_In_From_Name'] = False
+    return config
+
+def loadConfig(configName: str):
     global config
     os.makedirs('Settings\\Configs', exist_ok=True)
     if not os.path.exists(f'Settings\\Configs\\{configName}.toml'):
-        config = document()
-        config.add(nl())
-        config.add(comment('Meow >:3'))
-        config.add(nl())
-
-        # General
-        config.add('General', table())
-        config['General']['Console_Title'] = 'MeowTool... Meow :3'
-        config['General']['Language'] = 'RU'
-        config['General']['Language'].comment('RU or EN')
-        config['General']['Show_Lable_MeowTool'] = True
-        config['General']['Show_Lable_by_h1kken'] = False
-        config['General']['Press_Any_Key_To_Continue'] = True
-        config['General']['Disable_All_Warnings'] = False
+        config = defaultConfig()
+    else:
+        config = loads(open(f'Settings\\Configs\\{configName}.toml', 'r', encoding='UTF-8').read())
+        validateConfigSettings(config, defaultConfig())
         
-        # Proxy
-        config.add('Proxy', table())
-        
-        # Proxy - Checker
-        config['Proxy'].add('Checker', table())
-        config['Proxy']['Checker']['Timeout'] = 1
-        config['Proxy']['Checker']['Timeout'].comment('maximum wait for a response from a proxy (in seconds)')
-        config['Proxy']['Checker']['Save_In_Custom_Folder'] = False
-        config['Proxy']['Checker']['Save_Without_Protocol'] = False
-
-        # Roblox
-        config.add('Roblox', table())
-    
-        # Roblox - Cookie Parser
-        config['Roblox'].add('CookieParser', table())
-        config['Roblox']['CookieParser']['Create_Backups'] = True
-        config['Roblox']['CookieParser']['Save_To_A_File'] = 'outputs'
-
-        # Roblox - Cookie Checker
-        config['Roblox'].add('CookieChecker', table())
-
-        # Roblox - Cookie Checker - General
-        config['Roblox']['CookieChecker'].add('General', table())
-        config['Roblox']['CookieChecker']['General']['First_Check_All_Cookies_For_Valid'] = False
-        config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker'] = 5
-        config['Roblox']['CookieChecker']['General']['Send_Some_Requests_Through_RoProxy'] = False
-        config['Roblox']['CookieChecker']['General']['Output_Total'] = True
-        config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker'] = 5
-
-        # Roblox - Cookie Checker - Sorting
-        config['Roblox']['CookieChecker'].add('Sorting', table())
-        config['Roblox']['CookieChecker']['Sorting']['Sort'] = False
-        config['Roblox']['CookieChecker']['Sorting'].add(comment('Categories'))
-        for category in cookieData.listOfCookieData:
-            if   category[3] == int:  config['Roblox']['CookieChecker']['Sorting'][category[1]] = [False, []]
-            elif category[3] == bool: config['Roblox']['CookieChecker']['Sorting'][category[1]] = False
-
-        # Roblox - Cookie Checker - Proxy
-        config['Roblox']['CookieChecker']['General'].add('Proxy', table())
-        config['Roblox']['CookieChecker']['General']['Proxy']['Use_Proxy'] = False
-        config['Roblox']['CookieChecker']['General']['Proxy']['Auto_Protocol_If_Not_Specified'] = 'http'
-        config['Roblox']['CookieChecker']['General']['Proxy']['Auto_Protocol_If_Not_Specified'].comment('if protocol is not specified - it will be this (available: http, https, socks4, socks5)')
-
-        # Roblox - Cookie Checker - Main
-        config['Roblox']['CookieChecker'].add('Main', table())
-        for data in cookieData.listOfCookieData:
-            config['Roblox']['CookieChecker']['Main'][data[1]] = False
-            match data[1]:
-                case 'Purchases':
-                    config['Roblox']['CookieChecker']['Main']['Purchases_Max_Check_Pages'] = 0
-                    config['Roblox']['CookieChecker']['Main']['Purchases_Max_Check_Pages'].comment('0 - All')
-                case 'Rap':
-                    config['Roblox']['CookieChecker']['Main']['Rap_Max_Check_Pages'] = 0
-                    config['Roblox']['CookieChecker']['Main']['Rap_Max_Check_Pages'].comment('0 - All')
-                case 'Gamepasses':
-                    config['Roblox']['CookieChecker']['Main']['Gamepasses_Max_Check_Pages'] = 0
-                    config['Roblox']['CookieChecker']['Main']['Gamepasses_Max_Check_Pages'].comment('0 - All')
-                case 'Custom_Gamepasses':
-                    config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Names'] = [
-                        ['Fly-A-Pet Potion',  False],
-                        ['Ride-A-Pet Potion', False]
-                    ]
-                    config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'] = 0
-                    config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'].comment('0 - All')
-                case 'Badges':
-                    config['Roblox']['CookieChecker']['Main']['Badges_Max_Check_Pages'] = 0
-                    config['Roblox']['CookieChecker']['Main']['Badges_Max_Check_Pages'].comment('0 - All')
-                case 'Favorite_Places':
-                    config['Roblox']['CookieChecker']['Main']['Favorite_Places_IDs'] = [
-                        [920587237,  'Adopt Me',         False],
-                        [142823291,  'Murder Mystery 2', False],
-                        [8737899170, 'Pet Simulator 99', False]
-                    ]
-                    config['Roblox']['CookieChecker']['Main']['Favorite_Places_Max_Check_Pages'] = 0
-                    config['Roblox']['CookieChecker']['Main']['Favorite_Places_Max_Check_Pages'].comment('0 - All')
-                case 'Bundles':
-                    config['Roblox']['CookieChecker']['Main']['Bundles_IDs'] = [
-                        [192, 'Korblox Deathspeaker', False],
-                        [201, 'Headless Horseman',    False]
-                    ]
-                    config['Roblox']['CookieChecker']['Main']['Bundles_Max_Check_Pages'] = 0
-                    config['Roblox']['CookieChecker']['Main']['Bundles_Max_Check_Pages'].comment('0 - All')
-                case 'Sessions':
-                    config['Roblox']['CookieChecker']['Main']['Sessions_Max_Check_Pages'] = 1
-                    config['Roblox']['CookieChecker']['Main']['Sessions_Max_Check_Pages'].comment('0 - All, 1 - Must be good to avoid long wait for this \'https://imgur.com/a/TrBIdCu\'')
-
-        # Roblox - Cookie Checker - Places
-        config['Roblox']['CookieChecker'].add('Places', table())
-        for place in listOfPlaces:
-            config['Roblox']['CookieChecker']['Places'][place.placeNames[1]] = False
-        
-        # Roblox - Cookie Checker - Places - Gamepasses and Badges
-        for place in listOfPlaces:
-            config['Roblox']['CookieChecker'].add(place.__name__, table())
-            if getattr(place, 'Gamepasses', False):
-                config['Roblox']['CookieChecker'][place.__name__].add(comment('Gamepasses'))
-                for gamepass in place.Gamepasses.listOfGamepasses:
-                    config['Roblox']['CookieChecker'][place.__name__][gamepass[2]] = False
-            if getattr(place, 'Badges', False):
-                config['Roblox']['CookieChecker'][place.__name__].add(comment('Badges'))
-                for badge in place.Badges.listOfBadges:
-                    config['Roblox']['CookieChecker'][place.__name__][badge[2]] = False
-
-        # Roblox - Cookie Checker - Custom Places
-        config['Roblox']['CookieChecker'].add('CustomPlaces', table())
-        config['Roblox']['CookieChecker']['CustomPlaces']['Show_Game_ID_Next_To_The_Name'] = False
-        config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places'] = []
-        config['Roblox']['CookieChecker']['CustomPlaces'].add(comment('Custom Places'))
-
-        # Roblox - Cookie Refresher
-        config['Roblox'].add('CookieRefresher', table())
-
-        # Roblox - Cookie Refresher - Single Mode
-        config['Roblox']['CookieRefresher'].add('SingleMode', table())
-        config['Roblox']['CookieRefresher']['SingleMode']['Cookie_Save_Mode'] = [1]
-        config['Roblox']['CookieRefresher']['SingleMode']['Cookie_Save_Mode'].comment('Modes: 1, 2, 3 | Examples: [1, 2, 3] / [1, 2] / [1, 3] etc.')
-        
-        # Roblox - Cookie Refresher - Mass Mode
-        config['Roblox']['CookieRefresher'].add('MassMode', table())
-        config['Roblox']['CookieRefresher']['MassMode']['Cookie_Save_Mode'] = [1]
-        config['Roblox']['CookieRefresher']['MassMode']['Cookie_Save_Mode'].comment('Modes: 1, 2, 3 | Examples: [1, 2, 3] / [1, 2] / [1, 3] etc.')
-        config['Roblox']['CookieRefresher']['MassMode']['Save_Invalid_Cookies'] = False
-        config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = ''
-        
-        # Roblox - Cookie Control Panel
-        config['Roblox'].add('CookieControlPanel', table())
-        config['Roblox']['CookieControlPanel']['Save_Cookies_Added_Manually'] = False
-        config['Roblox']['CookieControlPanel']['Save_Cookies_Checked_By_Checker'] = False
-        
-        # Roblox - Cookie Control Panel - Cookie Control Panel History
-        config['Roblox']['CookieControlPanel'].add('CookieControlPanelHistory', table())
-        
-        # Roblox - Cookie Control Panel - Roblox Cookie Checker History
-        config['Roblox']['CookieControlPanel'].add('RobloxCookieCheckerHistory', table())
-        
-        # Roblox - Misc
-        config['Roblox'].add('Misc', table())
-        
-        # Roblox - Misc - Gamepasses Parser
-        config['Roblox']['Misc'].add('GamepassesParser', table())
-        config['Roblox']['Misc']['GamepassesParser']['Remove_Emojies_From_Name'] = False
-        config['Roblox']['Misc']['GamepassesParser']['Remove_Round_Brackets_And_In_From_Name'] = False
-        config['Roblox']['Misc']['GamepassesParser']['Remove_Square_Brackets_And_In_From_Name'] = False
-        
-        # Roblox - Misc - Badges Parser
-        config['Roblox']['Misc'].add('BadgesParser', table())
-        config['Roblox']['Misc']['BadgesParser']['Remove_Emojies_From_Name'] = False
-        config['Roblox']['Misc']['BadgesParser']['Remove_Round_Brackets_And_In_From_Name'] = False
-        config['Roblox']['Misc']['BadgesParser']['Remove_Square_Brackets_And_In_From_Name'] = False
-
-        open(f'Settings\\Configs\\{configName}.toml', 'w', encoding='UTF-8').write(dumps(config))
-
     configLoader['Loader']['Current_Config'] = configName
     open('Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
-    config = loads(open(f'Settings\\Configs\\{configName}.toml', 'r', encoding='UTF-8').read())
+    open(f'Settings\\Configs\\{configName}.toml', 'w', encoding='UTF-8').write(dumps(config))
 
 def configFiles() -> list:
     configs = {str(file[:-5]) for file in os.listdir('Settings\\Configs')
@@ -3658,13 +3694,13 @@ async def mainMenu():
 
     while True:
         # Главное меню
-        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Proxy}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Roblox}\n  ┃\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Settings}\n [{ANSI.FG.RED}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Close_Program}{ANSI.CLEAR}\n\n')
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Proxy}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Roblox}\n  ┃\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Settings}\n [{ANSI.FG.YELLOW}I{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_About_The_Program}\n [{ANSI.FG.RED}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Close_Program}{ANSI.CLEAR}\n\n')
         mainTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
         match mainTab.upper():
             # Прокси
             case '1':
                 whileTrueStage1 = True
-                await removeLines(9)
+                await removeLines(10)
                 while whileTrueStage1:
                     sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Proxy}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Checker}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                     proxyTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -3711,7 +3747,7 @@ async def mainMenu():
             # Роблокс
             case '2':
                 whileTrueStage1 = True
-                await removeLines(9)
+                await removeLines(10)
                 while whileTrueStage1:
                     sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Parser}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Checker}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Refresher}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Control_Panel}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Misc}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                     robloxTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -4154,7 +4190,7 @@ async def mainMenu():
             # Настройки
             case 'S' | 'Ы':
                 whileTrueStage1 = True
-                await removeLines(9)
+                await removeLines(10)
                 while whileTrueStage1:
                     sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_General}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Proxy}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Roblox}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Configs}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                     settingsTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -4164,7 +4200,7 @@ async def mainMenu():
                             whileTrueStage2 = True
                             await removeLines(10)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_General}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Language}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if configLoader['Updater']['Check_For_Updates'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check_For_Updates} ({MT_Current}: {VERSIONS['MeowTool']})\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Console_Title}: {config['General']['Console_Title'][:50]}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Show_Lable_MeowTool'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Lable_MeowTool}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Show_Lable_by_h1kken'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Lable_by_h1kken}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Key_To_Continue}: {MT_Any if config['General']['Press_Any_Key_To_Continue'] else 'Enter'}\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Disable_All_Warnings'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Disable_All_Warnings}\n [{ANSI.FG.PINK}8{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Fix_Console} ({MT_Bind}: F)\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_General}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Language}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if configLoader['Updater']['Check_For_Updates'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check_For_Updates}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Console_Title}: {config['General']['Console_Title'][:50]}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Show_Lable_MeowTool'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Lable_MeowTool}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Show_Lable_by_h1kken'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Lable_by_h1kken}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Key_To_Continue}: {MT_Any if config['General']['Press_Any_Key_To_Continue'] else 'Enter'}\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Disable_All_Warnings'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Disable_All_Warnings}\n [{ANSI.FG.PINK}8{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Fix_Console} ({MT_Bind}: F)\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 settingsGeneralTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 match settingsGeneralTab.upper():
                                     # Общие - Язык
@@ -5308,11 +5344,51 @@ async def mainMenu():
                             await removeLines(10)
                         case _:
                             await removeLines(10)
+            # О программе
+            case 'I' | 'Ш':
+                whileTrueStage1 = True
+                await removeLines(10)
+                while whileTrueStage1:
+                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_About_The_Program}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_You_Are_Using_Version_Of_Program}\n [{ANSI.FG.PINK}G{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Open_MeowTool_On_GitHub}\n [{ANSI.FG.PINK}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Open_Showcase_On_YouTube}\n [{ANSI.FG.PINK}T{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Open_PM_With_Developer_In_Telegram} ({MT_Telegram[1]}: L1feeK)\n [{ANSI.FG.PINK}U{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Latest_Update_Changes}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                    aboutTheProgramTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
+                    match aboutTheProgramTab.upper():
+                        case 'G' | 'П':
+                            webbrowser.open('https://github.com/h1kken/MeowTool')
+                            await removeLines(11)
+                        case 'S' | 'Ы':
+                            webbrowser.open('https://www.youtube.com/live/S_BODxV5vXk')
+                            await removeLines(11)
+                        case 'T' | 'Е':
+                            webbrowser.open('https://t.me/L1feeK')
+                            await removeLines(11)
+                        case 'U' | 'Г':
+                            whileTrueStage2 = True
+                            await removeLines(11)
+                            while whileTrueStage2:
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_About_The_Program}\\{MT_Latest_Update_Changes}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.PINK}*{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {VERSIONS['MeowTool']}\n  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_U_Added_Validation_Of_Config_Settings}\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_U_Added_Information_About_The_Program}\n [{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_U_Minor_Fixes_And_Improvements}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                latestUpdateChangesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
+                                match latestUpdateChangesTab.upper():
+                                    case '0':
+                                        whileTrueStage2 = False
+                                        await removeLines(11)
+                                    case _:
+                                        await removeLines(11)
+                        case 'F' | 'А':
+                            await cls()
+                            await lableASCII()
+                        case 'R' | 'К':
+                            loadConfig(configLoader['Loader']['Current_Config'])
+                            await removeLines(11)
+                        case '0':
+                            whileTrueStage1 = False
+                            await removeLines(11)
+                        case _:
+                            await removeLines(11)
             # Закрыть программу
             case '0':
                 if not config['General']['Disable_All_Warnings']:
                     whileTrueStage1 = True
-                    await removeLines(9)
+                    await removeLines(10)
                     while whileTrueStage1:
                         sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
                         confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -5331,9 +5407,9 @@ async def mainMenu():
                 await lableASCII()
             case 'R' | 'К':
                 loadConfig(configLoader['Loader']['Current_Config'])
-                await removeLines(9)
+                await removeLines(10)
             case _:
-                await removeLines(9)
+                await removeLines(10)
 
 if __name__ == '__main__':
     sys.stdout.write(f'\n  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Настраиваемся к комфорту и уюту... >:3{ANSI.CLEAR}\r')
