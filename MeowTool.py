@@ -5953,7 +5953,7 @@ async def mainMenu():
                     aboutTheProgramTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                     match aboutTheProgramTab.upper():
                         case 'U' | 'Г':
-                            webbrowser.open('https://github.com/h1kken/MeowTool/blob/meow/latest%20changes.txt')
+                            webbrowser.open('https://github.com/h1kken/MeowTool/blob/meow/latest%20changes.md')
                         case 'G' | 'П':
                             webbrowser.open('https://github.com/h1kken/MeowTool')
                         case 'L' | 'Д':
