@@ -84,7 +84,7 @@ from msvcrt import getch
 ### Версии
 
 VERSIONS = {
-    'MeowTool': 'v2.0.0'
+    'MeowTool': 'v2.1.0'
 }
 
 ### ANSI коды
@@ -1055,10 +1055,11 @@ async def proxyChecker(file: str): # http, https, socks4, socks5
 async def robloxGetConnector(category: str, proxies: list = None):
     if config['Roblox'][category]['Proxy']['Use_Proxy'] and proxies:
         choosenProxy = choice(proxies)
-        if '://' not in choosenProxy:
-            choosenProxy = f'{config['Roblox'][category]['Proxy']['Auto_Protocol_If_Not_Specified'] if config['Roblox'][category]['Proxy']['Auto_Protocol_If_Not_Specified'] in ('http', 'socks4', 'socks5') else 'http'}://{choosenProxy}'
-        protocol, ip, port, username, password = choosenProxy.replace('https://', 'http://').split(':')
-        return ProxyConnector.from_url(f'{protocol}{username}:{password}@{ip}:{port}')
+        if '://' not in choosenProxy[0:9]:
+            choosenProxy = f'{config['Roblox'][category]['Proxy']['Auto_Protocol_If_Not_Specified'] if config['Roblox'][category]['Proxy']['Auto_Protocol_If_Not_Specified'] in ('http', 'socks4', 'socks5') else 'http'}:{choosenProxy}'
+        protocol, ip, port, username, password = choosenProxy.replace('https://', 'http:').split(':')
+        
+        return ProxyConnector.from_url(f'{protocol}://{username}:{password}@{ip}:{port}')
     return TCPConnector()
 
 ### Roblox Cookie Checker
@@ -4419,8 +4420,8 @@ async def mainMenu():
                                         while whileTrueStage3:
                                             try:
                                                 nextRefresh = datetime.strptime(config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'], '%d.%m.%Y - %H.%M.%S') + timedelta(minutes=1)
-                                                statusOfRefresh = f'{MT_Status}: {ANSI.FG.GREEN}{MT_Can_Run}{ANSI.CLEAR + ANSI.DECOR.BOLD}' if config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] == '' or nextRefresh < datetimeNow else f'{MT_Status}: {ANSI.FG.RED}{MT_Wait[0]} {abs(int((datetimeNow - nextRefresh).total_seconds()))} {MT_Seconds}.{ANSI.CLEAR + ANSI.DECOR.BOLD}'
                                                 datetimeNow = datetime.now()
+                                                statusOfRefresh = f'{MT_Status}: {ANSI.FG.GREEN}{MT_Can_Run}{ANSI.CLEAR + ANSI.DECOR.BOLD}' if config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] == '' or nextRefresh < datetimeNow else f'{MT_Status}: {ANSI.FG.RED}{MT_Wait[0]} {abs(int((datetimeNow - nextRefresh).total_seconds()))} {MT_Seconds}.{ANSI.CLEAR + ANSI.DECOR.BOLD}'
                                             except ValueError:
                                                 nextRefresh = ''
                                             sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_50_Cookies_In_Once}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_50_Cookies_In_60_Seconds}\n  ┃\n [{ANSI.FG.RED if nextRefresh > datetimeNow else ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {statusOfRefresh}\n [{ANSI.FG.YELLOW}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Play_Sound_Cookie_Refresher_Mass_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')    
@@ -5923,7 +5924,7 @@ async def mainMenu():
                                         copyfile(f'Settings\\Configs\\{configLoader['Loader']['Current_Config']}.toml', f'Settings\\Configs\\{nameOfNewConfig}.toml')
                                         loadConfig(nameOfNewConfig)
                                         await autoSaveConfig()
-                                    
+
                                     await createConfig()
                                 elif configsTab.upper() in ('S', 'Ы'):
                                     configLoader['Saver']['Auto_Save_Changes'] ^= True
@@ -5953,7 +5954,7 @@ async def mainMenu():
                     aboutTheProgramTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                     match aboutTheProgramTab.upper():
                         case 'U' | 'Г':
-                            webbrowser.open('https://github.com/h1kken/MeowTool/blob/meow/latest%20changes.md')
+                            webbrowser.open('https://github.com/h1kken/MeowTool/blob/meow/Changelog.md#v201')
                         case 'G' | 'П':
                             webbrowser.open('https://github.com/h1kken/MeowTool')
                         case 'L' | 'Д':
@@ -5974,7 +5975,7 @@ async def mainMenu():
 
                     await autoSaveConfigAndRemoveLinesInSettings(aboutTheProgramTab.upper(), (), ('U', 'Г', 'G', 'П', 'L', 'Д', 'Y', 'Н', 'T', 'Е', '0', 'R', 'К'), 12)
             case 'Meow':
-                await errorOrCorrectHandler(False, 10, 'Meow >:3', 'Hewhewhew~')
+                await errorOrCorrectHandler(False, amountRemoveLines, 'Meow >:3', 'Hewhewhew~')
             # Закрыть программу
             case '0':
                 if not config['General']['Disable_All_Warnings']:
