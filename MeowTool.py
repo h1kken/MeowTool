@@ -84,7 +84,7 @@ from msvcrt import getch
 ### Версии
 
 VERSIONS = {
-    'MeowTool': 'v2.1.0'
+    'MeowTool': 'v2.0.1'
 }
 
 ### ANSI коды
