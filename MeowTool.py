@@ -1,33 +1,65 @@
 import os
 import sys
-from copy import deepcopy
-from random import choice
-from winsound import MessageBeep, MB_ICONASTERISK
+from subprocess   import run
+from zipfile      import ZipFile, ZIP_DEFLATED
+from copy         import deepcopy
+from random       import choice
 import asyncio
 import webbrowser
-from shutil import move, copyfile
-from datetime import datetime, timedelta
-from re import compile, sub, search
-from tomlkit import loads, dumps, document, nl, comment, table, TOMLDocument
-from tomlkit.items import Table, Item
-import requests # ‾\
-import socks    #  | в планах на удаление
-import socket   # _/
-from aiohttp import ClientSession, TCPConnector, ClientOSError, ContentTypeError, ConnectionTimeoutError, ClientConnectorError, ServerDisconnectedError
-from aiohttp_socks import ProxyConnector, ProxyConnectionError, ProxyTimeoutError
-import aiofiles
-# from fake_useragent import UserAgent; ua = UserAgent()
-from emoji import replace_emoji
-from columnar import columnar
-import colorama; colorama.init()
-from msvcrt import getch
+from shutil       import move, copyfile
+from datetime     import datetime, timedelta
+from re           import compile, sub, search
+import socket
+from msvcrt       import getch
 
-# MeowTool
+IMPORTS = {
+    'tomlkit'         : 'tomlkit==0.13.3',        # 0.13.3
+    'requests'        : 'requests==2.32.4',       # 2.32.4
+    'socks'           : 'PySocks==1.7.1',         # 1.7.1
+    'aiohttp'         : 'aiohttp==3.12.14',       # 3.12.14
+    'aiohttp_socks'   : 'aiohttp_socks==0.10.1',  # 0.10.1
+    'aiofiles'        : 'aiofiles==24.1.0',       # 24.1.0
+    'aiogram'         : 'aiogram==3.21.0',        # 3.21.0
+    'discord_webhook' : 'discord-webhook==1.4.1', # 1.4.1
+    'fake_useragent'  : 'fake-useragent==2.2.0',  # 2.2.0
+    'emoji'           : 'emoji==2.14.1',          # 2.14.1
+    'columnar'        : 'columnar==1.4.1',        # 1.4.1
+    'colorama'        : 'colorama==0.4.6'         # 0.4.6
+}
+
+while True:
+    try:
+        import colorama; colorama.init()
+        sys.stdout.write(f'\n  \033[1m[\033[95m<3\033[0m\033[1m] Заботимся о зависимостях... :3\033[0m\r')
+        from tomlkit            import loads, dumps, document, nl, comment, table, TOMLDocument
+        from tomlkit.items      import Table, Item
+        import requests
+        import socks
+        from aiohttp            import ClientSession, TCPConnector, ClientOSError, ContentTypeError, ConnectionTimeoutError, ClientConnectorError, ServerDisconnectedError, ClientConnectorDNSError
+        from aiohttp_socks      import ProxyConnector, ProxyConnectionError, ProxyTimeoutError
+        import aiofiles
+        from aiogram            import Bot
+        from aiogram.types      import FSInputFile
+        from aiogram.enums      import ParseMode
+        from aiogram.exceptions import TelegramNetworkError, TelegramUnauthorizedError, TelegramBadRequest
+        from discord_webhook    import DiscordWebhook, DiscordEmbed
+        # from fake_useragent     import UserAgent; ua = UserAgent()
+        from emoji              import replace_emoji
+        from columnar           import columnar
+        break
+    except ModuleNotFoundError as me:
+        run([sys.executable, "-m", "pip", "install", IMPORTS[str(me)[17:-1]]])
+    except Exception as e:
+        sys.stdout.write(f'Неизвестная ошибка: {e} :<\n')
+        getch()
+        sys.exit()
+
+# MeowTool :3
 
 '''
 <|> MAYBE USEFUL INFORMATION
 
-    Roblox
+    Roblox API
       [*] AssetType: https://create.roblox.com/docs/reference/engine/enums/AssetType
       
       [*] APIs: https://create.roblox.com/docs/en-us/cloud (left-bottom: Legacy APIs)
@@ -63,9 +95,9 @@ from msvcrt import getch
         [C=] [G] [LIM] [CSR] Rap:                    https://inventory.roblox.com/v1/users/{UserId}/assets/collectibles?sortOrder=Asc&limit=100
         [C+] [G]             Cards:                  https://apis.roblox.com/payments-gateway/v1/payment-profiles
         [C=] [G] [CNT] [ESI] Gamepasses:             https://apis.roblox.com/game-passes/v1/users/{UserId}/game-passes?count=100
-        [C=] [G] [LIM] [CSR] Badges:                 https://badges.roblox.com/v1/users/{UserId}/badges?limit=100&sortOrder=Desc
+        [C=] [G] [LIM] [CSR] Badges:                 https://badges.roblox.com/v1/users/{UserId}/badges?limit=100
         [C-] [G] [IPP] [CSR] Favorite Places:        https://games.roblox.com/v2/users/{UserId}/favorite/games?limit=100
-        [C=] [G] [LIM] [CSR] Bundles:                https://catalog.roblox.com/v1/users/{UserId}/bundles?limit=100
+        [C=] [G] [LIM] [CSR] Bundles:                https://catalog.roblox.com/v1/users/{UserId}/bundles/1?limit=100
         [C+] [G]             Inventory Privacy:      https://apis.roblox.com/user-settings-api/v1/user-settings/settings-and-options
         [C+] [G]             Trade Privacy:          https://accountsettings.roblox.com/v1/trade-privacy
         [C+] [G]       [NSR] Sessions:               https://apis.roblox.com/token-metadata-service/v1/sessions
@@ -79,12 +111,25 @@ from msvcrt import getch
         [C+] [P]             X-CSRF-Token:           https://auth.roblox.com/v2/logout
         [C+] [P]             Authentication Ticket:  https://auth.roblox.com/v1/authentication-ticket
         [C+] [P]             Set Cookie:             https://auth.roblox.com/v1/authentication-ticket/redeem
+
+
+
+    Telegram API
+      [?] Create a bot: https://t.me/BotFather
+    
+      [?] Methods:
+        [G] - GET
+        [P] - POST
+
+      [?] {TOKEN} Bot's token (without {})
+
+      [G] Chat ID with bot: https://api.telegram.org/bot{TOKEN}/getUpdates (message to bot before check)
 '''
 
 ### Версии
 
 VERSIONS = {
-    'MeowTool': 'v2.0.1'
+    'MeowTool': 'v2.1.0'
 }
 
 ### ANSI коды
@@ -107,23 +152,6 @@ class ANSI:
         PINK        = '\033[95m' # UI
         LIGHTCYAN   = '\033[96m' # UI
         LIGHTWHITE  = '\033[97m'
-    class BG: # background colors
-        BLACK       = '\033[40m'
-        RED         = '\033[41m'
-        GREEN       = '\033[42m'
-        YELLOW      = '\033[43m'
-        BLUE        = '\033[44m'
-        PURPLE      = '\033[45m'
-        CYAN        = '\033[46m'
-        WHITE       = '\033[47m'
-        GRAY        = '\033[100m'
-        LIGHTRED    = '\033[101m'
-        LIGHTGREEN  = '\033[102m'
-        LIGHTYELLOW = '\033[103m'
-        LIGHTBLUE   = '\033[104m'
-        PINK        = '\033[105m'
-        LIGHTCYAN   = '\033[106m'
-        LIGHTWHITE  = '\033[107m'
     class DECOR: # text decorations
         BOLD            = '\033[1m'
         NOTBOLD         = '\033[2m'
@@ -140,9 +168,45 @@ class ANSI:
 ### Переводы
 
 def translateMT(language: str):
-    global MT_Spent, MT_Transactions, MT_Status, MT_Play_The_Sound_At_The_End_Of_The_Work, MT_Show_Amount_Of_Lines_In_Files, MT_Count_Robux_In_Total, MT_Cookie, MT_Format, MT_Enable_At_Least_One_Place_To_Start_Analysis, MT_Number_Of_Threads_For_Transaction_Analysis, MT_Output_Filename, MT_Name_Output_File_The_Same_As_Input_File, MT_Transaction_With_This_Name_Already_Exists, MT_Enter_A_Transaction_Name, MT_Add_A_Transaction, MT_Ignore, MT_Ignore_All, MT_Do_Not_Ignore_All, MT_Important, MT_Ignore_List, MT_Discover_New_Names_For_Ignore_List, MT_Save_Old_Versions, MT_Updates, MT_No, MT_Use_SSL, MT_Max_Indentation, MT_No_Indentation, MT_Transaction_Analysis, MT_Save_All_Places_In_One_File, MT_Save_Places_To_Different_Files, MT_Add_Nick_After_Cookie_In_Folder_Names, MT_Add_Robux_After_Place_In_File_Names, MT_Indentation_Option , MT_Item, MT_Price, MT_Date, MT_Open_MeowTool_On_GitHub, MT_You_Are_Using_Version_Of_Program, MT_Open_A_Topic_On_LolzTeam, MT_Open_The_Showcase_On_YouTube, MT_Open_PM_With_Developer_In_Telegram, MT_Telegram, MT_Open_Latest_Changes, MT_About_The_Program, MT_Check_For_Updates, MT_No_Cookies_Found, MT_All_Cookies_Were_Invalid, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Incorrect_Number_Of_Threads_500, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Cookie_Was_Found, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Error, MT_50_Cookies_In_Once, MT_50_Cookies_In_60_Seconds, MT_Send_Some_Requests_Through_RoProxy, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_Characters_Such_As, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_All_Warnings, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_History_Manual, MT_Save_Cookies_Checked_By_Checker, MT_History_Checker, MT_Cookie_Control_Panel, MT_Start_Refresher, MT_Wait, MT_Can_Run, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_The_Parameter_Can_Only_Be_A_Number, MT_Add_A_Parameter, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Nickname, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_To_Start_Checking, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_ID_50, MT_Incorrect_Length_Of_Parameter_20, MT_Incorrect_Length_Of_Name_50, MT_Incorrect_Length_Of_Config_Name_50, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Sorting, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_A_Bundle_By_ID, MT_Add_A_Place_By_ID, MT_Enter_Something, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_Enter_New_Filename, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Parameter_With_This_Value_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_File_Name, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Checking_Complete, MT_Sorting_File, MT_Sorting_Complete, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Sorter, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta, MT_Only_Goodness, MT_Hi
+    global MT_Invalid_Token_Format, MT_Invalid_URL_Format, MT_Send_Any_Message_To_The_Bot_And_Try_Again, MT_Specify_The_Bot_Token, MT_Specify_The_Chat_ID, MT_Specify_The_Webhook_URL, MT_Following_The_Link, MT_Message_Was_Sent, MT_Enter_A_Bot_Token, MT_Enter_A_Chat_ID, MT_Enter_A_Webhook_URL, MT_Send, MT_You, MT_Results_To_Telegram, MT_Results_To_Discord, MT_Create_A_Telegram_Bot, MT_Search_Chat_ID, MT_Telegram, MT_Discord, MT_Specify, MT_Value_Must_Consist_Of_Digits, MT_Value_Cannot_Be_Empty, MT_Successfully, MT_Unsuccessfully, MT_Possibly_The_Internet_Is_Unstable, MT_Possibly_A_Typo_In_The_Bot_Token, MT_Possibly_A_Typo_In_The_Chat_ID, MT_Unknown_Error, MT_Possibly_A_Typo_In_The_Webhook_URL, MT_Unknown_Server_Response_Code, MT_Bot_Token, MT_Chat_ID, MT_Telegram_Bot, MT_Webhook_URL, MT_Discord_Webhook, MT_Outputs, MT_Spent, MT_Transactions, MT_Status, MT_Play_The_Sound_At_The_End_Of_The_Work, MT_Show_Amount_Of_Lines_In_Files, MT_Count_Robux_In_Total, MT_Cookie, MT_Format, MT_Enable_At_Least_One_Place_To_Start_Analysis, MT_Number_Of_Threads_For_Transaction_Analysis, MT_Output_Filename, MT_Name_Output_File_The_Same_As_Input_File, MT_Transaction_With_This_Name_Already_Exists, MT_Enter_A_Transaction_Name, MT_Add_A_Transaction, MT_Ignore, MT_Ignore_All, MT_Do_Not_Ignore_All, MT_Important, MT_Ignore_List, MT_Discover_New_Names_For_Ignore_List, MT_Save_Old_Versions, MT_Updates, MT_Yes, MT_No, MT_Use_SSL, MT_Max_Indentation, MT_No_Indentation, MT_Transaction_Analysis, MT_Save_All_Places_In_One_File, MT_Save_Places_To_Different_Files, MT_Add_Nick_After_Cookie_In_Folder_Names, MT_Add_Robux_After_Place_In_File_Names, MT_Indentation_Option , MT_Item, MT_Price, MT_Date, MT_Open_MeowTool_On_GitHub, MT_You_Are_Using_Version_Of_Program, MT_Open_A_Topic_On_LolzTeam, MT_Open_The_Showcase_On_YouTube, MT_Open_PM_With_Developer_In_Telegram, MT_Open_Latest_Changes, MT_About_The_Program, MT_Check_For_Updates, MT_No_Cookies_Found, MT_All_Cookies_Were_Invalid, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Incorrect_Number_Of_Threads_500, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Cookie_Was_Found, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Was_Not_Created, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Error, MT_50_Cookies_In_Once, MT_50_Cookies_In_60_Seconds, MT_Send_Some_Requests_Through_RoProxy, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_Characters_Such_As, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_Warnings_For_Links, MT_Disable_Warnings_For_Dangerous_Actions, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_History_Manual, MT_Save_Cookies_Checked_By_Checker, MT_History_Checker, MT_Cookie_Control_Panel, MT_Start_Refresher, MT_Wait, MT_Can_Run, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_The_Parameter_Can_Only_Be_A_Number, MT_Add_A_Parameter, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Nickname, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_To_Start_Checking, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_ID_50, MT_Incorrect_Length_Of_Parameter_20, MT_Incorrect_Length_Of_Name_50, MT_Incorrect_Length_Of_Config_Name_50, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Sorting, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_A_Bundle_By_ID, MT_Add_A_Place_By_ID, MT_Enter_Something, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_Enter_New_Filename, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Parameter_With_This_Value_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_File_Name, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Checking_Complete, MT_Sorting_File, MT_Sorting_Complete, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Sorter, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta, MT_Only_Goodness, MT_Hi
     match str(language).upper():
         case 'EN':
+            MT_Invalid_Token_Format                        = 'Invalid token format'
+            MT_Invalid_URL_Format                          = 'Invalid URL format'
+            MT_Send_Any_Message_To_The_Bot_And_Try_Again   = 'Send any message to the bot and try again'
+            MT_Specify_The_Bot_Token                       = 'Specify the bot token'
+            MT_Specify_The_Chat_ID                         = 'Specify the chat ID'
+            MT_Specify_The_Webhook_URL                     = 'Specify the webhook URL'
+            MT_Following_The_Link                          = 'Following the link'
+            MT_Message_Was_Sent                            = 'Message was sent'
+            MT_Enter_A_Bot_Token                           = 'Enter a bot token'
+            MT_Enter_A_Chat_ID                             = 'Enter a chat ID'
+            MT_Enter_A_Webhook_URL                         = 'Enter a webhook URL'
+            MT_Send                                        = 'Send', 'Send', 'Sent'
+            MT_You                                         = 'You', 'You', 'Are you'
+            MT_Results_To_Telegram                         = 'Results to Telegram'
+            MT_Results_To_Discord                          = 'Results to Discord'
+            MT_Create_A_Telegram_Bot                       = 'Create a telegram bot'
+            MT_Search_Chat_ID                              = 'Search chat ID'
+            MT_Telegram                                    = 'Telegram', 'TG'
+            MT_Discord                                     = 'Discord', 'DS'
+            MT_Specify                                     = 'Specify'
+            MT_Value_Must_Consist_Of_Digits                = 'Value must consist of digits'
+            MT_Value_Cannot_Be_Empty                       = 'Value can not be empty'
+            MT_Successfully                                = 'Successfully'
+            MT_Unsuccessfully                              = 'Unsuccessfully'
+            MT_Possibly_The_Internet_Is_Unstable           = 'Possibly the internet is unstable'
+            MT_Possibly_A_Typo_In_The_Bot_Token            = 'Possibly a typo in the bot token'
+            MT_Possibly_A_Typo_In_The_Chat_ID              = 'Possibly a typo in the chat ID'
+            MT_Unknown_Error                               = 'Unknown error'
+            MT_Possibly_A_Typo_In_The_Webhook_URL          = 'Possibly a typo in the webhook URL'
+            MT_Unknown_Server_Response_Code                = 'Unknown server response code'
+            MT_Bot_Token                                   = 'Bot token'
+            MT_Chat_ID                                     = 'Chat ID', 'chat ID'
+            MT_Telegram_Bot                                = 'Telegram bot'
+            MT_Webhook_URL                                 = 'Webhook URL', 'webhook URL'
+            MT_Discord_Webhook                             = 'Discord webhook'
+            MT_Outputs                                     = 'Outputs'
             MT_Spent                                       = 'Spent'
             MT_Transactions                                = 'Transactions'
             MT_Status                                      = 'Status'
@@ -166,6 +230,7 @@ def translateMT(language: str):
             MT_Discover_New_Names_For_Ignore_List          = 'Discover new names for ignore list'
             MT_Save_Old_Versions                           = 'Save old versions'
             MT_Updates                                     = 'Updates'
+            MT_Yes                                         = 'Yes'
             MT_No                                          = 'No'
             MT_Use_SSL                                     = 'Use SSL'
             MT_Max_Indentation                             = 'Max indentation'
@@ -185,7 +250,6 @@ def translateMT(language: str):
             MT_Open_A_Topic_On_LolzTeam                    = 'Open a topic on LolzTeam'
             MT_Open_The_Showcase_On_YouTube                = 'Open the showcase on YouTube'
             MT_Open_PM_With_Developer_In_Telegram          = 'Open PM with developer in Telegram'
-            MT_Telegram                                    = 'Telegram', 'TG'
             MT_About_The_Program                           = 'About the program'
             MT_Check_For_Updates                           = 'Check for updates'
             MT_No_Cookies_Found                            = 'No cookies found'
@@ -205,7 +269,8 @@ def translateMT(language: str):
             MT_Auto_Protocol_If_Not_Specified              = 'The protocol, if it isn\'t specified in file'
             MT_Any                                         = 'Any'
             MT_Key_To_Continue                             = 'Key to continue'
-            MT_File_Is_Missing                             = 'File is missing somewhere, strange...'
+            MT_File_Was_Not_Created                        = 'File was not created'
+            MT_File_Is_Missing                             = 'File is missing somewhere, strange'
             MT_Incorrect_Cookies_Removed                   = 'Incorrect cookies removed'
             MT_Error                                       = 'Error'
             MT_50_Cookies_In_Once                          = '50 cookies in once'
@@ -219,7 +284,8 @@ def translateMT(language: str):
             MT_Enter_A_New_Title                           = 'Enter a new title'
             MT_Console_Title                               = 'Console title'
             MT_Show_Place_ID_Next_To_The_Name              = 'Show place ID next to the name'
-            MT_Disable_All_Warnings                        = 'Disable all warnings'
+            MT_Disable_Warnings_For_Links                  = 'Disable warnings for links'
+            MT_Disable_Warnings_For_Dangerous_Actions      = 'Disable warnings for dangerous actions'
             MT_Show_Cookie                                 = 'Show cookie'
             MT_Data                                        = 'Data'
             MT_Find                                        = 'Find'
@@ -356,6 +422,42 @@ def translateMT(language: str):
             MT_Only_Goodness                               = 'Only goodness'
             MT_Hi                                          = 'Hi'
         case _: # 'RU'
+            MT_Invalid_Token_Format                        = 'Недопустимый формат токена'
+            MT_Invalid_URL_Format                          = 'Недопустимый формат URL'
+            MT_Send_Any_Message_To_The_Bot_And_Try_Again   = 'Отправь любое сообщение боту и попробуй снова'
+            MT_Specify_The_Bot_Token                       = 'Укажи токен бота'
+            MT_Specify_The_Chat_ID                         = 'Укажи ID чата'
+            MT_Specify_The_Webhook_URL                     = 'Укажи URL вебхука'
+            MT_Following_The_Link                          = 'Переход по ссылке'
+            MT_Message_Was_Sent                            = 'Сообщение было отправлено'
+            MT_Enter_A_Bot_Token                           = 'Введи токен бота'
+            MT_Enter_A_Chat_ID                             = 'Введи ID чата'
+            MT_Enter_A_Webhook_URL                         = 'Введи URL вебхука'
+            MT_Send                                        = 'Отправлять', 'Отправляю', 'Отправил'
+            MT_You                                         = 'Ты', 'Тебе', 'Ты'
+            MT_Results_To_Telegram                         = 'результаты в Телеграм'
+            MT_Results_To_Discord                          = 'результаты в Дискорд'
+            MT_Create_A_Telegram_Bot                       = 'Создать телеграм бота'
+            MT_Search_Chat_ID                              = 'Найти ID чата'
+            MT_Telegram                                    = 'Телеграм', 'ТГ'
+            MT_Discord                                     = 'Дискорд', 'ДС'
+            MT_Specify                                     = 'Указать'
+            MT_Value_Must_Consist_Of_Digits                = 'Значение должно состоять из цифр'
+            MT_Value_Cannot_Be_Empty                       = 'Значение не может быть пустым'
+            MT_Successfully                                = 'Удачно'
+            MT_Unsuccessfully                              = 'Неудачно'
+            MT_Possibly_The_Internet_Is_Unstable           = 'Возможно интернет нестабилен'
+            MT_Possibly_A_Typo_In_The_Bot_Token            = 'Возможно опечатка в токене бота'
+            MT_Possibly_A_Typo_In_The_Chat_ID              = 'Возможно опечатка в ID чата'
+            MT_Unknown_Error                               = 'Неизвестная ошибка'
+            MT_Possibly_A_Typo_In_The_Webhook_URL          = 'Возможно опечатка в URL вебхука'
+            MT_Unknown_Server_Response_Code                = 'Неизвестный код ответа сервера'
+            MT_Bot_Token                                   = 'Токен бота'
+            MT_Chat_ID                                     = 'ID чата', 'ID чата'
+            MT_Telegram_Bot                                = 'Телеграм бот'
+            MT_Discord_Webhook                             = 'Дискорд вебхук'
+            MT_Webhook_URL                                 = 'URL вебхука', 'URL вебхука'
+            MT_Outputs                                     = 'Выводы'
             MT_Spent                                       = 'Потрачено'
             MT_Transactions                                = 'Транзакций'
             MT_Status                                      = 'Статус'
@@ -379,6 +481,7 @@ def translateMT(language: str):
             MT_Discover_New_Names_For_Ignore_List          = 'Обнаруживать новые названия для игнор-листа'
             MT_Save_Old_Versions                           = 'Сохранять старые версии'
             MT_Updates                                     = 'Обновления'
+            MT_Yes                                         = 'Да'
             MT_No                                          = 'Нет'
             MT_Use_SSL                                     = 'Использовать SSL'
             MT_Max_Indentation                             = 'Максимальный отступ'
@@ -398,7 +501,6 @@ def translateMT(language: str):
             MT_Open_A_Topic_On_LolzTeam                    = 'Открыть тему на LolzTeam'
             MT_Open_The_Showcase_On_YouTube                = 'Открыть демонстрацию на YouTube'
             MT_Open_PM_With_Developer_In_Telegram          = 'Открыть ЛС с разработчиком в Телеграм'
-            MT_Telegram                                    = 'Телеграм', 'ТГ'
             MT_About_The_Program                           = 'О программе'
             MT_Check_For_Updates                           = 'Проверять обновления'
             MT_No_Cookies_Found                            = 'Куки не найдены'
@@ -418,7 +520,8 @@ def translateMT(language: str):
             MT_Auto_Protocol_If_Not_Specified              = 'Протокол, если не указан в файле'
             MT_Any                                         = 'Любая'
             MT_Key_To_Continue                             = 'Клавиша для продолжения'
-            MT_File_Is_Missing                             = 'Файл куда-то пропал, странно...'
+            MT_File_Was_Not_Created                        = 'Файл не был создан'
+            MT_File_Is_Missing                             = 'Файл куда-то пропал, странно'
             MT_Incorrect_Cookies_Removed                   = 'Удалено некорректных куки'
             MT_Error                                       = 'Ошибка'
             MT_50_Cookies_In_Once                          = '50 куки за раз'
@@ -432,7 +535,8 @@ def translateMT(language: str):
             MT_Enter_A_New_Title                           = 'Введи новое название'
             MT_Console_Title                               = 'Название консоли'
             MT_Show_Place_ID_Next_To_The_Name              = 'Показывать ID плейса рядом с названием'
-            MT_Disable_All_Warnings                        = 'Отключить все предупреждения'
+            MT_Disable_Warnings_For_Links                  = 'Отключить предупреждения для ссылок'
+            MT_Disable_Warnings_For_Dangerous_Actions      = 'Отключить предупреждения для опасных действий'
             MT_Show_Cookie                                 = 'Показать куки'
             MT_Data                                        = 'Данные'
             MT_Find                                        = 'Найти'
@@ -599,11 +703,15 @@ async def cls():
     if os.name == 'nt': os.system('cls')
     else: os.system('clear')
 
+async def playOSSound():
+    sys.stdout.write('\a')
+    sys.stdout.flush()
+
 async def removeLines(amountOfLines: int):
     if amountOfLines:
         sys.stdout.write(f'\033[{amountOfLines}A\033[J')
 
-def removeBracketsAndIn(string: str, removeRound: bool, removeSquare: bool) -> str:
+async def removeBracketsAndIn(string: str, removeRound: bool, removeSquare: bool) -> str:
     newString = ''
     skip = 0
     for char in string:
@@ -615,22 +723,22 @@ def removeBracketsAndIn(string: str, removeRound: bool, removeSquare: bool) -> s
             newString += char
     return newString
 
-def removeAllSpecialChars(string: str) -> str:
+async def removeAllSpecialChars(string: str) -> str:
     return sub('[^A-Za-z0-9 ]+', '', string)
 
-def removeSpecialChars(string: str) -> str:
+async def removeSpecialChars(string: str) -> str:
     """Chars will be removed:
     \n - \\\\, /, *, ?, :, ", <, >, |
     \n - from \\x00 to \\x1f"""
     return sub(r'[\\/*?:"<>|\x00-\x1f]', '', string)
 
-def removeEmojies(string: str) -> str:
+async def removeEmojies(string: str) -> str:
     return replace_emoji(string, replace=' ') # Пробел, потому что есть разработчики использующие эмодзи как пробел между слов
 
-def removeTwoSpaces(string: str) -> str:
+async def removeTwoSpaces(string: str) -> str:
     return ' '.join(string.split()).strip()
 
-def amountOfLines(path: str) -> str:
+async def amountOfLines(path: str) -> str:
     if not os.path.exists(f'{path}.txt'):
         return '0 lines'
 
@@ -646,7 +754,7 @@ async def waitingInput():
     if config['General']['Press_Any_Key_To_Continue']:
         sys.stdout.write(f' [{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.DECOR.FLASHING1}{MT_Press_Any_Key_To_Continue}...')
         sys.stdout.flush()
-        getch() 
+        getch()
     else:
         sys.stdout.write(f' [{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.DECOR.FLASHING1}{MT_Press_Enter_To_Continue}...')
         sys.stdout.flush()
@@ -658,7 +766,7 @@ async def waitingInput():
 
 async def errorOrCorrectHandler(isError: bool, removeLines_: int, message: str, path=''):
     await removeLines(removeLines_)
-    sys.stdout.write(f'\r {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{path}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}{f'[{ANSI.FG.RED}X{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if isError else f'[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} ┃ {message}\n\n')
+    sys.stdout.write(f'\r {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{path}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}{f'[{ANSI.FG.RED}X{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if isError else f'[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} ┃ {message}\n\n')
     await waitingInput()
 
 async def autoSaveConfig():
@@ -667,8 +775,8 @@ async def autoSaveConfig():
             await f.write(dumps(config))
 
 async def autoSaveConfigAndRemoveLinesInSettings(caseValue: str, autoSaveConfig_: tuple, removeLines_: tuple, numberOfLines: int):
-    if caseValue in tuple(autoSaveConfig_):                       await autoSaveConfig()
-    if caseValue in tuple(autoSaveConfig_) + tuple(removeLines_): await removeLines(numberOfLines)
+    if caseValue                   in tuple(autoSaveConfig_):                       await autoSaveConfig()
+    if numberOfLines and caseValue in tuple(autoSaveConfig_) + tuple(removeLines_): await removeLines(numberOfLines)
 
 async def printFiles(category: str, path: str, printFiles: bool) -> list:
     os.makedirs(path, exist_ok=True)
@@ -677,9 +785,28 @@ async def printFiles(category: str, path: str, printFiles: bool) -> list:
 
     if printFiles:
         for index, file in enumerate(listOfFiles):
-            sys.stdout.write(f' {ANSI.DECOR.BOLD}{f'[{ANSI.FG.PINK}{index + 1}{ANSI.CLEAR + ANSI.DECOR.BOLD}]'.rjust(len(str(len(listOfFiles))) + 15)} ┃ {file} {f'({amountOfLines(f'{path}\\{file}')})' if config['Roblox']['General'][f'Show_Amount_Of_Lines_In_Files_{category}'] else ''}{ANSI.CLEAR}\n')
+            sys.stdout.write(f' {ANSI.DECOR.BOLD}{f'[{ANSI.FG.PINK}{index + 1}{ANSI.CLEAR + ANSI.DECOR.BOLD}]'.rjust(len(str(len(listOfFiles))) + 15)} ┃ {file} {f'({await amountOfLines(f'{path}\\{file}')})' if config['Roblox']['General'][f'Show_Amount_Of_Lines_In_Files'] else ''}{ANSI.CLEAR}\n')
 
     return listOfFiles
+
+async def openLink(url: str, path: str, removeLines_: int):
+    if not config['General']['Disable_Warnings_For_Links']:
+        whileTrueStageLink = True
+        await removeLines(removeLines_)
+        while whileTrueStageLink:
+            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{path}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Following_The_Link}: {ANSI.DECOR.UNDERLINE1}{url}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃\n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
+            confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
+            match confirmTheAction.upper():
+                case 'Y' | 'Н':
+                    whileTrueStageLink = False
+                    webbrowser.open(url)
+                case 'N' | 'Т':
+                    whileTrueStageLink = False
+
+            await removeLines(9)
+    else:
+        webbrowser.open(url)
+        await removeLines(removeLines_)
 
 def createFoldersAndFiles():
     FOLDERS = [
@@ -724,12 +851,12 @@ async def downloadPythonVersion():
         sys.exit()
     except Exception:
         while True:
-            sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Не смогли скачать обновление, возможно нестабильный интернет. Что будем делать? >:3\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Попробуем ещё раз\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Продолжить запуск{ANSI.CLEAR}\n\n')
+            sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Не смогли скачать обновление, возможно нестабильный интернет. Что будем делать? :3\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Попробуем ещё раз\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Продолжить запуск{ANSI.CLEAR}\n\n')
             couldNotDownloadUpdate = input(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] Введи что-то:{ANSI.CLEAR} ')
             match couldNotDownloadUpdate:
                 case '1':
                     await removeLines(6)
-                    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Пытаемся ещё раз... >:3{ANSI.CLEAR}\r')
+                    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Пытаемся ещё раз... :3{ANSI.CLEAR}\r')
                     break
                 case '2':
                     await removeLines(6)
@@ -738,6 +865,8 @@ async def downloadPythonVersion():
                     await removeLines(6)
 
 async def downloadExecutableVersion(version: str):
+    webbrowser.open(f'https://github.com/h1kken/MeowTool/releases/download/{version}/MeowTool.exe')
+
     if configLoader['Updater']['Save_Old_Versions']:
         os.makedirs('Versions', exist_ok=True)
         userProgramName = os.path.basename(__file__)
@@ -745,29 +874,28 @@ async def downloadExecutableVersion(version: str):
         parameters = [3, '.py'] if userProgramName.lower().endswith('.py') else [4, '.exe']
         os.rename(f'Versions\\{userProgramName}', f'Versions\\{userProgramName[:-parameters[0]]} ({VERSIONS['MeowTool']}){parameters[1]}')
 
-    webbrowser.open(f'https://github.com/h1kken/MeowTool/releases/download/{version}/MeowTool.exe')
     sys.exit()
 
 async def checkUpdates():
     if configLoader['Updater']['Check_For_Updates']:
         while True:
-            sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Проверяем твою трендовость... >:3     {ANSI.CLEAR}\r')
+            sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Проверяем твою трендовость... :3     {ANSI.CLEAR}\r')
             try:
                 response = requests.get('https://raw.githubusercontent.com/h1kken/MeowTool/refs/heads/meow/version.txt', timeout=3)
                 response.raise_for_status()
                 latestVersion = response.text.strip()
                 if latestVersion == VERSIONS['MeowTool']:
-                    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Ура! У тебя последняя версия... >:3{ANSI.CLEAR}\r')
+                    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Ура! У тебя последняя версия... :3{ANSI.CLEAR}\r')
                     return
                 else:
                     while True:
-                        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Ух-ты! Доступна новая версия, будем качать? >:3\n\n  [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] Текущая версия: {VERSIONS['MeowTool']}\n  [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] Последняя версия: {latestVersion}\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Да, хочу \'.py\' версию\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Да, хочу \'.exe\' версию\n  [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Нет, как-нибудь потом{ANSI.CLEAR}\n\n')
+                        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Ух-ты! Доступна новая версия, будем качать? :3\n\n  [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] Текущая версия: {VERSIONS['MeowTool']}\n  [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] Последняя версия: {latestVersion}\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Да, хочу \'.py\' версию\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Да, хочу \'.exe\' версию\n  [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Нет, как-нибудь потом{ANSI.CLEAR}\n\n')
                         newUpdateAvailable = input(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] Введи что-то:{ANSI.CLEAR} ')
                         match newUpdateAvailable:
                             case '1':
                                 await removeLines(10)
                                 while True:
-                                    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Добываем данные для обновления... >:3{ANSI.CLEAR}\r')
+                                    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Добываем данные для обновления... :3{ANSI.CLEAR}\r')
                                     await downloadPythonVersion()
                             case '2':
                                 await downloadExecutableVersion(latestVersion)
@@ -778,7 +906,7 @@ async def checkUpdates():
                                 await removeLines(10)
             except Exception:
                 while True:
-                    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Не смогли проверить, возможно нестабильный интернет. Что будем делать? >:3\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Проверим ещё раз\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Продолжить запуск{ANSI.CLEAR}\n\n')
+                    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Не смогли проверить, возможно нестабильный интернет. Что будем делать? :3\n\n  [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] Проверим ещё раз\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] Продолжить запуск{ANSI.CLEAR}\n\n')
                     couldNotCheckUpdate = input(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] Введи что-то:{ANSI.CLEAR} ')
                     match couldNotCheckUpdate:
                         case '1':
@@ -803,7 +931,17 @@ async def updateFixer_v2_0_0():
             config['Roblox']['CookieChecker']['Main'].remove(old)
         except Exception:
             pass
+    await autoSaveConfig()
 
+async def updateFixer_v2_1_0():
+    UPDATE_FIXER_PARAMS = ['Donate_All_Time', 'Rap', 'Gamepasses', 'Badges', 'Custom_Gamepasses', 'Favorite_Places', 'Bundles', 'Sessions']
+
+    for param in UPDATE_FIXER_PARAMS:
+        try:
+            if config['Roblox']['CookieChecker']['Main'][f'{param}_Max_Check_Pages'] == 0:
+                config['Roblox']['CookieChecker']['Main'][f'{param}_Max_Check_Pages'] = -1
+        except Exception:
+            pass
     await autoSaveConfig()
 
 async def getProxiesFromFile(useProxy: bool, pathToProxies: str, pathError: str, removeLines_: int):
@@ -812,9 +950,9 @@ async def getProxiesFromFile(useProxy: bool, pathToProxies: str, pathError: str,
             proxiesFromFile = {proxy.strip() for proxy in open(pathToProxies, 'r', encoding='UTF-8').readlines()
                                if len(proxy.split(':')) in (4, 5)}
             if not proxiesFromFile:
-                return await errorOrCorrectHandler(True, removeLines_, MT_No_Proxy_Was_Found, pathError)
+                raise FileNotFoundError
 
-            return proxiesFromFile
+            return list(proxiesFromFile)
         except FileNotFoundError:
             return await errorOrCorrectHandler(True, removeLines_, MT_No_Proxy_Was_Found, pathError)
 
@@ -827,22 +965,127 @@ async def getCookiesFromFile(pathToCookies: str, pathError: str, removeLines_: i
                 if match:
                     cookiesSet.add(match.group(0))
         if not cookiesSet:
-            return await errorOrCorrectHandler(True, removeLines_, MT_No_Cookie_Was_Found, pathError)
+            raise FileNotFoundError
 
         return cookiesSet
     except FileNotFoundError:
         return await errorOrCorrectHandler(True, removeLines_, MT_No_Cookie_Was_Found, pathError)
 
+async def makeArchive(path: str):
+    if os.path.exists(path):
+        with ZipFile(f'{path}.zip', 'w', ZIP_DEFLATED) as zipf:
+            pathLength = len(path) + 1
+            for root, _, files in os.walk(path):
+                for file in files:
+                    filePath = os.path.join(root, file)
+                    arcname = filePath[pathLength:]
+                    zipf.write(filePath, arcname)
+
+async def sendMessageTelegramBot(token: str, chatID: str, text: str = None, filePath: str = None):
+    if len(token.split(':')) != 2:
+        return sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Telegram[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Invalid_Token_Format}... :<\n')
+
+    try:
+        bot = Bot(token=token)
+
+        if filePath:
+            if not os.path.exists(filePath):
+                raise FileNotFoundError
+
+            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}{MT_Telegram[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Send[1]} {MT_Results_To_Telegram[0].lower() + MT_Results_To_Telegram[1:]}\r')
+            sys.stdout.flush()
+            await bot.send_document(
+                chat_id=chatID,
+                document=FSInputFile(filePath),
+                caption=text,
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
+            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}{MT_Telegram[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Send[2]} {MT_Results_To_Telegram[0].lower() + MT_Results_To_Telegram[1:]} :3\n')
+        elif text:
+            await bot.send_message(
+                chat_id=chatID,
+                text=text
+            )
+            sys.stdout.write(f'\r {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}{MT_Telegram[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Message_Was_Sent} :3\n')
+    except FileNotFoundError:
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Telegram[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_File_Was_Not_Created}... :<\n')
+    except (TelegramNetworkError, ClientConnectorDNSError):
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Telegram[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Possibly_The_Internet_Is_Unstable}... :<\n')
+    except TelegramUnauthorizedError:
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Telegram[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Possibly_A_Typo_In_The_Bot_Token}... :<\n')
+    except TelegramBadRequest:
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Telegram[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Possibly_A_Typo_In_The_Chat_ID}... :<\n')
+    except Exception as e:
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Telegram[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Unknown_Error}: {e} :<\n')
+    finally:
+        sys.stdout.flush()
+        await bot.session.close()
+
+async def sendMessageDiscordWebhook(webhookURL: str, text: str = None, filePath: str = None, filename_: str = None):
+    if len(webhookURL.split('/')) not in (7, 8):
+        return sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Discord[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Invalid_URL_Format}... :<\n')
+
+    try:
+        webhook = DiscordWebhook(
+            url=webhookURL,
+            rate_limit_retry=True
+        )
+
+        embed = DiscordEmbed(
+            description=text,
+            color="c883b3"
+        )
+
+        if not filePath:
+            webhook.add_embed(embed)
+            response = webhook.execute()
+            sys.stdout.write(f'\r {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}{MT_Discord[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Message_Was_Sent} :3\n')
+            return
+
+        if not os.path.exists(f'{filePath}\\{filename_}'):
+            raise FileNotFoundError
+
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}{MT_Discord[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Send[1]} {MT_Results_To_Discord[0].lower() + MT_Results_To_Discord[1:]}\r')
+        sys.stdout.flush()
+
+        embed.set_thumbnail(url='https://media.discordapp.net/attachments/1393994423481663528/1394053567899369533/Neko_for_MeowTool_Discord_output.png?ex=6875690e&is=6874178e&hm=b1570da0041dc8148f866cfa2c92cbf61d5d33177a534f63bb9965bcc6cc8d6c&=')
+        webhook.add_embed(embed)
+
+        with open(f'{filePath}\\{filename_}', 'rb') as f:
+            webhook.add_file(file=f.read(), filename=filename_)
+
+        response = webhook.execute()
+
+        match response.status_code:
+            case 200:
+                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}{MT_Discord[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Send[2]} {MT_Results_To_Discord[0].lower() + MT_Results_To_Discord[1:]} :3\n')
+            case 401 | 404:
+                await removeLines(1)
+                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Discord[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Possibly_A_Typo_In_The_Webhook_URL}... :<\n')
+            case _:
+                await removeLines(1)
+                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Discord[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Unknown_Server_Response_Code}: {response.status_code}... :<\n')
+    except FileNotFoundError:
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Discord[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_File_Was_Not_Created}... :<\n')
+    except requests.exceptions.ConnectionError:
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Discord[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Possibly_The_Internet_Is_Unstable}... :<\n')
+    except requests.exceptions.MissingSchema:
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Discord[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Invalid_URL_Format}... :<\n')
+    except Exception as e:
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.RED}{MT_Discord[1]}{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Unknown_Error}: {e} :<\n')
+    finally:
+        sys.stdout.flush()
+
 ### Proxy Checker
 
-async def proxyChecker(file: str): # http, https, socks4, socks5
+async def proxyChecker(fileName: str): # http, socks4, socks5
     await removeLines(15)
-    sys.stdout.write(f'\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINE1}{file}.txt{ANSI.CLEAR + ANSI.DECOR.BOLD}\':\n')
+    sys.stdout.write(f'\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINE1}{fileName}.txt{ANSI.CLEAR + ANSI.DECOR.BOLD}\':\n')
 
-    if not os.path.exists(f'Proxy\\Checker\\{file}.txt'):
+    if not os.path.exists(f'Proxy\\Checker\\{fileName}.txt'):
         return await errorOrCorrectHandler(True, MT_No_Proxy_Was_Found, f'{MT_Proxy}\\{MT_Checker}')
 
-    with open(f'Proxy\\Checker\\{file}.txt', 'r', encoding='UTF-8', errors='ignore') as f:
+    with open(f'Proxy\\Checker\\{fileName}.txt', 'r', encoding='UTF-8', errors='ignore') as f:
         proxyList = list({line.strip() for line in f
                           if line.strip() != ''})
 
@@ -850,7 +1093,7 @@ async def proxyChecker(file: str): # http, https, socks4, socks5
         return await errorOrCorrectHandler(True, MT_No_Proxy_Was_Found, f'{MT_Proxy}\\{MT_Checker}')
 
     def proxySave(protocol = '', protocolUpper = '', filename = '', validity = '', proxy = '', color = '', goodbad = ''):
-        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{color}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {proxyCount} {MT_Of} {len(proxyList)} ┃ {ANSI.FG.CYAN}[{protocolUpper}] {ANSI.CLEAR + ANSI.DECOR.BOLD + color}[{goodbad}] {proxy + ANSI.CLEAR}')
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{color}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {proxyCount} {MT_Of} {len(proxyList)} ┃ {ANSI.FG.CYAN}[{protocolUpper}] {ANSI.CLEAR + ANSI.DECOR.BOLD + color}[{goodbad}] {proxy.strip()}{ANSI.CLEAR}\n')
         with open(f'Proxy\\Checker\\{filename}_{validity}.txt', 'a+', encoding='UTF-8') as f:
             f.seek(0)
             if f'{protocol}{proxy}' not in f.read():
@@ -1038,14 +1281,12 @@ async def proxyChecker(file: str): # http, https, socks4, socks5
 
     # Выравнивание после проверки
     if len(proxyList) > 0 and proxyList[-1] not in ('\n', '', ' '):
-        copyfile(f'Proxy\\Checker\\{file}.txt', f'Proxy\\Checker\\{file}_cached.txt')
+        copyfile(f'Proxy\\Checker\\{fileName}.txt', f'Proxy\\Checker\\{fileName}_cached.txt')
         while proxyList[-1] not in ('\n', '', ' '):
-            with open(f'Proxy\\Checker\\{file}_cached.txt', 'a', encoding='UTF-8', errors='ignore') as f:
+            with open(f'Proxy\\Checker\\{fileName}_cached.txt', 'a', encoding='UTF-8', errors='ignore') as f:
                 f.write('\n')
-            sys.stdout.write('\n')
-            proxyList = open(f'Proxy\\Checker\\{file}_cached.txt', 'r').readlines()
-        os.remove(f'Proxy\\Checker\\{file}_cached.txt')
-        await removeLines(1)
+            proxyList = open(f'Proxy\\Checker\\{fileName}_cached.txt', 'r').readlines()
+        os.remove(f'Proxy\\Checker\\{fileName}_cached.txt')
 
     sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Checking_Complete}\n\n')
     await waitingInput()
@@ -1053,14 +1294,19 @@ async def proxyChecker(file: str): # http, https, socks4, socks5
 ### Roblox
 
 async def robloxGetConnector(category: str, proxies: list = None):
-    if config['Roblox'][category]['Proxy']['Use_Proxy'] and proxies:
-        choosenProxy = choice(proxies)
-        if '://' not in choosenProxy[0:9]:
-            choosenProxy = f'{config['Roblox'][category]['Proxy']['Auto_Protocol_If_Not_Specified'] if config['Roblox'][category]['Proxy']['Auto_Protocol_If_Not_Specified'] in ('http', 'socks4', 'socks5') else 'http'}:{choosenProxy}'
-        protocol, ip, port, username, password = choosenProxy.replace('https://', 'http:').split(':')
-        
-        return ProxyConnector.from_url(f'{protocol}://{username}:{password}@{ip}:{port}')
-    return TCPConnector()
+    if not proxies:
+        return TCPConnector(limit=0)
+
+    choosenProxy = choice(proxies)
+    if '://' not in choosenProxy[0:9]:
+        autoProtocol = config['Roblox'][category]['Proxy']['Auto_Protocol_If_Not_Specified']
+        choosenProxy = f'{autoProtocol if autoProtocol in ('http', 'socks4', 'socks5') else 'http'}:{choosenProxy}'
+    else:
+        choosenProxy = str(choosenProxy).replace('https://', 'http:').replace('socks4://', 'socks4:').replace('socks5://', 'socks5:')
+
+    protocol, ip, port, username, password = choosenProxy.split(':')
+
+    return ProxyConnector.from_url(f'{protocol}://{username}:{password}@{ip}:{port}')
 
 ### Roblox Cookie Checker
 
@@ -2039,36 +2285,10 @@ class cookieData: #                 Normal Name                             Conf
     # List Of Cookie Data
     listOfCookieData = [isAccountLink, isCountryRegistration, isID, isName, isDisplayName, isRegistrationDate, isExtendedRegistrationDateAge, isRobux, isBilling, isPending, isDonate1Year, isDonateAllTime, isRap, isCard, isPremium, isGamepasses, isCustomGamepasses, isBadges, isFavoritePlaces, isBundles, isInventoryPrivacy, isTradePrivacy, isCanTrade, isSessions, isEmail, isPhone, is2FA, isPin, isAbove13, isVerifiedAge, isVoice, isNumberOfFriends, isNumberOfFollowers, isNumberOfFollowings, isRobloxBadges, isXCSRFToken, isCookieInConsole]
 
-async def isValidFunc(cookieRoblox, ssl=False):
-    async with ClientSession(cookies=cookieRoblox) as session:
-        while True:
-            try:
-                async with session.get('https://www.roblox.com/my/settings/json', timeout=3, ssl=ssl) as response:
-                    try:
-                        data = await response.json()
-                        isValid = True if 'UserId' in data else False
-                    except ContentTypeError:
-                        isValid = False
-                return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Valid:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}Yes' if isValid else f'{ANSI.FG.RED}No'}{ANSI.CLEAR} | ', f'Valid: {'Yes' if isValid else 'No'} | ', 'Yes' if isValid else 'No', isValid
-            except (TypeError, ContentTypeError, ConnectionTimeoutError, ClientConnectorError, ServerDisconnectedError, TimeoutError):
-                await asyncio.sleep(1)
-
 async def isLinkFunc(isID, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Link'] and not isControlPanel:
         return '', ''
     return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Link:{ANSI.CLEAR} https://www.roblox.com/users/{isID} | ', f'Link: https://www.roblox.com/users/{isID} | '
-
-async def isUselessIDFunc(session: ClientSession, ssl=False, isControlPanel=False):
-    if not config['Roblox']['CookieChecker']['Main']['ID'] and not isControlPanel:
-        return '', '', ''
-    while True:
-        try:
-            async with session.get('https://www.roblox.com/my/settings/json', timeout=3, ssl=ssl) as response:
-                data = await response.json()
-                isUselessID = data['UserId']
-            return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}ID:{ANSI.CLEAR} {isUselessID} | ', f'ID: {isUselessID} | ', isUselessID
-        except (KeyError, TypeError, ContentTypeError):
-            await asyncio.sleep(1)
 
 async def isAccountInformationFunc(session: ClientSession, ssl=False):
     while True:
@@ -2167,67 +2387,48 @@ async def isTransactionsForYearFunc(session: ClientSession, isID, ssl=False, isC
 async def isDonateAllTimeFunc(session: ClientSession, isID, ssl=False, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Donate_All_Time'] and not config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses'] and not isControlPanel:
         return '', '', '', '', '', ''
-    maxPages = max(config['Roblox']['CookieChecker']['Main']['Donate_All_Time_Max_Check_Pages'], config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'])
     isDonateAllTime = 0
     isCustomGamepasses = []
-    pageCurrentCount = 1
-    while True:
+    nextPageCursorTransactions = ''
+    maxPages = max(config['Roblox']['CookieChecker']['Main']['Donate_All_Time_Max_Check_Pages'], config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'])
+    pageCurrentCount = 0
+    while nextPageCursorTransactions != None and pageCurrentCount != maxPages:
         try:
-            async with session.get(f'https://economy.roblox.com/v2/users/{isID}/transactions?transactionType=2&limit=100', timeout=3, ssl=ssl) as response:
+            async with session.get(f'https://economy.roblox.com/v2/users/{isID}/transactions?transactionType=2&limit=100&cursor={nextPageCursorTransactions}', timeout=3, ssl=ssl) as response:
                 transactions = await response.json()
-                nextPageCursorTransactions = transactions['nextPageCursor']
                 for transaction in transactions['data']:
-                    if config['Roblox']['CookieChecker']['Main']['Donate_All_Time']:
+                    if config['Roblox']['CookieChecker']['Main']['Donate_All_Time'] and (config['Roblox']['CookieChecker']['Main']['Donate_All_Time_Max_Check_Pages'] == -1 or pageCurrentCount < config['Roblox']['CookieChecker']['Main']['Donate_All_Time_Max_Check_Pages']):
                         isDonateAllTime += abs(transaction['currency']['amount'])
-                    if config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses'] and transaction['details']['name'] in checkListCustomGamepasses:
+                    if config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses'] and transaction['details']['name'] in checkListCustomGamepasses and (config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'] == -1 or pageCurrentCount < config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages']):
                         isCustomGamepasses.append(transaction['details']['name'])
-                while nextPageCursorTransactions != None and pageCurrentCount != maxPages or 'errors' in transactions:
-                    try:
-                        async with session.get(f'https://economy.roblox.com/v2/users/{isID}/transactions?transactionType=2&limit=100&cursor={nextPageCursorTransactions}', timeout=3, ssl=ssl) as response:
-                            transactions = await response.json()
-                            for transaction in transactions['data']:
-                                if config['Roblox']['CookieChecker']['Main']['Donate_All_Time'] and (config['Roblox']['CookieChecker']['Main']['Donate_All_Time_Max_Check_Pages'] == 0 or pageCurrentCount < config['Roblox']['CookieChecker']['Main']['Donate_All_Time_Max_Check_Pages']):
-                                    isDonateAllTime += abs(transaction['currency']['amount'])
-                                if config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses'] and transaction['details']['name'] in checkListCustomGamepasses and (config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'] == 0 or pageCurrentCount < config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages']):
-                                    isCustomGamepasses.append(transaction['details']['name'])
-                            nextPageCursorTransactions = transactions['nextPageCursor']
-                            pageCurrentCount += 1
-                    except (KeyError, TypeError, ContentTypeError):
-                        await asyncio.sleep(1)
-            if config['Roblox']['CookieChecker']['Main']['Donate_All_Time'] and config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses'] or isControlPanel:
-                return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Donate (All Time):{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{isDonateAllTime}' if isDonateAllTime else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Donate (All Time): {isDonateAllTime} | ', isDonateAllTime, f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Custom Gamepasses:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{len(isCustomGamepasses)}' if isCustomGamepasses else f'{ANSI.FG.RED}0{ANSI.CLEAR}'} | ', f'Custom Gamepasses: {len(isCustomGamepasses)} | ', len(isCustomGamepasses)
-            elif config['Roblox']['CookieChecker']['Main']['Donate_All_Time']:
-                return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Donate (All Time):{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{isDonateAllTime}' if isDonateAllTime else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Donate (All Time): {isDonateAllTime} | ', isDonateAllTime, '', '', ''
-            elif config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']:
-                return '', '', '', f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Custom Gamepasses:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{len(isCustomGamepasses)}' if isCustomGamepasses else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Custom Gamepasses: {len(isCustomGamepasses)} | ', len(isCustomGamepasses)
+                nextPageCursorTransactions = transactions['nextPageCursor']
+                pageCurrentCount += 1
         except (KeyError, TypeError, ContentTypeError):
             await asyncio.sleep(1)
+    if config['Roblox']['CookieChecker']['Main']['Donate_All_Time'] and config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses'] or isControlPanel:
+        return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Donate (All Time):{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{isDonateAllTime}' if isDonateAllTime else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Donate (All Time): {isDonateAllTime} | ', isDonateAllTime, f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Custom Gamepasses:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{len(isCustomGamepasses)}' if isCustomGamepasses else f'{ANSI.FG.RED}0{ANSI.CLEAR}'} | ', f'Custom Gamepasses: {len(isCustomGamepasses)} | ', len(isCustomGamepasses)
+    elif config['Roblox']['CookieChecker']['Main']['Donate_All_Time']:
+        return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Donate (All Time):{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{isDonateAllTime}' if isDonateAllTime else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Donate (All Time): {isDonateAllTime} | ', isDonateAllTime, '', '', ''
+    elif config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']:
+        return '', '', '', f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Custom Gamepasses:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{len(isCustomGamepasses)}' if isCustomGamepasses else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Custom Gamepasses: {len(isCustomGamepasses)} | ', len(isCustomGamepasses)
 
 async def isRapFunc(session: ClientSession, isID, ssl=False, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Rap'] and not isControlPanel:
         return '', '', ''
     isRap = 0
-    pageCurrentCount = 1
-    while True:
+    nextPageCursorRap = ''
+    pageCurrentCount = 0
+    while nextPageCursorRap != None and pageCurrentCount != config['Roblox']['CookieChecker']['Main']['Rap_Max_Check_Pages']:
         try:
-            async with session.get(f'https://inventory.roblox.com/v1/users/{isID}/assets/collectibles?sortOrder=Asc&limit=100', timeout=3, ssl=ssl) as response:
+            async with session.get(f'https://inventory.roblox.com/v1/users/{isID}/assets/collectibles?sortOrder=Asc&limit=100&cursor={nextPageCursorRap}', timeout=3, ssl=ssl) as response:
                 rap = await response.json()
-                nextPageCursorRap = rap['nextPageCursor']
                 for item in rap['data']:
                     if str(item['recentAveragePrice']).isdigit(): isRap += int(item['recentAveragePrice'])
-                while nextPageCursorRap != None and pageCurrentCount != config['Roblox']['CookieChecker']['Main']['Rap_Max_Check_Pages'] or 'errors' in rap:
-                    try:
-                        async with session.get(f'https://inventory.roblox.com/v1/users/{isID}/assets/collectibles?sortOrder=Asc&limit=100&cursor={nextPageCursorRap}', timeout=3, ssl=ssl) as response:
-                            rap = await response.json()
-                            for item in rap['data']:
-                                if str(item['recentAveragePrice']).isdigit(): isRap += int(item['recentAveragePrice'])
-                            nextPageCursorRap = rap['nextPageCursor']
-                            pageCurrentCount += 1
-                    except (KeyError, TypeError, ContentTypeError):
-                        await asyncio.sleep(1)
-            return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Rap:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{isRap}' if isRap else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Rap: {isRap} | ', isRap
+                nextPageCursorRap = rap['nextPageCursor']
+                pageCurrentCount += 1
         except (KeyError, TypeError, ContentTypeError):
             await asyncio.sleep(1)
+    return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Rap:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{isRap}' if isRap else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Rap: {isRap} | ', isRap
 
 async def isCardFunc(session: ClientSession, ssl=False, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Card'] and not isControlPanel:
@@ -2250,125 +2451,96 @@ async def isGamepassesFunc(session: ClientSession, isID, ssl=False, isControlPan
     if not config['Roblox']['CookieChecker']['Main']['Gamepasses'] and not isControlPanel:
         return '', '', ''
     isGamepasses = []
-    isGamepassesTimedList = checkListGamepasses[:]
-    pageCurrentCount = 1
-    while True:
+    isCheckListGamepasses = checkListGamepasses[:]
+    nextPageCursorGamepasses = ''
+    pageCurrentCount = 0
+    while nextPageCursorGamepasses != None and isCheckListGamepasses and pageCurrentCount != config['Roblox']['CookieChecker']['Main']['Gamepasses_Max_Check_Pages']:
         try:
-            async with session.get(f'https://apis.roblox.com/game-passes/v1/users/{isID}/game-passes?count=100', timeout=3, ssl=ssl) as response:
+            async with session.get(f'https://apis.roblox.com/game-passes/v1/users/{isID}/game-passes?count=100&exclusiveStartId={nextPageCursorGamepasses}', timeout=3, ssl=ssl) as response:
                 gamepasses = await response.json()
-                if not gamepasses['gamePasses']:
-                    return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Gamepasses:{ANSI.CLEAR} {f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Gamepasses: 0 | ', 0
-                for gamepass in gamepasses['gamePasses']:
-                    if gamepass['gamePassId'] in isGamepassesTimedList:
-                        isGamepassesTimedList.remove(gamepass['gamePassId'])
-                        isGamepasses.append(gamepass['gamePassId'])
-                while isGamepassesTimedList and len(isGamepasses) >= 100 and gamepasses['gamePassId'] and pageCurrentCount != config['Roblox']['CookieChecker']['Main']['Gamepasses_Max_Check_Pages'] or 'errors' in gamepasses:
-                    try:
-                        async with session.get(f'https://apis.roblox.com/game-passes/v1/users/{isID}/game-passes?count=100&exclusiveStartId={nextPage}', timeout=3, ssl=ssl) as response:
-                            nextPage = isGamepasses[-1]
-                            gamepasses = await response.json()
-                            if not gamepasses['gamePasses']:
-                                return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Gamepasses:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{len(isGamepasses)}' if isGamepasses else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Gamepasses: {len(isGamepasses)} | ', len(isGamepasses)
-                            for gamepass in gamepasses['gamePasses']:
-                                if gamepass['gamePassId'] in isGamepassesTimedList:
-                                    isGamepasses.append(gamepass['gamePassId'])
-                                    isGamepassesTimedList.remove(gamepass['gamePassId'])
-                            pageCurrentCount += 1
-                    except (KeyError, TypeError, ContentTypeError):
-                        await asyncio.sleep(1)
-            return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Gamepasses:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{len(isGamepasses)}' if isGamepasses else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Gamepasses: {len(isGamepasses)} | ', len(isGamepasses)
+                gamepasses = gamepasses['gamePasses']
+                if not gamepasses:
+                    return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Gamepasses:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{len(isGamepasses)}' if isGamepasses else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Gamepasses: {len(isGamepasses)} | ', len(isGamepasses)
+                for gamepass in gamepasses:
+                    if gamepass['gamePassId'] in isCheckListGamepasses:
+                        isGamepasses.append(gamepass['name'])
+                        isCheckListGamepasses.remove(gamepass['gamePassId'])
+                if len(gamepasses) < 100:
+                    nextPageCursorGamepasses = None
+                else:
+                    nextPageCursorGamepasses = isGamepasses[-1]
+                pageCurrentCount += 1
         except (KeyError, TypeError, ContentTypeError):
             await asyncio.sleep(1)
+    isGamepasses_ = ', '.join(isGamepasses) if config['Roblox']['CookieChecker']['Main']['Gamepasses_Output_Mode'] == 'Names' and isGamepasses else len(isGamepasses)
+    return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Gamepasses:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{isGamepasses_}' if isGamepasses else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Gamepasses: {isGamepasses_} | ', len(isGamepasses)
 
 async def isBadgesFunc(session: ClientSession, isID, ssl=False, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Badges'] and not isControlPanel:
         return '', '', ''
     isBadges = []
-    isBadgesTimedFunc = checkListBadges[:]
-    pageCurrentCount = 1
-    while True:
+    isCheckListBadges = checkListBadges[:]
+    nextPageCursorBadges = ''
+    pageCurrentCount = 0
+    while nextPageCursorBadges != None and isCheckListBadges and pageCurrentCount != config['Roblox']['CookieChecker']['Main']['Badges_Max_Check_Pages']:
         try:
-            async with session.get(f'https://badges.roblox.com/v1/users/{isID}/badges?limit=100&sortOrder=Desc', timeout=3, ssl=ssl) as response:
+            async with session.get(f'https://badges.roblox.com/v1/users/{isID}/badges?limit=100&cursor={nextPageCursorBadges}', timeout=3, ssl=ssl) as response:
                 badges = await response.json()
-                nextPageCursorBadges = badges['nextPageCursor']
                 for badge in badges['data']:
-                    if badge['id'] in isBadgesTimedFunc:
-                        isBadges.append(badge['id'])
-                        isBadgesTimedFunc.remove(badge['id'])
-                while isBadgesTimedFunc and nextPageCursorBadges != None and pageCurrentCount != config['Roblox']['CookieChecker']['Main']['Badges_Max_Check_Pages']:
-                    async with session.get(f'https://badges.roblox.com/v1/users/{isID}/badges?limit=100&sortOrder=Desc&cursor={nextPageCursorBadges}', timeout=3, ssl=ssl) as response:
-                        badges = await response.json()
-                        for badge in badges['data']:
-                            if badge['id'] in isBadgesTimedFunc:
-                                isBadges.append(badge['id'])
-                                isBadgesTimedFunc.remove(badge['id'])
-                        nextPageCursorBadges = badges['nextPageCursor']
-                        pageCurrentCount += 1
-            return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Badges:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{len(isBadges)}' if isBadges else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Badges: {len(isBadges)} | ', len(isBadges)
+                    if badge['id'] in isCheckListBadges:
+                        isBadges.append(badge['name'])
+                        isCheckListBadges.remove(badge['id'])
+                nextPageCursorBadges = badges['nextPageCursor']
+                pageCurrentCount += 1
         except (KeyError, TypeError, ContentTypeError):
             await asyncio.sleep(1)
+    isBadges_ = ', '.join(isBadges) if config['Roblox']['CookieChecker']['Main']['Badges_Output_Mode'] == 'Names' and isBadges else len(isBadges)
+    return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Badges:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{isBadges_}' if isBadges else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Badges: {isBadges_} | ', len(isBadges)
 
 async def isFavoritePlacesFunc(session: ClientSession, isID, ssl=False, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Favorite_Places'] and not isControlPanel:
         return '', '', ''
     isFavoritePlaces = []
-    isFavoritePlacesTimedFunc = checkListFavoritePlaces[:]
-    pageCurrentCount = 1
-    while True:
+    isCheckListFavoritePlaces = deepcopy(checkListFavoritePlaces)
+    nextPageCursorFavoritePlaces = ''
+    pageCurrentCount = 0
+    while nextPageCursorFavoritePlaces != None and pageCurrentCount != config['Roblox']['CookieChecker']['Main']['Favorite_Places_Max_Check_Pages']:
         try:
-            async with session.get(f'https://games.roblox.com/v2/users/{isID}/favorite/games?limit=100', timeout=3, ssl=ssl) as response:
+            async with session.get(f'https://games.roblox.com/v2/users/{isID}/favorite/games?limit=100&cursor={nextPageCursorFavoritePlaces}', timeout=3, ssl=ssl) as response:
                 favoritePlaces = await response.json()
-                nextPageCursorFavoritePlaces = favoritePlaces['nextPageCursor']
                 for game in favoritePlaces['data']:
-                    if game['rootPlace']['id'] in isFavoritePlacesTimedFunc:
-                        isFavoritePlaces.append(game['rootPlace']['id'])
-                        isFavoritePlacesTimedFunc.remove(game['rootPlace']['id'])
-                while nextPageCursorFavoritePlaces != None and pageCurrentCount != config['Roblox']['CookieChecker']['Main']['Favorite_Places_Max_Check_Pages'] or 'errors' in favoritePlaces:
-                    try:
-                        async with session.get(f'https://games.roblox.com/v2/users/{isID}/favorite/games?limit=100&cursor={nextPageCursorFavoritePlaces}', timeout=3, ssl=ssl) as response:
-                            favoritePlaces = await response.json()
-                            for game in favoritePlaces['data']:
-                                if game['rootPlace']['id'] in isFavoritePlacesTimedFunc:
-                                    isFavoritePlaces.append(game['rootPlace']['id'])
-                                    isFavoritePlacesTimedFunc.remove(game['rootPlace']['id'])
-                            nextPageCursorFavoritePlaces = favoritePlaces['nextPageCursor']
-                            pageCurrentCount += 1
-                    except (KeyError, TypeError, ContentTypeError):
-                        await asyncio.sleep(1)
-            return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Favorites:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{len(isFavoritePlaces)}' if isFavoritePlaces else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Fav. Games: {len(isFavoritePlaces)} | ', len(isFavoritePlaces)
+                    gameID = str(game['rootPlace']['id'])
+                    if gameID in isCheckListFavoritePlaces:
+                        isFavoritePlaces.append(isCheckListFavoritePlaces[gameID])
+                        del isCheckListFavoritePlaces[gameID]
+                nextPageCursorFavoritePlaces = favoritePlaces['nextPageCursor']
+                pageCurrentCount += 1
         except (KeyError, TypeError, ContentTypeError):
             await asyncio.sleep(1)
+    isFavoritePlaces_ = ', '.join(isFavoritePlaces) if config['Roblox']['CookieChecker']['Main']['Favorite_Places_Output_Mode'] == 'Names' and isFavoritePlaces else len(isFavoritePlaces)
+    return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Fav. Places:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{isFavoritePlaces_}' if isFavoritePlaces else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Fav. Places: {isFavoritePlaces_} | ', len(isFavoritePlaces)
 
 async def isBundlesFunc(session: ClientSession, isID, ssl=False, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Bundles'] and not isControlPanel:
         return '', '', ''
     isBundles = []
-    isBundlesTimedFunc = checkListBundles[:]
-    pageCurrentCount = 1
-    while True:
+    isCheckListBundles = checkListBundles[:]
+    nextPageCursorBundles = ''
+    pageCurrentCount = 0
+    while nextPageCursorBundles != None and pageCurrentCount != config['Roblox']['CookieChecker']['Main']['Bundles_Max_Check_Pages']:
         try:
-            async with session.get(f'https://catalog.roblox.com/v1/users/{isID}/bundles?limit=100', timeout=3, ssl=ssl) as response:
+            async with session.get(f'https://catalog.roblox.com/v1/users/{isID}/bundles/1?limit=100&cursor={nextPageCursorBundles}', timeout=3, ssl=ssl) as response:
                 bundles = await response.json()
-                nextPageCursorBundles = bundles['nextPageCursor']
                 for bundle in bundles['data']:
-                    if bundle['id'] in isBundlesTimedFunc:
-                        isBundles.append(bundle['id'])
-                        isBundlesTimedFunc.remove(bundle['id'])
-                while nextPageCursorBundles != None and pageCurrentCount != config['Roblox']['CookieChecker']['Main']['Bundles_Max_Check_Pages'] or 'errors' in bundles:
-                    try:
-                        async with session.get(f'https://catalog.roblox.com/v1/users/{isID}/bundles?limit=100&cursor={nextPageCursorBundles}', timeout=3, ssl=ssl) as response:
-                            bundles = await response.json()
-                            for bundle in bundles['data']:
-                                if bundle['id'] in isBundlesTimedFunc:
-                                    isBundles.append(bundle['id'])
-                                    isBundlesTimedFunc.remove(bundle['id'])
-                            nextPageCursorBundles = bundles['nextPageCursor']
-                            pageCurrentCount += 1
-                    except (KeyError, TypeError, ContentTypeError):
-                        await asyncio.sleep(1)
-            return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Bundles:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{len(isBundles)}' if isBundles else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Bundles: {len(isBundles)} | ', len(isBundles)
+                    if bundle['id'] in isCheckListBundles:
+                        isBundles.append(bundle['name'])
+                        isCheckListBundles.remove(bundle['id'])
+                nextPageCursorBundles = bundles['nextPageCursor']
+                pageCurrentCount += 1
         except (KeyError, TypeError, ContentTypeError):
             await asyncio.sleep(1)
+    isBundles_ = ', '.join(isBundles) if config['Roblox']['CookieChecker']['Main']['Favorite_Places_Output_Mode'] == 'Names' and isBundles else len(isBundles)
+    return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Bundles:{ANSI.CLEAR} {f'{ANSI.FG.GREEN}{isBundles_}' if isBundles else f'{ANSI.FG.RED}0'}{ANSI.CLEAR} | ', f'Bundles: {isBundles_} | ', len(isBundles)
 
 async def isInventoryPrivacyFunc(session: ClientSession, ssl=False, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Inventory_Privacy'] and not isControlPanel:
@@ -2403,25 +2575,19 @@ async def isCanTradeFunc(isAccountInformation, isControlPanel=False):
 async def isSessionsFunc(session: ClientSession, ssl=False, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Sessions'] and not isControlPanel:
         return '', '', ''
-    pageCurrentCount = 1
-    while True:
+    isSessions = 0
+    nextPageCursorSessions = ''
+    pageCurrentCount = 0
+    while nextPageCursorSessions != None and pageCurrentCount != config['Roblox']['CookieChecker']['Main']['Sessions_Max_Check_Pages']:
         try:
-            async with session.get('https://apis.roblox.com/token-metadata-service/v1/sessions', timeout=3, ssl=ssl) as response:
+            async with session.get(f'https://apis.roblox.com/token-metadata-service/v1/sessions?nextCursor={nextPageCursorSessions}', timeout=3, ssl=ssl) as response:
                 data = await response.json()
-                isSessions = len(data['sessions'])
+                isSessions += len(data['sessions'])
                 nextPageCursorSessions = data['nextCursor']
-                while (nextPageCursorSessions != None and 'statusCode' not in data and pageCurrentCount != config['Roblox']['CookieChecker']['Main']['Sessions_Max_Check_Pages']) or ('errors' in data and 'statusCode' not in data): # на 3 странице возникает 500 ошибка, непонятка =(
-                    try:
-                        async with session.get(f'https://apis.roblox.com/token-metadata-service/v1/sessions?nextCursor={nextPageCursorSessions}', timeout=3, ssl=ssl) as response:
-                            data = await response.json()
-                            isSessions += len(data['sessions'])
-                            nextPageCursorSessions = data['nextCursor']
-                            pageCurrentCount += 1
-                    except (KeyError, TypeError, ContentTypeError):
-                        await asyncio.sleep(1)
-            return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Sessions:{ANSI.CLEAR} {f'{ANSI.FG.RED}{isSessions}' if isSessions >= 10 else f'{ANSI.FG.YELLOW}{isSessions}' if isSessions >= 5 else f'{ANSI.FG.GREEN}{isSessions}'}{ANSI.CLEAR} | ', f'Sessions: {isSessions} | ', isSessions
+                pageCurrentCount += 1
         except (KeyError, TypeError, ContentTypeError):
             await asyncio.sleep(1)
+    return f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Sessions:{ANSI.CLEAR} {f'{ANSI.FG.RED}{isSessions}' if isSessions >= 10 else f'{ANSI.FG.YELLOW}{isSessions}' if isSessions >= 5 else f'{ANSI.FG.GREEN}{isSessions}'}{ANSI.CLEAR} | ', f'Sessions: {isSessions} | ', isSessions
 
 async def isEmailFunc(isAccountInformation, isControlPanel=False):
     if not config['Roblox']['CookieChecker']['Main']['Email'] and not isControlPanel:
@@ -2569,11 +2735,11 @@ def getGlobalCheckListBadges():
                 if badge[2]:
                     checkListBadges.append(badge[0])
 
-def getGlobalCheckListCustomGamepasses(): global checkListCustomGamepasses; checkListCustomGamepasses = [customGamepass[0] for customGamepass in config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_List'] if customGamepass[1]]
-def getGlobalCheckListFavoritePlaces():   global checkListFavoritePlaces;   checkListFavoritePlaces   = [favoritePlace[0]  for favoritePlace  in config['Roblox']['CookieChecker']['Main']['Favorite_Places_List']   if favoritePlace[2]]
-def getGlobalCheckListBundles():          global checkListBundles;          checkListBundles          = [bundle[0]         for bundle         in config['Roblox']['CookieChecker']['Main']['Bundles_List']           if bundle[2]]
+def getGlobalCheckListCustomGamepasses(): global checkListCustomGamepasses; checkListCustomGamepasses = [customGamepass[0]                       for customGamepass in config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_List'] if customGamepass[1]]
+def getGlobalCheckListFavoritePlaces():   global checkListFavoritePlaces;   checkListFavoritePlaces   = {str(favoritePlace[0]): favoritePlace[1] for favoritePlace  in config['Roblox']['CookieChecker']['Main']['Favorite_Places_List']   if favoritePlace[2]}
+def getGlobalCheckListBundles():          global checkListBundles;          checkListBundles          = [bundle[0]                               for bundle         in config['Roblox']['CookieChecker']['Main']['Bundles_List']           if bundle[2]]
 
-async def isResponseStatusFromCookie(cookieRoblox: dict | None, headersRoblox: dict | None, proxies: list, ssl=False) -> int:
+async def isResponseStatusFromCookie(cookieRoblox: dict, headersRoblox: dict = None, proxies: list = None, ssl=False) -> int:
     while True:
         try:
             session = ClientSession(connector=await robloxGetConnector('CookieChecker', proxies), cookies=cookieRoblox, headers=headersRoblox)
@@ -2584,15 +2750,13 @@ async def isResponseStatusFromCookie(cookieRoblox: dict | None, headersRoblox: d
             await session.close()
             return response.status
         except (ContentTypeError):
-            # sys.stdout.write(f'\n {ANSI.DECOR.BOLD}[{ANSI.FG.RED}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Could_Not_Connect_To_The_API}. {MT_Trying_To_Connect_Again}... :<{ANSI.CLEAR}\n')
-            await asyncio.sleep(0.5) # default: 2 seconds
-            # await removeLines(1)
+            await asyncio.sleep(0.5)
         except (ClientOSError, ConnectionTimeoutError, ClientConnectorError, ServerDisconnectedError, ProxyConnectionError, ProxyTimeoutError, TimeoutError):
             pass
         finally:
             await session.close()
 
-async def isResponseDataFromCookie(cookieRoblox: dict | None, headersRoblox: dict | None, proxies: list = None, ssl=False, isControlPanel: bool = False):
+async def isResponseDataFromCookie(cookieRoblox: dict | None, headersRoblox: dict = None, proxies: list = None, ssl=False, isControlPanel: bool = False):
     if not config['Roblox']['CookieChecker']['General']['First_Check_All_Cookies_For_Valid']:
         responseStatus = await isResponseStatusFromCookie(cookieRoblox, headersRoblox, proxies, ssl)
         if responseStatus != 200:
@@ -2689,7 +2853,7 @@ async def robloxCookieValidChecker(category: str, cookies, proxies=None, ssl=Fal
         await asyncio.gather(*validCheckTasks)
         
         if not validCookies:
-            return await errorOrCorrectHandler(True, 4, MT_All_Cookies_Were_Invalid, f'{MT_Roblox}\\{MT_Cookie_Checker}')
+            return await errorOrCorrectHandler(True, 4, MT_All_Cookies_Were_Invalid, f'{MT_Roblox}\\{MT_Cookie_Checker if category == 'CookieChecker' else MT_Transaction_Analysis}')
         
         await removeLines(1)
         return validCookies
@@ -2704,7 +2868,7 @@ async def robloxCookieChecker(file: str):
             if config['Roblox']['CookieChecker']['Main'][data[1]]]:
         return await errorOrCorrectHandler(True, 0, MT_Enable_Something_To_Start_Checking, f'{MT_Roblox}\\{MT_Cookie_Checker}')
 
-    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Checker}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Wait[0]}...')
+    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Cookie_Checker}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Wait[0]}...')
 
     proxiesFromFile = await getProxiesFromFile(config['Roblox']['CookieChecker']['Proxy']['Use_Proxy'], f'Roblox\\Cookie Checker\\proxies.txt', f'{MT_Roblox}\\{MT_Cookie_Checker}', 2)
     if config['Roblox']['CookieChecker']['Proxy']['Use_Proxy'] and not proxiesFromFile:
@@ -2719,8 +2883,10 @@ async def robloxCookieChecker(file: str):
     sys.stdout.write(f'\r {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINE1}{file}.txt{ANSI.CLEAR + ANSI.DECOR.BOLD}\':\n')
 
     checkReadyRobloxCookies = await robloxCookieValidChecker('CookieChecker', cookiesFromFile, proxiesFromFile, useSSL)
+    if not checkReadyRobloxCookies:
+        return
 
-    if config['Roblox']['CookieChecker']['General']['Output_Total']:
+    if config['Roblox']['CookieChecker']['General']['Output_Total'] or (config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] or config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook']):
         totalData_CURRENT = {
             'Robux'             : 0,
             'Billing'           : 0,
@@ -2841,7 +3007,7 @@ async def robloxCookieChecker(file: str):
                 # Всё, что сверху, переменные для вывода, в планах поменять их просто на resultRCC[index][index]
 
                 # Данные общего вывода
-                if config['Roblox']['CookieChecker']['General']['Output_Total']:
+                if config['Roblox']['CookieChecker']['General']['Output_Total'] or (config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] or config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook']):
                     totalData_UPDATE = {
                         'Robux'             : isRobuxTimed,
                         'Billing'           : isBillingTimed,
@@ -2917,14 +3083,14 @@ async def robloxCookieChecker(file: str):
                         isSortingCookiesFunc('Followings',                 isNumberOfFollowingsSorting,     dateOfCheck)
                     ))
 
-                # Сохранение в истории панели управления куком
                 if config['Roblox']['CookieControlPanel']['Save_Cookies_Checked_By_Checker']:
                     config['Roblox']['CookieControlPanel']['RobloxCookieCheckerHistory'][f'{cookie[115:130]}...{cookie[-15:-1]}'] = [isCountryRegistrationSorting if isCountryRegistrationSorting else '?', isID if config['Roblox']['CookieChecker']['Main']['ID'] else '?', isNameClean if isNameClean else '?', isDisplayNameClean if isDisplayNameClean else '?', isRegistrationDateClean if isRegistrationDateClean else '?', isRegistrationDateInDaysSorting if isRegistrationDateInDaysSorting else '?', isRobuxTimed if isRobuxTimed else '?', isBillingTimed if isBillingTimed else '?', isPendingTimed if config['Roblox']['CookieChecker']['Main']['Pending'] else '?', isDonate1YearTimed if config['Roblox']['CookieChecker']['Main']['Donate_1_Year'] else '?', isDonateAllTimeTimed if isDonateAllTimeTimed else '?', isCustomGamepassesTimed if isCustomGamepassesTimed else '?', isRapTimed if isRapTimed else '?', isCardTimed if isCardTimed else '?', isPremiumSorting if isPremiumSorting else '?', isGamepassesTimed if isGamepassesTimed else '?', isBadgesTimed if isBadgesTimed else '?', isFavoritePlacesTimed if isFavoritePlacesTimed else '?', isBundlesTimed if isBundlesTimed else '?', isInventoryPrivacyClean if isInventoryPrivacyClean else '?', isTradePrivacyClean if isTradePrivacyClean else '?', isCanTradeClean if isCanTradeClean else '?', isSessionsSorting if isSessionsSorting else '?', isEmailSorting if isEmailSorting else '?', isPhoneSorting if isPhoneSorting else '?', is2FASorting if is2FASorting else '?', isPinSorting if isPinSorting else '?', isAbove13Sorting if isAbove13Sorting else '?', isVerifiedAgeSorting if isVerifiedAgeSorting else '?', isVoiceSorting if isVoiceSorting else '?', isNumberOfFriendsSorting if isNumberOfFriendsSorting else '?', isNumberOfFollowersSorting if isNumberOfFollowersSorting else '?', isNumberOfFollowingsSorting if isNumberOfFollowingsSorting else '?', isRobloxBadgesClean if isRobloxBadgesClean else '?', isXCSRFTokenClean if isXCSRFTokenClean else '?', cookie]
 
+                os.makedirs(f'Roblox\\Cookie Checker\\outputs\\{dateOfCheck}', exist_ok=True)
+                async with aiofiles.open(f'Roblox\\Cookie Checker\\outputs\\{dateOfCheck}\\{fileName}.txt', 'a', encoding='UTF-8') as file:
+                    await file.write(f'{isAccountLinkN}{isCountryRegistrationN}{f'ID: {isID} | ' if config['Roblox']['CookieChecker']['Main']['ID'] else ''}{isNameN}{isDisplayNameN}{isRegistrationDateN}{isRobuxN}{isBillingN}{isTransactionsForYearN}{isDonateAllTimeN}{isRapN}{isCardN}{isPremiumN}{isGamepassesN}{isCustomGamepassesN}{isBadgesN}{isFavoritePlacesN}{isBundlesN}{isInventoryPrivacyN}{isTradePrivacyN}{isCanTradeN}{isSessionsN}{isEmailN}{isPhoneN}{is2FAN}{isPinN}{isAbove13N}{isVerifiedAgeN}{isVoiceN}{isNumberOfFriendsN}{isNumberOfFollowersN}{isNumberOfFollowingsN}{isRobloxBadgesN}{isXCSRFTokenN}Cookie: {cookie}\n')
+
                 async with locker:
-                    os.makedirs(f'Roblox\\Cookie Checker\\outputs\\{dateOfCheck}', exist_ok=True)
-                    async with aiofiles.open(f'Roblox\\Cookie Checker\\outputs\\{dateOfCheck}\\{fileName}.txt', 'a', encoding='UTF-8') as file:
-                        await file.write(f'{isAccountLinkN}{isCountryRegistrationN}{f'ID: {isID} | ' if config['Roblox']['CookieChecker']['Main']['ID'] else ''}{isNameN}{isDisplayNameN}{isRegistrationDateN}{isRobuxN}{isBillingN}{isTransactionsForYearN}{isDonateAllTimeN}{isRapN}{isCardN}{isPremiumN}{isGamepassesN}{isCustomGamepassesN}{isBadgesN}{isFavoritePlacesN}{isBundlesN}{isInventoryPrivacyN}{isTradePrivacyN}{isCanTradeN}{isSessionsN}{isEmailN}{isPhoneN}{is2FAN}{isPinN}{isAbove13N}{isVerifiedAgeN}{isVoiceN}{isNumberOfFriendsN}{isNumberOfFollowersN}{isNumberOfFollowingsN}{isRobloxBadgesN}{isXCSRFTokenN}Cookie: {cookie}\n')
                     validCount += 1
                     if config['Roblox']['CookieChecker']['General']['Output_Total'] and cookieCount: await removeLines(17)
                     sys.stdout.write(f'\r {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}]{ANSI.CLEAR} {isAccountLink}{isCountryRegistration}{f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}ID:{ANSI.CLEAR} {isID} | ' if config['Roblox']['CookieChecker']['Main']['ID'] else ''}{isName}{isDisplayName}{isRegistrationDate}{isRobux}{isBilling}{isTransactionsForYear}{isDonateAllTime}{isRap}{isCard}{isPremium}{isGamepasses}{isCustomGamepasses}{isBadges}{isFavoritePlaces}{isBundles}{isInventoryPrivacy}{isTradePrivacy}{isCanTrade}{isSessions}{isEmail}{isPhone}{is2FA}{isPin}{isAbove13}{isVerifiedAge}{isVoice}{isNumberOfFriends}{isNumberOfFollowers}{isNumberOfFollowings}{isRobloxBadges}{isXCSRFToken}{f'{ANSI.FG.CYAN + ANSI.DECOR.BOLD}Cookie: {ANSI.FG.YELLOW}{cookie}{ANSI.CLEAR}' if config['Roblox']['CookieChecker']['Main']['Cookie_In_Console'] else ''}\n')
@@ -2942,7 +3108,20 @@ async def robloxCookieChecker(file: str):
     await autoSaveConfig()
 
     sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Checking_Complete}\n\n')
-    if config['Roblox']['General']['Play_Sound_Cookie_Checker']: MessageBeep(MB_ICONASTERISK)
+    if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work']: await playOSSound()
+
+    if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] or config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook']:
+        await makeArchive(f'Roblox\\Cookie Checker\\outputs\\{dateOfCheck}')
+
+        messageText = f'*💜 {MT_Roblox} {MT_Cookie_Checker.lower()}\n\n🟢 {MT_Valid}: {validCount}\n🔴 {MT_Invalid}: {cookieCount - validCount}\n\n{f'💎 Robux: {totalData_CURRENT['Robux']}\n' if type(totalData_CURRENT['Robux']) is int else ''}{f'💵 Billing: {totalData_CURRENT['Billing']}\n' if type(totalData_CURRENT['Billing']) is int else ''}{f'⌛ Pending: {totalData_CURRENT['Pending']}\n' if type(totalData_CURRENT['Pending']) is int else ''}{f'💰 Donate \\(1 Year\\): {totalData_CURRENT['Donate (1 Year)']}\n' if type(totalData_CURRENT['Donate (1 Year)']) is int else ''}{f'💰 Donate \\(All Time\\): {totalData_CURRENT['Donate (All Time)']}\n' if type(totalData_CURRENT['Donate (All Time)']) is int else ''}{f'🚀 Rap: {totalData_CURRENT['Rap']}\n' if type(totalData_CURRENT['Rap']) is int else ''}{f'💳 Card: {totalData_CURRENT['Card']}\n' if type(totalData_CURRENT['Card']) is int else ''}{f'👑 Premium: {totalData_CURRENT['Premium']}\n' if type(totalData_CURRENT['Premium']) is int else ''}{f'🎫 Gamepasses: {totalData_CURRENT['Gamepasses']}\n' if type(totalData_CURRENT['Gamepasses']) is int else ''}{f'🎫 Custom Gamepasses: {totalData_CURRENT['Custom Gamepasses']}\n' if type(totalData_CURRENT['Custom Gamepasses']) is int else ''}{f'🏆 Badges: {totalData_CURRENT['Badges']}\n' if type(totalData_CURRENT['Badges']) is int else ''}{f'⭐ Favorite Places: {totalData_CURRENT['Favorite Places']}\n' if type(totalData_CURRENT['Favorite Places']) is int else ''}{f'📦 Bundles: {totalData_CURRENT['Bundles']}' if type(totalData_CURRENT['Bundles']) is int else ''}*'
+
+        if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot']:
+            await sendMessageTelegramBot(str(config['Roblox']['General']['Outputs']['Telegram_Bot_Token']), str(config['Roblox']['General']['Outputs']['Telegram_Bot_Chat_ID']), messageText, f'Roblox\\Cookie Checker\\outputs\\{dateOfCheck}.zip')
+
+        if config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook']:
+            await sendMessageDiscordWebhook(str(config['Roblox']['General']['Outputs']['Discord_Webhook_URL']), messageText.replace('*', '**'), 'Roblox\\Cookie Checker\\outputs', f'{dateOfCheck}.zip')
+        sys.stdout.write('\n')
+
     await waitingInput()
 
 def printRCCGeneral():
@@ -2990,7 +3169,7 @@ async def RCCPlaceContextMenu(indexPlace: int):
         whileTrueStage5 = True
         await removeLinesGamepassesAndOrBadges()
         while whileTrueStage5:
-            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Places}\\{listOfPlaces[indexPlace].placeNames[0]}\\{MT_Gamepasses}{ANSI.CLEAR}\n\n')
+            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Places}\\{listOfPlaces[indexPlace].placeNames[0]}\\{MT_Gamepasses}{ANSI.CLEAR}\n\n')
             await printPlaceGamepasses()
             sys.stdout.write(f'{ANSI.DECOR.BOLD}  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
             settingsRCCPlacesPlaceGamepassesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -3020,7 +3199,7 @@ async def RCCPlaceContextMenu(indexPlace: int):
         whileTrueStage5 = True
         await removeLinesGamepassesAndOrBadges()
         while whileTrueStage5:
-            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Places}\\{listOfPlaces[indexPlace].placeNames[0]}\\{MT_Badges}{ANSI.CLEAR}\n\n')
+            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Places}\\{listOfPlaces[indexPlace].placeNames[0]}\\{MT_Badges}{ANSI.CLEAR}\n\n')
             await printPlaceBadges()
             sys.stdout.write(f'{ANSI.DECOR.BOLD}  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
             settingsRCCPlacesPlaceBadgesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -3046,7 +3225,7 @@ async def RCCPlaceContextMenu(indexPlace: int):
     await cls()
     await lableASCII()
     while whileTrueStage4:
-        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Places}\\{listOfPlaces[indexPlace].placeNames[0]}{ANSI.CLEAR}\n\n')
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Places}\\{listOfPlaces[indexPlace].placeNames[0]}{ANSI.CLEAR}\n\n')
 
         if   getattr(listOfPlaces[indexPlace], 'Gamepasses', False) and getattr(listOfPlaces[indexPlace], 'Badges', False):
             sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Gamepasses}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Badges}{ANSI.CLEAR}\n')
@@ -3109,7 +3288,7 @@ async def RCCCustomPlaceContextMenu(placeIndex: int):
         whileTrueStage6 = True
         await removeLinesCustomPlaces()
         while whileTrueStage6:
-            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}\\{config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0] if config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0] != f'Unknown_Normal_{listOfRCCCustomPlaces[placeIndex]}' else config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][2][1] if config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][1] != f'Unknown_Default_{listOfRCCCustomPlaces[placeIndex]}' else f'Unknown_{listOfRCCCustomPlaces[placeIndex]}'}\\{MT_Gamepasses}{ANSI.CLEAR}\n\n')
+            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}\\{config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0] if config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0] != f'Unknown_Normal_{listOfRCCCustomPlaces[placeIndex]}' else config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][2][1] if config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][1] != f'Unknown_Default_{listOfRCCCustomPlaces[placeIndex]}' else f'Unknown_{listOfRCCCustomPlaces[placeIndex]}'}\\{MT_Gamepasses}{ANSI.CLEAR}\n\n')
             await printCustomPlaceGamepasses()
             sys.stdout.write(f'{ANSI.DECOR.BOLD}  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
             settingsRCCCustomPlacesPlaceGamepassesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -3137,7 +3316,7 @@ async def RCCCustomPlaceContextMenu(placeIndex: int):
         whileTrueStage6 = True
         await removeLinesCustomPlaces()
         while whileTrueStage6:
-            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}\\{config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0]}\\{MT_Badges}{ANSI.CLEAR}\n\n')
+            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}\\{config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0]}\\{MT_Badges}{ANSI.CLEAR}\n\n')
             await printCustomPlaceBadges()
             sys.stdout.write(f'{ANSI.DECOR.BOLD}  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
             settingsRCCCustomPlacesPlaceBadgesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -3161,7 +3340,7 @@ async def RCCCustomPlaceContextMenu(placeIndex: int):
     await cls()
     await lableASCII()
     while whileTrueStage5:
-        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}\\{config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0] if config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0] != f'Unknown_Normal_{listOfRCCCustomPlaces[placeIndex]}' else config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][1] if config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][1] != f'Unknown_Default_{listOfRCCCustomPlaces[placeIndex]}' else f'Unknown_{listOfRCCCustomPlaces[placeIndex]}'}{ANSI.CLEAR}\n\n')
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}\\{config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0] if config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0] != f'Unknown_Normal_{listOfRCCCustomPlaces[placeIndex]}' else config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][1] if config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][1] != f'Unknown_Default_{listOfRCCCustomPlaces[placeIndex]}' else f'Unknown_{listOfRCCCustomPlaces[placeIndex]}'}{ANSI.CLEAR}\n\n')
         
         if f'{listOfRCCCustomPlaces[placeIndex]}_Gamepasses' in config['Roblox']['CookieChecker']['CustomPlaces'] and f'{listOfRCCCustomPlaces[placeIndex]}_Badges' in config['Roblox']['CookieChecker']['CustomPlaces']:
             sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Gamepasses}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Badges}{ANSI.CLEAR}\n')
@@ -3184,11 +3363,11 @@ async def RCCCustomPlaceContextMenu(placeIndex: int):
                 await autoSaveConfig()
                 await removeLinesCustomPlaces()
             case 'D' | 'В':
-                if not config['General']['Disable_All_Warnings']:
+                if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
                     whileTrueStage6 = True
                     await removeLinesCustomPlaces()
                     while whileTrueStage6:
-                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}\\{config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0] if config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0] != f'Unknown_Normal_{listOfRCCCustomPlaces[placeIndex]}' else config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][1] if config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][1] != f'Unknown_Default_{listOfRCCCustomPlaces[placeIndex]}' else f'Unknown_{listOfRCCCustomPlaces[placeIndex]}'}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
+                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}\\{config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0] if config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][0] != f'Unknown_Normal_{listOfRCCCustomPlaces[placeIndex]}' else config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][1] if config['Roblox']['CookieChecker']['CustomPlaces'][listOfRCCCustomPlaces[placeIndex]][1][1] != f'Unknown_Default_{listOfRCCCustomPlaces[placeIndex]}' else f'Unknown_{listOfRCCCustomPlaces[placeIndex]}'}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
                         confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                         match confirmTheAction.upper():
                             case 'Y' | 'Н':
@@ -3335,7 +3514,20 @@ async def robloxCookieSorter():
             await file.write(f'{cookie}\n')
 
     sys.stdout.write(f'\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Sorting_Complete}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Unique_Cookies_Found}: {countSorterUniqueCookies}\n [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Duplicated_Cookies_Removed}: {countSorterDuplicatedCookies}\n [{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Incorrect_Cookies_Removed}: {countSorterIncorrectCookies}\n\n')
-    if config['Roblox']['General']['Play_Sound_Cookie_Sorter']: MessageBeep(MB_ICONASTERISK)
+    if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work']: await playOSSound()
+
+    if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] or config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook']:
+        await makeArchive(f'Roblox\\Cookie Sorter\\outputs\\{dateOfCookieSorting}')
+
+        messageText = f'*💜 {MT_Roblox} {MT_Cookie_Sorter.lower()}\n\n🟢 {MT_Unique_Cookies_Found}: {countSorterUniqueCookies} \n🟡 {MT_Duplicated_Cookies_Removed}: {countSorterDuplicatedCookies} \n🔴 {MT_Incorrect_Cookies_Removed}: {countSorterIncorrectCookies}*'
+
+        if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot']:
+            await sendMessageTelegramBot(str(config['Roblox']['General']['Outputs']['Telegram_Bot_Token']), str(config['Roblox']['General']['Outputs']['Telegram_Bot_Chat_ID']), messageText, f'Roblox\\Cookie Sorter\\outputs\\{dateOfCookieSorting}.zip')
+
+        if config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook']:
+            await sendMessageDiscordWebhook(str(config['Roblox']['General']['Outputs']['Discord_Webhook_URL']), messageText.replace('*', '**'), 'Roblox\\Cookie Sorter\\outputs', f'{dateOfCookieSorting}.zip')
+        sys.stdout.write('\n')
+
     await waitingInput()
 
 ### Roblox Cookie Refresher
@@ -3375,7 +3567,7 @@ async def startSingleModeRCR(cookieRoblox: dict):
 async def startMassModeRCR(cookieRoblox: str, dateRefreshing: str):
     cookie = {'.ROBLOSECURITY': cookieRoblox}
 
-    isValid = await isValidFunc(cookie) # изменить проверку на валидность [fix_it_1]
+    isValid = await isResponseStatusFromCookie(cookie)
     isSetCookie = await startSingleModeRCR(cookie) if isValid[3] else ''
 
     try:
@@ -3427,14 +3619,14 @@ async def TAPlaceContextMenu(placeIndex: int):
     await cls()
     await lableASCII()
     while whileTrueStage5:
-        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Ignore_List}\n  ┃\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][2] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check}\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Ignore_List}\n  ┃\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][2] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check}\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
         settingsTAPlacesPlaceTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
         match settingsTAPlacesPlaceTab.upper():
             case '1':
                 whileTrueStage6 = True
                 await removeLines(9)
                 while whileTrueStage6:
-                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}\\{MT_Ignore_List}{ANSI.CLEAR}\n\n')
+                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}\\{MT_Ignore_List}{ANSI.CLEAR}\n\n')
                     await printIgnoreNames()
                     sys.stdout.write(f'{ANSI.DECOR.BOLD}{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Ignore_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_Not_Ignore_All}\n  ┃\n' if config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List'] else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Add_A_Transaction}\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][3] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Discover_New_Names_For_Ignore_List}\n [{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][4] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Count_Robux_In_Total}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                     settingsTAIgnoreListTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -3444,7 +3636,7 @@ async def TAPlaceContextMenu(placeIndex: int):
                         ignoreItem = config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List'][int(settingsTAIgnoreListTab) - 1]
                         await cls()
                         await lableASCII()
-                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}\\{MT_Ignore_List}\\{ignoreItem[0]}{ANSI.CLEAR}\n\n')
+                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}\\{MT_Ignore_List}\\{ignoreItem[0]}{ANSI.CLEAR}\n\n')
                         while whileTrueStage7:
                             sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}I{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if ignoreItem[1] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Ignore}\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                             settingsTAIgnoreListIgnoreNameTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -3453,11 +3645,11 @@ async def TAPlaceContextMenu(placeIndex: int):
                                     ignoreItem[1] ^= True
                                     await autoSaveConfig()
                                 case 'D' | 'В':
-                                    if not config['General']['Disable_All_Warnings']:
+                                    if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
                                         whileTrueStage8 = True
                                         await removeLines(7)
                                         while whileTrueStage8:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}\\{MT_Ignore_List}\\{ignoreItem[0]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}\\{MT_Ignore_List}\\{ignoreItem[0]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
                                             confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             match confirmTheAction.upper():
                                                 case 'Y' | 'Н':
@@ -3486,7 +3678,7 @@ async def TAPlaceContextMenu(placeIndex: int):
                     elif settingsTAIgnoreListTab.upper() in ('A', 'Ф'):
                         await cls()
                         await lableASCII()
-                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}\\{MT_Ignore_List}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
+                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}\\{MT_Ignore_List}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
                         settingsTAPlaceIgnoreNameAdd = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_A_Transaction_Name}:{ANSI.CLEAR} ')
 
                         async def addIgnoreName():
@@ -3524,11 +3716,11 @@ async def TAPlaceContextMenu(placeIndex: int):
                 await autoSaveConfig()
                 await removeLines(9)
             case 'D' | 'В':
-                if not config['General']['Disable_All_Warnings']:
+                if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
                     whileTrueStage6 = True
                     await removeLines(9)
                     while whileTrueStage6:
-                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][1][0] if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][1][0] != f'Unknown_Normal_{listOfTAPlaces[placeIndex]}' else config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][1][1] if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][1][1] != f'Unknown_Default_{listOfTAPlaces[placeIndex]}' else f'Unknown_{listOfTAPlaces[placeIndex]}'}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
+                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][1][0] if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][1][0] != f'Unknown_Normal_{listOfTAPlaces[placeIndex]}' else config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][1][1] if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][1][1] != f'Unknown_Default_{listOfTAPlaces[placeIndex]}' else f'Unknown_{listOfTAPlaces[placeIndex]}'}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
                         confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                         match confirmTheAction.upper():
                             case 'Y' | 'Н':
@@ -3574,7 +3766,7 @@ async def isTransactionsFromCookieFunc(checkListPlaces: set, cookieRoblox: dict 
     if not config['Roblox']['TransactionAnalysis']['General']['First_Check_All_Cookies_For_Valid']:
         responseStatus = await isResponseStatusFromCookie(cookieRoblox, headersRoblox, proxies, ssl)
         if responseStatus != 200:
-            return responseStatus, None, None, None, None
+            return responseStatus, None, None, None
 
     while True:
         try:
@@ -3587,14 +3779,13 @@ async def isTransactionsFromCookieFunc(checkListPlaces: set, cookieRoblox: dict 
         except KeyError:
             if responseAccountInformation.status == 302:
                 await session.close()
-                return 302, None, None, None, None
+                return 302, None, None, None
             await asyncio.sleep(5)
         except ContentTypeError:
             await asyncio.sleep(1)
         except (ClientOSError, ConnectionTimeoutError, ClientConnectorError, ServerDisconnectedError, ProxyConnectionError, ProxyTimeoutError, TimeoutError):
             await session.close()
 
-    totalTransactions = 0
     nextPageCursorTransactions = ''
     while nextPageCursorTransactions != None:
         try:
@@ -3609,32 +3800,32 @@ async def isTransactionsFromCookieFunc(checkListPlaces: set, cookieRoblox: dict 
                             price = abs(transaction['currency']['amount'])
                             checkListPlaces[placeID][1] += price
                         if [transactionName, True] not in ignoreList:
-                            checkListPlaces[placeID][2].append([transactionName, price, datetime.strptime(transaction['created'], '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%d.%m.%Y - %H:%M:%S')])
+                            checkListPlaces[placeID][3].append([transactionName, price, datetime.strptime(transaction['created'], '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%d.%m.%Y - %H:%M:%S')])
                         if ([transactionName, True] not in ignoreList and [transactionName, False] not in ignoreList) and config['Roblox']['TransactionAnalysis']['Places'][placeID][3]:
                             ignoreList.append([transactionName, False])
-                        totalTransactions += 1
+                        checkListPlaces[placeID][2] += 1
                 nextPageCursorTransactions = transactions['nextPageCursor']
             await session.close()
         except (KeyError, ContentTypeError):
             if response.status == 401:
                 await session.close()
-                return 401, None, None, None, None
+                return 401, None, None, None
             await asyncio.sleep(5)
         except (ClientOSError, ConnectionTimeoutError, ClientConnectorError, ServerDisconnectedError, ProxyConnectionError, ProxyTimeoutError, TimeoutError):
             await session.close()
             session = ClientSession(connector=await robloxGetConnector('TransactionAnalysis', proxies), cookies=cookieRoblox, headers=headersRoblox)
 
-    return 200, isID, isName, checkListPlaces, totalTransactions
+    return 200, isID, isName, checkListPlaces
 
 async def robloxTransactionAnalysis(file: str):
-    checkListPlaces = {str(place): [config['Roblox']['TransactionAnalysis']['Places'][str(place)][1][0], 0, []] for place in config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places']
+    checkListPlaces = {str(place): [config['Roblox']['TransactionAnalysis']['Places'][str(place)][1][0], 0, 0, []] for place in config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places']
                        if str(place).isdigit() and config['Roblox']['TransactionAnalysis']['Places'][str(place)][2]}
     await cls()
     await lableASCII()
     if not checkListPlaces:
         return await errorOrCorrectHandler(True, 0, MT_Enable_At_Least_One_Place_To_Start_Analysis, f'{MT_Roblox}\\{MT_Transaction_Analysis}')
 
-    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Transaction_Analysis}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Wait[0]}...')
+    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Transaction_Analysis}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Wait[0]}...')
 
     proxiesFromFile = await getProxiesFromFile(config['Roblox']['TransactionAnalysis']['Proxy']['Use_Proxy'], 'Roblox\\Transaction Analysis\\proxies.txt', f'{MT_Roblox}\\{MT_Transaction_Analysis}', 2)
     if config['Roblox']['TransactionAnalysis']['Proxy']['Use_Proxy'] and not proxiesFromFile:
@@ -3649,48 +3840,52 @@ async def robloxTransactionAnalysis(file: str):
     sys.stdout.write(f'\r {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINE1}{file}.txt{ANSI.CLEAR + ANSI.DECOR.BOLD}\':\n')
 
     checkReadyRobloxCookies = await robloxCookieValidChecker('TransactionAnalysis', cookiesFromFile, proxiesFromFile, useSSL)
+    if not checkReadyRobloxCookies:
+        return
 
     cookieCount = 0
     validCount = 0
-    amountOfCookiesFromFile = len(checkReadyRobloxCookies)
+    allTotalRobux = 0
+    allTransactionsCount = 0
     dateOfCheck = datetime.now().strftime('%d.%m.%Y - %H.%M.%S')
     semaphore = asyncio.Semaphore(int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) if str(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) <= 500) else 10)
     locker = asyncio.Lock()
 
     async def threadingTransactionAnalysis(cookie: str, proxies: list | None = None):
-        nonlocal cookieCount, validCount
+        nonlocal cookieCount, validCount, allTotalRobux, allTransactionsCount
         async with semaphore:
             cookieRoblox = {'.ROBLOSECURITY': cookie}
             headersRoblox = None # {'User-Agent': ua.random}
 
-            responseStatus, isID, isName, checkListPlaces_, totalTransactions_ = await isTransactionsFromCookieFunc(deepcopy(checkListPlaces), cookieRoblox, headersRoblox, proxies, useSSL)
-
+            responseStatus, isID, isName, checkListPlaces_ = await isTransactionsFromCookieFunc(deepcopy(checkListPlaces), cookieRoblox, headersRoblox, proxies, useSSL)
             if responseStatus == 200:
                 totalWord = ''.join(MT_Total).lower().capitalize()
                 partOfCookie = f'{cookie[115:130]}...{cookie[-15:-1]}'
 
-                totalRobux = 0
-                for _, value in checkListPlaces_.items():
-                    if not value[1]: continue
+                for _, place in checkListPlaces_.items():
+                    if not place[1]: continue
 
-                    totalRobux += value[1]
+                    allTotalRobux += place[1]
                     os.makedirs(f'Roblox\\Transaction Analysis\\outputs\\{dateOfCheck}\\{partOfCookie}{f' ({isName})' if config['Roblox']['TransactionAnalysis']['General']['Add_Nick_After_Cookie_In_Folder_Names'] else ''}', exist_ok=True)
                     if config['Roblox']['TransactionAnalysis']['General']['Save_Places_To_Different_Files']:
-                        async with aiofiles.open(f'Roblox\\Transaction Analysis\\outputs\\{dateOfCheck}\\{partOfCookie}{f' ({isName})' if config['Roblox']['TransactionAnalysis']['General']['Add_Nick_After_Cookie_In_Folder_Names'] else ''}\\{value[0]}{f' ({value[1]} R$)' if config['Roblox']['TransactionAnalysis']['General']['Add_Robux_After_Place_In_File_Names'] else ''}.txt', 'a', encoding='UTF-8', errors='ignore') as f:
-                            await f.write(f'\n Meow >:3\n\n {MT_Id}: {isID}\n {MT_Nickname}: {isName}\n {MT_Link}: https://www.roblox.com/users/{isID}\n {MT_Cookie}: {cookie}\n{'-'*52}\n > {totalWord}: {value[1]} R$\n{'-'*52}\n')
-                            for item in value[2]:
+                        async with aiofiles.open(f'Roblox\\Transaction Analysis\\outputs\\{dateOfCheck}\\{partOfCookie}{f' ({isName})' if config['Roblox']['TransactionAnalysis']['General']['Add_Nick_After_Cookie_In_Folder_Names'] else ''}\\{place[0]}{f' ({place[1]} R$)' if config['Roblox']['TransactionAnalysis']['General']['Add_Robux_After_Place_In_File_Names'] else ''}.txt', 'a', encoding='UTF-8', errors='ignore') as f:
+                            await f.write(f'\n Meow :3\n\n {MT_Id}: {isID}\n {MT_Nickname}: {isName}\n {MT_Link}: https://www.roblox.com/users/{isID}\n {MT_Cookie}: {cookie}\n{'-'*52}\n > {totalWord}: {place[1]} R$\n{'-'*52}\n')
+                            for item in place[3]:
                                 await f.write(f' > {MT_Name}: {item[0]}\n > {MT_Price}: {item[1]} R$\n > {MT_Date}: {item[2]}\n{'-'*52}\n')
+                                allTransactionsCount += 1
 
-                if totalRobux and config['Roblox']['TransactionAnalysis']['General']['Save_All_Places_In_One_File']:
-                    indentationLength = max(len(value[0]) for _, value in checkListPlaces_.items()) + 1 if config['Roblox']['TransactionAnalysis']['General']['Indentation_Options'] == 'MaxIndent' else 0
-                    async with aiofiles.open(f'Roblox\\Transaction Analysis\\outputs\\{dateOfCheck}\\{partOfCookie}{f' ({isName})' if config['Roblox']['TransactionAnalysis']['General']['Add_Nick_After_Cookie_In_Folder_Names'] else ''}\\.All{f' ({totalRobux} R$)' if config['Roblox']['TransactionAnalysis']['General']['Add_Robux_After_Place_In_File_Names'] else ''}.txt', 'a', encoding='UTF-8', errors='ignore') as f:
-                        await f.write(f'\n Meow >:3\n\n {MT_Id}: {isID}\n {MT_Nickname}: {isName}\n {MT_Link}: https://www.roblox.com/users/{isID}\n {MT_Cookie}: {cookie}\n{'-'*52}\n > {totalWord}: {totalRobux} R$\n{'-'*52}\n')
-                        for _, value in checkListPlaces_.items():
-                            if value[1]:
-                                await f.write(f' > {value[0]:<{indentationLength}}: {value[1]} R$\n')
+                placeTotalRobux        = sum(place[1] for _, place in checkListPlaces_.items())
+                placeTransactionsCount = sum(place[2] for _, place in checkListPlaces_.items())
+                if config['Roblox']['TransactionAnalysis']['General']['Save_All_Places_In_One_File'] and allTotalRobux:
+                    indentationLength = max(len(place[0]) for _, place in checkListPlaces_.items()) + 1 if config['Roblox']['TransactionAnalysis']['General']['Indentation_Options'] == 'MaxIndent' else 0
+                    async with aiofiles.open(f'Roblox\\Transaction Analysis\\outputs\\{dateOfCheck}\\{partOfCookie}{f' ({isName})' if config['Roblox']['TransactionAnalysis']['General']['Add_Nick_After_Cookie_In_Folder_Names'] else ''}\\.All{f' ({placeTotalRobux} R$)' if config['Roblox']['TransactionAnalysis']['General']['Add_Robux_After_Place_In_File_Names'] else ''}.txt', 'a', encoding='UTF-8', errors='ignore') as f:
+                        await f.write(f'\n Meow :3\n\n {MT_Id}: {isID}\n {MT_Nickname}: {isName}\n {MT_Link}: https://www.roblox.com/users/{isID}\n {MT_Cookie}: {cookie}\n{'-'*52}\n > {totalWord}: {placeTotalRobux} R$\n{'-'*52}\n')
+                        for _, place in checkListPlaces_.items():
+                            if place[1]:
+                                await f.write(f' > {place[0]:<{indentationLength}}: {place[1]} R$\n')                        
                         await f.write(f'{'-'*52}\n')
 
-                sys.stdout.write(f'\r {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}{MT_Nickname}:{ANSI.CLEAR + ANSI.DECOR.BOLD} {isName} | {ANSI.FG.CYAN}{MT_Transactions}: {ANSI.FG.GREEN if totalTransactions_ else ANSI.FG.RED}{totalTransactions_}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {ANSI.FG.CYAN}{MT_Spent}: {ANSI.FG.GREEN if totalRobux else ANSI.FG.RED}{totalRobux} R${ANSI.CLEAR + ANSI.DECOR.BOLD} | {ANSI.FG.GRAY}{partOfCookie}{ANSI.CLEAR}\n')
+                sys.stdout.write(f'\r {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}{MT_Nickname}:{ANSI.CLEAR + ANSI.DECOR.BOLD} {isName} | {ANSI.FG.CYAN}{MT_Transactions}: {ANSI.FG.GREEN if placeTransactionsCount else ANSI.FG.RED}{placeTransactionsCount}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {ANSI.FG.CYAN}{MT_Spent}: {ANSI.FG.GREEN if placeTotalRobux else ANSI.FG.RED}{placeTotalRobux} R${ANSI.CLEAR + ANSI.DECOR.BOLD} | {ANSI.FG.GRAY}{partOfCookie}{ANSI.CLEAR}\n')
             else:
                 sys.stdout.write(f'\r {ANSI.DECOR.BOLD}[{ANSI.FG.RED}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.RED}{MT_Invalid_Cookie}{ANSI.CLEAR}\n')
 
@@ -3698,7 +3893,20 @@ async def robloxTransactionAnalysis(file: str):
     await asyncio.gather(*transactionsCheckTasks)
 
     sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Checking_Complete}\n\n')
-    if config['Roblox']['General']['Play_Sound_Transaction_Analysis']: MessageBeep(MB_ICONASTERISK)
+    if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work']: await playOSSound()
+
+    if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] or config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook']:
+        await makeArchive(f'Roblox\\Transaction Analysis\\outputs\\{dateOfCheck}')
+
+        messageText = f'*💜 {MT_Roblox} {MT_Transaction_Analysis.lower()}\n\n🛒 {MT_Transactions}: {allTransactionsCount}\n💎 {MT_Spent}: {allTotalRobux} R$*'
+
+        if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot']:
+            await sendMessageTelegramBot(str(config['Roblox']['General']['Outputs']['Telegram_Bot_Token']), str(config['Roblox']['General']['Outputs']['Telegram_Bot_Chat_ID']), messageText, f'Roblox\\Transaction Analysis\\outputs\\{dateOfCheck}.zip')
+
+        if config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook']:
+            await sendMessageDiscordWebhook(str(config['Roblox']['General']['Outputs']['Discord_Webhook_URL']), messageText.replace('*', '**'), 'Roblox\\Transaction Analysis\\outputs', f'{dateOfCheck}.zip')
+        sys.stdout.write('\n')
+
     await waitingInput()
 
 ### Cookie Control Panel
@@ -3712,7 +3920,7 @@ async def cookieControlPanel(category: str, key: str, path: str):
     await cls()
     await lableASCII()
     while whileTrueStageCCP1:
-        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{path}\\{key}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Data}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Show_Cookie}\n  ┃\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{path}\\{key}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Data}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Show_Cookie}\n  ┃\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
         cookieControlPanelCookieCurrentCookieMainTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
         match cookieControlPanelCookieCurrentCookieMainTab.upper():
             case '1':
@@ -3720,7 +3928,7 @@ async def cookieControlPanel(category: str, key: str, path: str):
                 await cls()
                 await lableASCII()
                 while whileTrueStageCCP2:
-                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{path}\\{key}\\{MT_Data}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD} [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Country Reg.' if config['Roblox']['CookieControlPanel'][category][key][0] == '?' else f'Country Reg.: {config['Roblox']['CookieControlPanel'][category][key][0]}'}\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} ID' if config['Roblox']['CookieControlPanel'][category][key][1] == '?' else f'ID: {config['Roblox']['CookieControlPanel'][category][key][1]}'}\n  [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Name' if config['Roblox']['CookieControlPanel'][category][key][2] == '?' else f'Name: {config['Roblox']['CookieControlPanel'][category][key][2]}'}\n  [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Display Name' if config['Roblox']['CookieControlPanel'][category][key][3] == '?' else f'Display Name: {config['Roblox']['CookieControlPanel'][category][key][3]}'}\n  [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Reg. Date' if config['Roblox']['CookieControlPanel'][category][key][4] == '?' else f'Reg. Date: {config['Roblox']['CookieControlPanel'][category][key][4]}'} {f'({config['Roblox']['CookieControlPanel'][category][key][5]})' if config['Roblox']['CookieControlPanel'][category][key][5] != None else ''}\n  [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Robux' if config['Roblox']['CookieControlPanel'][category][key][6] == '?' else f'Robux: {config['Roblox']['CookieControlPanel'][category][key][6]}'}\n  [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Billing' if config['Roblox']['CookieControlPanel'][category][key][7] == '?' else f'Billing: {config['Roblox']['CookieControlPanel'][category][key][7]}'}\n  [{ANSI.FG.PINK}8{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Pending' if config['Roblox']['CookieControlPanel'][category][key][8] == '?' else f'Pending: {config['Roblox']['CookieControlPanel'][category][key][8]}'}\n  [{ANSI.FG.PINK}9{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Donate' if config['Roblox']['CookieControlPanel'][category][key][9] == '?' else f'Donate: {config['Roblox']['CookieControlPanel'][category][key][9]}'}\n [{ANSI.FG.PINK}10{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Donate (All Time)' if config['Roblox']['CookieControlPanel'][category][key][10] == '?' else f'Donate (All Time): {config['Roblox']['CookieControlPanel'][category][key][10]}'}\n [{ANSI.FG.PINK}11{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Custom Gamepasses' if config['Roblox']['CookieControlPanel'][category][key][11] == '?' else f'Custom Gamepasses: {config['Roblox']['CookieControlPanel'][category][key][11]}'}\n [{ANSI.FG.PINK}12{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Rap' if config['Roblox']['CookieControlPanel'][category][key][12] == '?' else f'Rap: {config['Roblox']['CookieControlPanel'][category][key][12]}'}\n [{ANSI.FG.PINK}13{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Card' if config['Roblox']['CookieControlPanel'][category][key][13] == '?' else f'Card: {config['Roblox']['CookieControlPanel'][category][key][13]}'}\n [{ANSI.FG.PINK}14{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Premium' if config['Roblox']['CookieControlPanel'][category][key][14] == '?' else f'Premium: {config['Roblox']['CookieControlPanel'][category][key][14]}'}\n [{ANSI.FG.PINK}15{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Gamepasses' if config['Roblox']['CookieControlPanel'][category][key][15] == '?' else f'Gamepasses: {config['Roblox']['CookieControlPanel'][category][key][15]}'}\n [{ANSI.FG.PINK}16{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Badges' if config['Roblox']['CookieControlPanel'][category][key][16] == '?' else f'Badges: {config['Roblox']['CookieControlPanel'][category][key][16]}'}\n [{ANSI.FG.PINK}17{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Fav. Games' if config['Roblox']['CookieControlPanel'][category][key][16] == '?' else f'Fav. Games: {config['Roblox']['CookieControlPanel'][category][key][16]}'}\n [{ANSI.FG.PINK}18{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Bundles' if config['Roblox']['CookieControlPanel'][category][key][18] == '?' else f'Bundles: {config['Roblox']['CookieControlPanel'][category][key][18]}'}\n [{ANSI.FG.PINK}19{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Inv. Privacy' if config['Roblox']['CookieControlPanel'][category][key][19] == '?' else f'Inv. Privacy: {config['Roblox']['CookieControlPanel'][category][key][19]}'}\n [{ANSI.FG.PINK}20{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Trade Privacy' if config['Roblox']['CookieControlPanel'][category][key][20] == '?' else f'Trade Privacy: {config['Roblox']['CookieControlPanel'][category][key][20]}'}\n [{ANSI.FG.PINK}21{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Can Trade' if config['Roblox']['CookieControlPanel'][category][key][21] == '?' else f'Can Trade: {config['Roblox']['CookieControlPanel'][category][key][21]}'}\n [{ANSI.FG.PINK}22{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Sessions' if config['Roblox']['CookieControlPanel'][category][key][22] == '?' else f'Sessions: {config['Roblox']['CookieControlPanel'][category][key][22]}'}\n [{ANSI.FG.PINK}23{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Email' if config['Roblox']['CookieControlPanel'][category][key][23] == '?' else f'Email: {config['Roblox']['CookieControlPanel'][category][key][23]}'}\n [{ANSI.FG.PINK}24{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Phone' if config['Roblox']['CookieControlPanel'][category][key][24] == '?' else f'Phone: {config['Roblox']['CookieControlPanel'][category][key][24]}'}\n [{ANSI.FG.PINK}25{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} 2FA' if config['Roblox']['CookieControlPanel'][category][key][25] == '?' else f'2FA: {config['Roblox']['CookieControlPanel'][category][key][25]}'}\n [{ANSI.FG.PINK}26{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Pin' if config['Roblox']['CookieControlPanel'][category][key][26] == '?' else f'Pin: {config['Roblox']['CookieControlPanel'][category][key][26]}'}\n [{ANSI.FG.PINK}27{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} >13' if config['Roblox']['CookieControlPanel'][category][key][27] == '?' else f'>13: {config['Roblox']['CookieControlPanel'][category][key][27]}'}\n [{ANSI.FG.PINK}28{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Verified Age' if config['Roblox']['CookieControlPanel'][category][key][28] == '?' else f'Verified Age: {config['Roblox']['CookieControlPanel'][category][key][28]}'}\n [{ANSI.FG.PINK}29{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Voice' if config['Roblox']['CookieControlPanel'][category][key][29] == '?' else f'Voice: {config['Roblox']['CookieControlPanel'][category][key][29]}'}\n [{ANSI.FG.PINK}30{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Friends' if config['Roblox']['CookieControlPanel'][category][key][30] == '?' else f'Friends: {config['Roblox']['CookieControlPanel'][category][key][30]}'}\n [{ANSI.FG.PINK}31{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Followers' if config['Roblox']['CookieControlPanel'][category][key][31] == '?' else f'Followers: {config['Roblox']['CookieControlPanel'][category][key][31]}'}\n [{ANSI.FG.PINK}32{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Followings' if config['Roblox']['CookieControlPanel'][category][key][32] == '?' else f'Followings: {config['Roblox']['CookieControlPanel'][category][key][32]}'}\n [{ANSI.FG.PINK}33{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Roblox Badges' if config['Roblox']['CookieControlPanel'][category][key][33] == '?' else f'Roblox Badges: No' if not config['Roblox']['CookieControlPanel'][category][key][33] else f'Roblox Badges: {', '.join(config['Roblox']['CookieControlPanel'][category][key][33])}'}\n [{ANSI.FG.PINK}34{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} X-CSRF-Token' if config['Roblox']['CookieControlPanel'][category][key][34] == '?' else f'X-CSRF-Token: {config['Roblox']['CookieControlPanel'][category][key][34]}'}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{path}\\{key}\\{MT_Data}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD} [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Country Reg.' if config['Roblox']['CookieControlPanel'][category][key][0] == '?' else f'Country Reg.: {config['Roblox']['CookieControlPanel'][category][key][0]}'}\n  [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} ID' if config['Roblox']['CookieControlPanel'][category][key][1] == '?' else f'ID: {config['Roblox']['CookieControlPanel'][category][key][1]}'}\n  [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Name' if config['Roblox']['CookieControlPanel'][category][key][2] == '?' else f'Name: {config['Roblox']['CookieControlPanel'][category][key][2]}'}\n  [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Display Name' if config['Roblox']['CookieControlPanel'][category][key][3] == '?' else f'Display Name: {config['Roblox']['CookieControlPanel'][category][key][3]}'}\n  [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Reg. Date' if config['Roblox']['CookieControlPanel'][category][key][4] == '?' else f'Reg. Date: {config['Roblox']['CookieControlPanel'][category][key][4]}'} {f'({config['Roblox']['CookieControlPanel'][category][key][5]})' if config['Roblox']['CookieControlPanel'][category][key][5] != None else ''}\n  [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Robux' if config['Roblox']['CookieControlPanel'][category][key][6] == '?' else f'Robux: {config['Roblox']['CookieControlPanel'][category][key][6]}'}\n  [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Billing' if config['Roblox']['CookieControlPanel'][category][key][7] == '?' else f'Billing: {config['Roblox']['CookieControlPanel'][category][key][7]}'}\n  [{ANSI.FG.PINK}8{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Pending' if config['Roblox']['CookieControlPanel'][category][key][8] == '?' else f'Pending: {config['Roblox']['CookieControlPanel'][category][key][8]}'}\n  [{ANSI.FG.PINK}9{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Donate' if config['Roblox']['CookieControlPanel'][category][key][9] == '?' else f'Donate: {config['Roblox']['CookieControlPanel'][category][key][9]}'}\n [{ANSI.FG.PINK}10{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Donate (All Time)' if config['Roblox']['CookieControlPanel'][category][key][10] == '?' else f'Donate (All Time): {config['Roblox']['CookieControlPanel'][category][key][10]}'}\n [{ANSI.FG.PINK}11{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Custom Gamepasses' if config['Roblox']['CookieControlPanel'][category][key][11] == '?' else f'Custom Gamepasses: {config['Roblox']['CookieControlPanel'][category][key][11]}'}\n [{ANSI.FG.PINK}12{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Rap' if config['Roblox']['CookieControlPanel'][category][key][12] == '?' else f'Rap: {config['Roblox']['CookieControlPanel'][category][key][12]}'}\n [{ANSI.FG.PINK}13{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Card' if config['Roblox']['CookieControlPanel'][category][key][13] == '?' else f'Card: {config['Roblox']['CookieControlPanel'][category][key][13]}'}\n [{ANSI.FG.PINK}14{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Premium' if config['Roblox']['CookieControlPanel'][category][key][14] == '?' else f'Premium: {config['Roblox']['CookieControlPanel'][category][key][14]}'}\n [{ANSI.FG.PINK}15{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Gamepasses' if config['Roblox']['CookieControlPanel'][category][key][15] == '?' else f'Gamepasses: {config['Roblox']['CookieControlPanel'][category][key][15]}'}\n [{ANSI.FG.PINK}16{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Badges' if config['Roblox']['CookieControlPanel'][category][key][16] == '?' else f'Badges: {config['Roblox']['CookieControlPanel'][category][key][16]}'}\n [{ANSI.FG.PINK}17{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Fav. Places' if config['Roblox']['CookieControlPanel'][category][key][16] == '?' else f'Fav. Places: {config['Roblox']['CookieControlPanel'][category][key][16]}'}\n [{ANSI.FG.PINK}18{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Bundles' if config['Roblox']['CookieControlPanel'][category][key][18] == '?' else f'Bundles: {config['Roblox']['CookieControlPanel'][category][key][18]}'}\n [{ANSI.FG.PINK}19{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Inv. Privacy' if config['Roblox']['CookieControlPanel'][category][key][19] == '?' else f'Inv. Privacy: {config['Roblox']['CookieControlPanel'][category][key][19]}'}\n [{ANSI.FG.PINK}20{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Trade Privacy' if config['Roblox']['CookieControlPanel'][category][key][20] == '?' else f'Trade Privacy: {config['Roblox']['CookieControlPanel'][category][key][20]}'}\n [{ANSI.FG.PINK}21{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Can Trade' if config['Roblox']['CookieControlPanel'][category][key][21] == '?' else f'Can Trade: {config['Roblox']['CookieControlPanel'][category][key][21]}'}\n [{ANSI.FG.PINK}22{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Sessions' if config['Roblox']['CookieControlPanel'][category][key][22] == '?' else f'Sessions: {config['Roblox']['CookieControlPanel'][category][key][22]}'}\n [{ANSI.FG.PINK}23{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Email' if config['Roblox']['CookieControlPanel'][category][key][23] == '?' else f'Email: {config['Roblox']['CookieControlPanel'][category][key][23]}'}\n [{ANSI.FG.PINK}24{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Phone' if config['Roblox']['CookieControlPanel'][category][key][24] == '?' else f'Phone: {config['Roblox']['CookieControlPanel'][category][key][24]}'}\n [{ANSI.FG.PINK}25{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} 2FA' if config['Roblox']['CookieControlPanel'][category][key][25] == '?' else f'2FA: {config['Roblox']['CookieControlPanel'][category][key][25]}'}\n [{ANSI.FG.PINK}26{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Pin' if config['Roblox']['CookieControlPanel'][category][key][26] == '?' else f'Pin: {config['Roblox']['CookieControlPanel'][category][key][26]}'}\n [{ANSI.FG.PINK}27{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} >13' if config['Roblox']['CookieControlPanel'][category][key][27] == '?' else f'>13: {config['Roblox']['CookieControlPanel'][category][key][27]}'}\n [{ANSI.FG.PINK}28{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Verified Age' if config['Roblox']['CookieControlPanel'][category][key][28] == '?' else f'Verified Age: {config['Roblox']['CookieControlPanel'][category][key][28]}'}\n [{ANSI.FG.PINK}29{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Voice' if config['Roblox']['CookieControlPanel'][category][key][29] == '?' else f'Voice: {config['Roblox']['CookieControlPanel'][category][key][29]}'}\n [{ANSI.FG.PINK}30{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Friends' if config['Roblox']['CookieControlPanel'][category][key][30] == '?' else f'Friends: {config['Roblox']['CookieControlPanel'][category][key][30]}'}\n [{ANSI.FG.PINK}31{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Followers' if config['Roblox']['CookieControlPanel'][category][key][31] == '?' else f'Followers: {config['Roblox']['CookieControlPanel'][category][key][31]}'}\n [{ANSI.FG.PINK}32{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Followings' if config['Roblox']['CookieControlPanel'][category][key][32] == '?' else f'Followings: {config['Roblox']['CookieControlPanel'][category][key][32]}'}\n [{ANSI.FG.PINK}33{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} Roblox Badges' if config['Roblox']['CookieControlPanel'][category][key][33] == '?' else f'Roblox Badges: No' if not config['Roblox']['CookieControlPanel'][category][key][33] else f'Roblox Badges: {', '.join(config['Roblox']['CookieControlPanel'][category][key][33])}'}\n [{ANSI.FG.PINK}34{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Find} X-CSRF-Token' if config['Roblox']['CookieControlPanel'][category][key][34] == '?' else f'X-CSRF-Token: {config['Roblox']['CookieControlPanel'][category][key][34]}'}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                     cookieControlPanelCookieCurrentCookieDataTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                     if cookieControlPanelCookieCurrentCookieDataTab == '0': whileTrueStageCCP2 = False
                     elif cookieControlPanelCookieCurrentCookieDataTab.isdigit() and int(cookieControlPanelCookieCurrentCookieDataTab) <= 35:
@@ -3746,7 +3954,7 @@ async def cookieControlPanel(category: str, key: str, path: str):
 
                                         match cookieControlPanelCookieCurrentCookieDataTab.upper():
                                             case '1':  config['Roblox']['CookieControlPanel'][category][key][0]  = list(await isCountryRegistrationFunc(session,                             ssl, True))[2]
-                                            case '2':  config['Roblox']['CookieControlPanel'][category][key][1]  = list(await isUselessIDFunc(          session,                             ssl, True))[2]
+                                            case '2':  config['Roblox']['CookieControlPanel'][category][key][1]  = str(isID)
                                             case '3':  config['Roblox']['CookieControlPanel'][category][key][2]  = list(await isNameFunc(                              isAccountInformation,      True))[2]
                                             case '4':  config['Roblox']['CookieControlPanel'][category][key][3]  = list(await isDisplayNameFunc(                       isAccountInformation,      True))[2]
                                             case '5':  _, _, config['Roblox']['CookieControlPanel'][category][key][4], _, _, config['Roblox']['CookieControlPanel'][category][key][5] = list(await isRegistrationDateFunc(session, isID, isAccountInformation, ssl, True))
@@ -3779,8 +3987,7 @@ async def cookieControlPanel(category: str, key: str, path: str):
                                             case '32': config['Roblox']['CookieControlPanel'][category][key][32] = list(await isNumberOfFollowingsFunc( session, isID,                       ssl, True))[2]
                                             case '33': config['Roblox']['CookieControlPanel'][category][key][33] = list(await isRobloxBadgesFunc(       session, isID,                       ssl, True))[2]
                                             case '34': config['Roblox']['CookieControlPanel'][category][key][34] = list(await isXCSRFTokenFunc(         session,                             ssl, True))[2]
-                                except Exception as e:
-                                    # print(f'CCP_U_Error: {e}')
+                                except Exception:
                                     pass
 
                         await startCCP(useSSL)
@@ -3793,7 +4000,7 @@ async def cookieControlPanel(category: str, key: str, path: str):
                 await cls()
                 await lableASCII()
                 while whileTrueStageCCP2:
-                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{path}\\{key}\\{MT_Show_Cookie}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n{config['Roblox']['CookieControlPanel'][category][key][35]}\n\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{path}\\{key}\\{MT_Show_Cookie}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n{config['Roblox']['CookieControlPanel'][category][key][35]}\n\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                     cookieControlPanelCookieCurrentCookieShowCookie = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                     match cookieControlPanelCookieCurrentCookieShowCookie.upper():
                         case '0':
@@ -3801,11 +4008,11 @@ async def cookieControlPanel(category: str, key: str, path: str):
                     await cls()
                     await lableASCII()
             case 'D' | 'В':
-                if not config['General']['Disable_All_Warnings']:
+                if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
                     whileTrueStageCCP2 = True
                     await removeLines(9)
                     while whileTrueStageCCP2:
-                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{path}\\{key}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
+                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{path}\\{key}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
                         confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                         match confirmTheAction.upper():
                             case 'Y' | 'Н':
@@ -3833,7 +4040,7 @@ async def cookieControlPanel(category: str, key: str, path: str):
 
 ### Конфиг функции
 
-def validateConfigSettings(userConfig: TOMLDocument, defaultConfig: TOMLDocument, path=''):
+def validateConfigSettings(userConfig: TOMLDocument, defaultConfig: Table | TOMLDocument, path=''):
     if isinstance(defaultConfig, (Table, TOMLDocument)):
         for key in defaultConfig.keys():
             fullPath = f'{path}.{key}' if path else key
@@ -3859,7 +4066,7 @@ def validateConfigSettings(userConfig: TOMLDocument, defaultConfig: TOMLDocument
 def defaultConfigLoader() -> TOMLDocument:
     configLoader = document()
     configLoader.add(nl())
-    configLoader.add(comment('Meow >:3'))
+    configLoader.add(comment('Meow :3'))
     configLoader.add(nl())
     configLoader.add('Loader', table())
     configLoader['Loader']['Load_Config'] = 'default'
@@ -3872,7 +4079,7 @@ def defaultConfigLoader() -> TOMLDocument:
     configLoader['Updater']['Save_Old_Versions'] = False
     configLoader.add('MeowTool', table())
     configLoader['MeowTool']['Username'] = ''
-    configLoader['MeowTool']['Username'].comment('>:3')
+    configLoader['MeowTool']['Username'].comment(':3')
     return configLoader
 
 async def loadConfigLoader():
@@ -3891,7 +4098,7 @@ async def loadConfigLoader():
             return loadConfig('default')
 
         await checkUpdates()
-        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Мило просим у конфига настройки... >:3{ANSI.CLEAR}\r')
+        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Мило просим у конфига настройки... :3{ANSI.CLEAR}\r')
 
         if configName in configFiles():
             return loadConfig(configName)
@@ -3903,13 +4110,13 @@ async def loadConfigLoader():
         configLoader = defaultConfigLoader()
         open('Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
         await checkUpdates()
-        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Мило просим у конфига настройки... >:3{ANSI.CLEAR}\r')        
+        sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Мило просим у конфига настройки... :3{ANSI.CLEAR}\r')        
         return loadConfig('default')
 
 def defaultConfig() -> TOMLDocument:
     config = document()
     config.add(nl())
-    config.add(comment('Meow >:3'))
+    config.add(comment('Meow :3'))
     config.add(nl())
 
     # General
@@ -3920,7 +4127,8 @@ def defaultConfig() -> TOMLDocument:
     config['General']['Show_Lable_MeowTool'] = True
     config['General']['Show_Lable_by_h1kken'] = False
     config['General']['Press_Any_Key_To_Continue'] = True
-    config['General']['Disable_All_Warnings'] = False
+    config['General']['Disable_Warnings_For_Links'] = False
+    config['General']['Disable_Warnings_For_Dangerous_Actions'] = False
     
     # Proxy
     config.add('Proxy', table())
@@ -3937,12 +4145,16 @@ def defaultConfig() -> TOMLDocument:
 
     # Roblox - General
     config['Roblox'].add('General', table())
-    config['Roblox']['General']['Show_Amount_Of_Lines_In_Files_Cookie_Checker'] = False
-    config['Roblox']['General']['Show_Amount_Of_Lines_In_Files_Transaction_Analysis'] = False
-    config['Roblox']['General']['Play_Sound_Cookie_Checker'] = False
-    config['Roblox']['General']['Play_Sound_Cookie_Sorter'] = False
-    config['Roblox']['General']['Play_Sound_Cookie_Refresher_Mass_Mode'] = False
-    config['Roblox']['General']['Play_Sound_Transaction_Analysis'] = False
+    config['Roblox']['General']['Show_Amount_Of_Lines_In_Files'] = False
+    config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work'] = False
+    
+    # Roblox - General - Outputs
+    config['Roblox']['General'].add('Outputs', table())
+    config['Roblox']['General']['Outputs']['Telegram_Bot_Token'] = ''
+    config['Roblox']['General']['Outputs']['Telegram_Bot_Chat_ID'] = ''
+    config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] = False
+    config['Roblox']['General']['Outputs']['Discord_Webhook_URL'] = ''
+    config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook'] = False
 
     # Roblox - Cookie Sorter
     config['Roblox'].add('CookieSorter', table())
@@ -3981,34 +4193,43 @@ def defaultConfig() -> TOMLDocument:
     for data in cookieData.listOfCookieData:
         config['Roblox']['CookieChecker']['Main'][data[1]] = False
         match data[1]:
-            case 'Donate_All_Time' | 'Rap' | 'Gamepasses' | 'Badges':
-                config['Roblox']['CookieChecker']['Main'][f'{data[1]}_Max_Check_Pages'] = 0
-                config['Roblox']['CookieChecker']['Main'][f'{data[1]}_Max_Check_Pages'].comment('0 - All')
+            case 'Donate_All_Time' | 'Rap':
+                config['Roblox']['CookieChecker']['Main'][f'{data[1]}_Max_Check_Pages'] = -1
+                config['Roblox']['CookieChecker']['Main'][f'{data[1]}_Max_Check_Pages'].comment('-1 - All')
+            case 'Gamepasses' | 'Badges':
+                config['Roblox']['CookieChecker']['Main'][f'{data[1]}_Output_Mode'] = 'Number'
+                config['Roblox']['CookieChecker']['Main'][f'{data[1]}_Output_Mode'].comment('Options: [ Number | Names ]')
+                config['Roblox']['CookieChecker']['Main'][f'{data[1]}_Max_Check_Pages'] = -1
+                config['Roblox']['CookieChecker']['Main'][f'{data[1]}_Max_Check_Pages'].comment('-1 - All')
             case 'Custom_Gamepasses':
                 config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_List'] = [
                     ['Fly A Pet Potion',  False],
                     ['Ride-A-Pet Potion', False]
                 ]
-                config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'] = 0
-                config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'].comment('0 - All')
+                config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'] = -1
+                config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages'].comment('-1 - All')
             case 'Favorite_Places':
+                config['Roblox']['CookieChecker']['Main']['Favorite_Places_Output_Mode'] = 'Number'
+                config['Roblox']['CookieChecker']['Main']['Favorite_Places_Output_Mode'].comment('Options: [ Number | Names ]')
                 config['Roblox']['CookieChecker']['Main']['Favorite_Places_List'] = [
                     [920587237,  'Adopt Me',         False],
                     [142823291,  'Murder Mystery 2', False],
                     [8737899170, 'Pet Simulator 99', False]
                 ]
-                config['Roblox']['CookieChecker']['Main']['Favorite_Places_Max_Check_Pages'] = 0
-                config['Roblox']['CookieChecker']['Main']['Favorite_Places_Max_Check_Pages'].comment('0 - All')
+                config['Roblox']['CookieChecker']['Main']['Favorite_Places_Max_Check_Pages'] = -1
+                config['Roblox']['CookieChecker']['Main']['Favorite_Places_Max_Check_Pages'].comment('-1 - All')
             case 'Bundles':
+                config['Roblox']['CookieChecker']['Main']['Bundles_Output_Mode'] = 'Number'
+                config['Roblox']['CookieChecker']['Main']['Bundles_Output_Mode'].comment('Options: [ Number | Names ]')
                 config['Roblox']['CookieChecker']['Main']['Bundles_List'] = [
                     [192, 'Korblox Deathspeaker', False],
                     [201, 'Headless Horseman',    False]
                 ]
-                config['Roblox']['CookieChecker']['Main']['Bundles_Max_Check_Pages'] = 0
-                config['Roblox']['CookieChecker']['Main']['Bundles_Max_Check_Pages'].comment('0 - All')
+                config['Roblox']['CookieChecker']['Main']['Bundles_Max_Check_Pages'] = -1
+                config['Roblox']['CookieChecker']['Main']['Bundles_Max_Check_Pages'].comment('-1 - All')
             case 'Sessions':
                 config['Roblox']['CookieChecker']['Main']['Sessions_Max_Check_Pages'] = 1
-                config['Roblox']['CookieChecker']['Main']['Sessions_Max_Check_Pages'].comment('0 - All, 1 - Must be good to avoid long wait for this \'https://imgur.com/a/TrBIdCu\'')
+                config['Roblox']['CookieChecker']['Main']['Sessions_Max_Check_Pages'].comment('-1 - All, 1 - Must be good to avoid long wait for this \'https://imgur.com/a/TrBIdCu\'')
 
     # Roblox - Cookie Checker - Places
     config['Roblox']['CookieChecker'].add('Places', table())
@@ -4075,7 +4296,9 @@ def defaultConfig() -> TOMLDocument:
     config['Roblox']['TransactionAnalysis']['Places']['Show_Game_ID_Next_To_The_Name'] = False
     config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places'] = []
     config['Roblox']['TransactionAnalysis']['Places'].add(comment('Places'))
-    
+    config['Roblox']['TransactionAnalysis']['Places'].add(comment('ID = [ID (int), [Clean_Name (str), Full_Name (str)], Check (bool), Discover_New_Names (bool), Count_Robux_In_Total (bool)]'))
+    config['Roblox']['TransactionAnalysis']['Places'].add(comment('ID_Ignore_List = [[Clean_Name (str), Ignore (bool)], ...]'))
+
     # Roblox - Cookie Control Panel
     config['Roblox'].add('CookieControlPanel', table())
     config['Roblox']['CookieControlPanel']['Use_SSL'] = False
@@ -4136,7 +4359,7 @@ async def configContextMenu(indexConfig: int):
     await cls()
     await lableASCII()
     while whileTrueStage3:
-        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Configs}\\{choosedConfig}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if configLoader['Loader']['Load_Config'] == choosedConfig else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Load_On_Launch}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Save[0]}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Load}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Rename}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_File_Location}\n  ┃\n [{ANSI.FG.YELLOW}R{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Reset_To_Default_Settings}\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Configs}\\{choosedConfig}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if configLoader['Loader']['Load_Config'] == choosedConfig else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Load_On_Launch}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Save[0]}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Load}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Rename}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_File_Location}\n  ┃\n [{ANSI.FG.YELLOW}R{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Reset_To_Default_Settings}\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
         configTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
         match configTab.upper():
             case '1':
@@ -4161,7 +4384,7 @@ async def configContextMenu(indexConfig: int):
                 if any(char in newNameOfConfig for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|']) or not newNameOfConfig.strip():
                     return await errorOrCorrectHandler(True, 5, MT_Incorrect_File_Name,                f'{MT_Settings}\\{MT_Configs}\\{choosedConfig}')
                 if not os.path.exists(f'Settings\\Configs\\{choosedConfig}.toml'):
-                    return await errorOrCorrectHandler(True, 5, MT_File_Is_Missing,                    f'{MT_Settings}\\{MT_Configs}\\{choosedConfig}')
+                    return await errorOrCorrectHandler(True, 5, f'{MT_File_Is_Missing}...',            f'{MT_Settings}\\{MT_Configs}\\{choosedConfig}')
                 if newNameOfConfig.lower() in listOfExistsConfigs:
                     return await errorOrCorrectHandler(True, 5, MT_File_With_This_Name_Already_Exists, f'{MT_Settings}\\{MT_Configs}\\{choosedConfig}')
 
@@ -4176,11 +4399,11 @@ async def configContextMenu(indexConfig: int):
                 os.startfile('Settings\\Configs')
                 await removeLines(13)
             case 'R' | 'К':
-                if not config['General']['Disable_All_Warnings']:
+                if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
                     whileTrueStage4 = True
                     await removeLines(13)
                     while whileTrueStage4:
-                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Configs}\\{choosedConfig}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
+                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Configs}\\{choosedConfig}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
                         confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                         match confirmTheAction.upper():
                             case 'Y' | 'Н':
@@ -4190,6 +4413,7 @@ async def configContextMenu(indexConfig: int):
                                 loadConfig(choosedConfig)
                             case 'N' | 'Т':
                                 whileTrueStage4 = False
+
                         await removeLines(8)
                 else:
                     try: os.remove(f'Settings\\Configs\\{choosedConfig}.toml')
@@ -4197,11 +4421,11 @@ async def configContextMenu(indexConfig: int):
                     loadConfig(choosedConfig)
                     await removeLines(13)
             case 'D' | 'В':
-                if not config['General']['Disable_All_Warnings']:
+                if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
                     whileTrueStage4 = True
                     await removeLines(13)
                     while whileTrueStage4:
-                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Configs}\\{choosedConfig}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
+                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Configs}\\{choosedConfig}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
                         confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                         match confirmTheAction.upper():
                             case 'Y' | 'Н':
@@ -4210,12 +4434,10 @@ async def configContextMenu(indexConfig: int):
                                 try: os.remove(f'Settings\\Configs\\{choosedConfig}.toml')
                                 except Exception: pass
                                 if configLoader['Loader']['Current_Config'] not in configFiles() or len(configFiles()) == 0: loadConfig('default')
-                                await removeLines(8)
                             case 'N' | 'Т':
                                 whileTrueStage4 = False
-                                await removeLines(8)
-                            case _:
-                                await removeLines(8)
+
+                        await removeLines(8)
                 else:
                     whileTrueStage3 = False
                     try: os.remove(f'Settings\\Configs\\{choosedConfig}.toml')
@@ -4232,12 +4454,14 @@ async def configContextMenu(indexConfig: int):
                 await removeLines(13)
 
 async def mainMenu():
-    await updateFixer_v2_0_0() # Временно до v3.0.0
+    await updateFixer_v2_0_0() # ‾\/‾ # Временно до v3.0.0
+    await updateFixer_v2_1_0() # _/
 
-    if str(config['General']['Console_Title']).strip() == '' or len(str(config['General']['Console_Title'])) > 50 or any(char in str(config['General']['Console_Title']) for char in ['<', '>', '|', '^', '&']):
+    consoleTitle = config['General']['Console_Title']
+    if str(consoleTitle).strip() == '' or len(str(consoleTitle)) > 50 or any(char in str(consoleTitle) for char in ['<', '>', '|', '^', '&']):
         os.system('title MeowTool... Meow :3')
     else:
-        os.system(f'title {config['General']['Console_Title']}')
+        os.system(f'title {consoleTitle}')
 
     await cls()
     await lableASCII()
@@ -4249,8 +4473,8 @@ async def mainMenu():
         userName = str(configLoader['MeowTool']['Username']).strip()
         if userName:
             amountRemoveLines = 12
-            welcomeString     = f'  {ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD} {MT_Hi}, {ANSI.FG.PINK}{userName}{ANSI.CLEAR + ANSI.DECOR.BOLD} >:3\n\n'
-        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{ANSI.CLEAR}\n\n{ANSI.DECOR.BOLD}{welcomeString} [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Proxy}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Roblox}\n  ┃\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Settings}\n [{ANSI.FG.YELLOW}I{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_About_The_Program}\n [{ANSI.FG.RED}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Close_Program}{ANSI.CLEAR}\n\n')
+            welcomeString     = f'  {ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD} {MT_Hi}, {ANSI.FG.PINK}{userName}{ANSI.CLEAR + ANSI.DECOR.BOLD}! :3\n\n'
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{ANSI.CLEAR}\n\n{ANSI.DECOR.BOLD}{welcomeString} [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Proxy}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Roblox}\n  ┃\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Settings}\n [{ANSI.FG.YELLOW}I{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_About_The_Program}\n [{ANSI.FG.RED}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Close_Program}{ANSI.CLEAR}\n\n')
         mainTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
         match mainTab:
             # Прокси
@@ -4258,7 +4482,7 @@ async def mainMenu():
                 whileTrueStage1 = True
                 await removeLines(amountRemoveLines)
                 while whileTrueStage1:
-                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Proxy}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Checker}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Proxy}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Checker}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                     proxyTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                     match proxyTab.upper():
                         # Прокси Чекер
@@ -4266,7 +4490,7 @@ async def mainMenu():
                             whileTrueStage2 = True
                             await removeLines(7)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Proxy}\\{MT_Checker}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ proxies ({amountOfLines('Proxy\\Checker\\proxies')})\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ http_valid ({amountOfLines('Proxy\\Checker\\http_valid')})\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ http_invalid ({amountOfLines('Proxy\\Checker\\http_invalid')})\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ socks4_valid ({amountOfLines('Proxy\\Checker\\socks4_valid')})\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ socks4_invalid ({amountOfLines('Proxy\\Checker\\socks4_invalid')})\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ socks5_valid ({amountOfLines('Proxy\\Checker\\socks5_valid')})\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ socks5_invalid ({amountOfLines('Proxy\\Checker\\socks5_invalid')})\n [{ANSI.FG.PINK}8{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ custom_valid ({amountOfLines('Proxy\\Checker\\custom_valid')})\n [{ANSI.FG.PINK}9{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ unknown_invalid ({amountOfLines('Proxy\\Checker\\unknown_invalid')})\n  ┃\n [{ANSI.FG.YELLOW}U{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Proxy}\\{MT_Checker}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ proxies ({await amountOfLines('Proxy\\Checker\\proxies')})\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ http_valid ({await amountOfLines('Proxy\\Checker\\http_valid')})\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ http_invalid ({await amountOfLines('Proxy\\Checker\\http_invalid')})\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ socks4_valid ({await amountOfLines('Proxy\\Checker\\socks4_valid')})\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ socks4_invalid ({await amountOfLines('Proxy\\Checker\\socks4_invalid')})\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ socks5_valid ({await amountOfLines('Proxy\\Checker\\socks5_valid')})\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ socks5_invalid ({await amountOfLines('Proxy\\Checker\\socks5_invalid')})\n [{ANSI.FG.PINK}8{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ custom_valid ({await amountOfLines('Proxy\\Checker\\custom_valid')})\n [{ANSI.FG.PINK}9{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ unknown_invalid ({await amountOfLines('Proxy\\Checker\\unknown_invalid')})\n  ┃\n [{ANSI.FG.YELLOW}U{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 proxyCheckerTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 match proxyCheckerTab.upper():
                                     case '1': await proxyChecker('proxies')
@@ -4305,7 +4529,7 @@ async def mainMenu():
                 whileTrueStage1 = True
                 await removeLines(amountRemoveLines)
                 while whileTrueStage1:
-                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Checker}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Sorter}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Refresher}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Transaction_Analysis}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Control_Panel}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Misc}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Checker}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Sorter}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Refresher}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Transaction_Analysis}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Control_Panel}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Misc}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                     robloxTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                     match robloxTab.upper():
                         # Роблокс Куки Чекер
@@ -4313,23 +4537,27 @@ async def mainMenu():
                             whileTrueStage2 = True
                             await removeLines(12)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Checker}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Cookie_Checker}{ANSI.CLEAR}\n\n')
                                 RCCFiles = await printFiles('Cookie_Checker', 'Roblox\\Cookie Checker', True)
-                                sys.stdout.write(f'{ANSI.DECOR.BOLD}{'  ┃\n' if RCCFiles else ''} [{ANSI.FG.YELLOW}U{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Show_Amount_Of_Lines_In_Files_Cookie_Checker'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Amount_Of_Lines_In_Files}\n [{ANSI.FG.YELLOW}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Play_Sound_Cookie_Checker'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f'{ANSI.DECOR.BOLD}{'  ┃\n' if RCCFiles else ''} [{ANSI.FG.YELLOW}U{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Show_Amount_Of_Lines_In_Files'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Amount_Of_Lines_In_Files}\n [{ANSI.FG.YELLOW}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}T{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Send[0]} {MT_Results_To_Telegram[0].lower() + MT_Results_To_Telegram[1:]}\n [{ANSI.FG.YELLOW}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Send[0]} {MT_Results_To_Discord[0].lower() + MT_Results_To_Discord[1:]}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 robloxCookieCheckerTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 if robloxCookieCheckerTab == '0': whileTrueStage2 = False
                                 elif robloxCookieCheckerTab.isdigit() and int(robloxCookieCheckerTab) <= len(RCCFiles):
                                     await robloxCookieChecker(RCCFiles[int(robloxCookieCheckerTab) - 1])
-                                elif robloxCookieCheckerTab.upper() in ('S', 'Ы'):
-                                    config['Roblox']['General']['Show_Amount_Of_Lines_In_Files_Cookie_Checker'] ^= True
-                                    await autoSaveConfig()
-                                elif robloxCookieCheckerTab.upper() in ('P', 'З'):
-                                    config['Roblox']['General']['Play_Sound_Cookie_Checker'] ^= True
-                                    if config['Roblox']['General']['Play_Sound_Cookie_Checker']: MessageBeep(MB_ICONASTERISK)
-                                    await autoSaveConfig()
-                                elif robloxCookieCheckerTab.upper() in ('R', 'К'):
-                                    loadConfig(configLoader['Loader']['Current_Config'])
+                                match robloxCookieCheckerTab.upper():
+                                    case 'S' | 'Ы':
+                                        config['Roblox']['General']['Show_Amount_Of_Lines_In_Files'] ^= True
+                                    case 'P' | 'З':
+                                        config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work'] ^= True
+                                        if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work']: await playOSSound()
+                                    case 'T' | 'Е':
+                                        config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] ^= True
+                                    case 'D' | 'В':
+                                        config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook'] ^= True
+                                    case 'R' | 'К':
+                                        loadConfig(configLoader['Loader']['Current_Config'])
 
+                                await autoSaveConfigAndRemoveLinesInSettings(robloxCookieCheckerTab.upper(), ('S', 'Ы', 'P', 'З', 'T', 'Е', 'D', 'В'), (), 0)
                                 await cls()
                                 await lableASCII()
                         # Роблокс Куки Сортер
@@ -4337,14 +4565,18 @@ async def mainMenu():
                             whileTrueStage2 = True
                             await removeLines(12)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Sorter}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Start_Sorting}\n  ┃\n [{ANSI.FG.YELLOW}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Play_Sound_Cookie_Sorter'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Cookie_Sorter}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Start_Sorting}\n  ┃\n [{ANSI.FG.YELLOW}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}T{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Send[0]} {MT_Results_To_Telegram[0].lower() + MT_Results_To_Telegram[1:]}\n [{ANSI.FG.YELLOW}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Send[0]} {MT_Results_To_Discord[0].lower() + MT_Results_To_Discord[1:]}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 robloxCookieSorterTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 match robloxCookieSorterTab.upper():
                                     case '1':
                                         await robloxCookieSorter()
                                     case 'P' | 'З':
-                                        config['Roblox']['General']['Play_Sound_Cookie_Sorter'] ^= True
-                                        if config['Roblox']['General']['Play_Sound_Cookie_Sorter']: MessageBeep(MB_ICONASTERISK)
+                                        config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work'] ^= True
+                                        if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work']: await playOSSound()
+                                    case 'T' | 'Е':
+                                        config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] ^= True
+                                    case 'D' | 'В':
+                                        config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook'] ^= True
                                     case '0':
                                         whileTrueStage2 = False
                                     case 'F' | 'А':
@@ -4353,21 +4585,21 @@ async def mainMenu():
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
                                     case _:
-                                        await removeLines(8)
+                                        await removeLines(10)
 
-                                await autoSaveConfigAndRemoveLinesInSettings(robloxCookieSorterTab.upper(), ('P', 'З'), ('0', 'R', 'К'), 8)
+                                await autoSaveConfigAndRemoveLinesInSettings(robloxCookieSorterTab.upper(), ('P', 'З', 'T', 'Е', 'D', 'В'), ('0', 'R', 'К'), 10)
                         # Роблокс Куки Рефрешер
                         case '3':
                             whileTrueStage2 = True
                             await removeLines(12)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Refresher}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Single_Mode}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Mass_Mode}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Cookie_Refresher}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Single_Mode}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Mass_Mode}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 robloxCookieRefresherTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 match robloxCookieRefresherTab.upper():
                                     # Одиночный режим
                                     case '1':
                                         await removeLines(8)
-                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Single_Mode}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Single_Mode}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                         robloxCookieRefresherCookieEnter = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_A_Cookie[0]}:{ANSI.CLEAR} ')
 
                                         async def refresherSingleModeCookie():
@@ -4377,7 +4609,7 @@ async def mainMenu():
 
                                             await cls()
                                             await lableASCII()
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Single_Mode}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Wait[0]}...{ANSI.CLEAR}\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Single_Mode}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Wait[0]}...{ANSI.CLEAR}\n')
 
                                             cookie = {'.ROBLOSECURITY': robloxCookieRefresherCookieEnter}
 
@@ -4409,7 +4641,7 @@ async def mainMenu():
                                             config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = dateOfSingleModeRefreshing
                                             await autoSaveConfig()
                                             await removeLines(3)
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Single_Mode}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n{newCookie}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Single_Mode}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n{newCookie}\n\n')
                                             await waitingInput()
 
                                         await refresherSingleModeCookie()
@@ -4422,15 +4654,15 @@ async def mainMenu():
                                             except ValueError: nextRefresh = ''
                                             datetimeNow = datetime.now()
                                             statusOfRefresh = f'{MT_Status}: {ANSI.FG.GREEN}{MT_Can_Run}{ANSI.CLEAR + ANSI.DECOR.BOLD}' if not nextRefresh or nextRefresh < datetimeNow else f'{MT_Status}: {ANSI.FG.RED}{MT_Wait[0]} {abs(int((datetimeNow - nextRefresh).total_seconds()))} {MT_Seconds}.{ANSI.CLEAR + ANSI.DECOR.BOLD}'
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_50_Cookies_In_Once}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_50_Cookies_In_60_Seconds}\n  ┃\n [{ANSI.FG.RED if nextRefresh and nextRefresh > datetimeNow else ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {statusOfRefresh}\n [{ANSI.FG.YELLOW}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Play_Sound_Cookie_Refresher_Mass_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')    
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_50_Cookies_In_Once}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_50_Cookies_In_60_Seconds}\n  ┃\n [{ANSI.FG.RED if nextRefresh and nextRefresh > datetimeNow else ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {statusOfRefresh}\n [{ANSI.FG.YELLOW}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}T{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Send[0]} {MT_Results_To_Telegram[0].lower() + MT_Results_To_Telegram[1:]}\n [{ANSI.FG.YELLOW}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Send[0]} {MT_Results_To_Discord[0].lower() + MT_Results_To_Discord[1:]}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')    
                                             robloxCookieRefresherMassModeTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             match robloxCookieRefresherMassModeTab.upper():
                                                 case '1':
                                                     async def refresherMassModeOnly50Cookie():
                                                         if config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] != '' and nextRefresh > datetime.now():
-                                                            return await errorOrCorrectHandler(True, 10, f'{MT_Wait[0]} {abs(int((nextRefresh - datetime.now()).total_seconds()))} {MT_Seconds}.', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
+                                                            return await errorOrCorrectHandler(True, 12, f'{MT_Wait[0]} {abs(int((nextRefresh - datetime.now()).total_seconds()))} {MT_Seconds}.', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
                                                         if not os.path.exists('Roblox\\Cookie Refresher\\Mass Mode\\cookies.txt'):
-                                                            return await errorOrCorrectHandler(True, 10, f'{MT_No_Cookies_Found}', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
+                                                            return await errorOrCorrectHandler(True, 12, MT_No_Cookies_Found, f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
 
                                                         dateOfMassMode1Refreshing = datetime.now().strftime('%d.%m.%Y - %H.%M.%S')
 
@@ -4442,26 +4674,39 @@ async def mainMenu():
                                                             if len(refreshTasks) >= 50: break
 
                                                         if not refreshTasks:
-                                                            return await errorOrCorrectHandler(True, 10, f'{MT_No_Cookies_Found}', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
+                                                            return await errorOrCorrectHandler(True, 12, MT_No_Cookies_Found, f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
 
-                                                        await removeLines(9)
+                                                        await removeLines(11)
                                                         sys.stdout.write(f'\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINE1}cookies.txt{ANSI.CLEAR + ANSI.DECOR.BOLD}\':\n')
 
                                                         await asyncio.gather(*refreshTasks)
 
                                                         config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = dateOfMassMode1Refreshing
                                                         await autoSaveConfig()
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Checking_Complete}\n\n')
-                                                        if config['Roblox']['General']['Play_Sound_Cookie_Refresher_Mass_Mode']: MessageBeep(MB_ICONASTERISK)
-                                                        await waitingInput()
 
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Checking_Complete}\n\n')
+                                                        if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work']: await playOSSound()
+
+                                                        if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] or config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook']:
+                                                            await makeArchive(f'Roblox\\Cookie Refresher\\Mass Mode\\outputs\\{dateOfMassMode1Refreshing}')
+
+                                                            messageText = f'*💜 {MT_Roblox} {MT_Cookie_Refresher.lower()}*'
+
+                                                            if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot']:
+                                                                await sendMessageTelegramBot(str(config['Roblox']['General']['Outputs']['Telegram_Bot_Token']), str(config['Roblox']['General']['Outputs']['Telegram_Bot_Chat_ID']), messageText, f'Roblox\\Cookie Refresher\\Mass Mode\\outputs\\{dateOfMassMode1Refreshing}.zip')
+
+                                                            if config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook']:
+                                                                await sendMessageDiscordWebhook(str(config['Roblox']['General']['Outputs']['Discord_Webhook_URL']), messageText.replace('*', '**'), 'Roblox\\Cookie Refresher\\Mass Mode\\outputs', f'{dateOfMassMode1Refreshing}.zip')
+                                                            sys.stdout.write('\n')
+
+                                                        await waitingInput()
                                                     await refresherMassModeOnly50Cookie()
                                                 case '2':
                                                     async def refresherMassModeMore50Cookie():
                                                         if config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] != '' and nextRefresh > datetime.now():
-                                                            return await errorOrCorrectHandler(True, 10, f'{MT_Wait[0]} {abs(int((nextRefresh - datetime.now()).total_seconds()))} {MT_Seconds}.', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
+                                                            return await errorOrCorrectHandler(True, 12, f'{MT_Wait[0]} {abs(int((nextRefresh - datetime.now()).total_seconds()))} {MT_Seconds}.', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
                                                         if not os.path.exists('Roblox\\Cookie Refresher\\Mass Mode\\cookies.txt'):
-                                                            return await errorOrCorrectHandler(True, 10, f'{MT_No_Cookies_Found}', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
+                                                            return await errorOrCorrectHandler(True, 12, MT_No_Cookies_Found, f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
 
                                                         correctedCookieList = []
                                                         for cookie in open(f'Roblox\\Cookie Refresher\\Mass Mode\\cookies.txt', 'r', encoding='UTF-8').readlines():
@@ -4470,11 +4715,11 @@ async def mainMenu():
                                                                 correctedCookieList.append(cookie)
 
                                                         if not correctedCookieList:
-                                                            return await errorOrCorrectHandler(True, 10, f'{MT_No_Cookies_Found}', f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
+                                                            return await errorOrCorrectHandler(True, 12, MT_No_Cookies_Found, f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}')
 
                                                         dateOfMassMode2Refreshing = datetime.now().strftime('%d.%m.%Y - %H.%M.%S')
 
-                                                        await removeLines(9)
+                                                        await removeLines(11)
                                                         sys.stdout.write(f'\n {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINE1}cookies.txt{ANSI.CLEAR + ANSI.DECOR.BOLD}\':\n')
 
                                                         while True:
@@ -4487,24 +4732,38 @@ async def mainMenu():
 
                                                             config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = dateOfMassMode2Refreshing
                                                             await autoSaveConfig()
-                                                            
+
                                                             if not correctedCookieList:
                                                                 break
-                                                        
+
                                                             sys.stdout.write(f'\r {ANSI.DECOR.BOLD}[{ANSI.FG.RED}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Rate_Limit_Has_Been_Reached}. {MT_Wait[1]} 60 {MT_Seconds}... :<{ANSI.CLEAR}\n')
                                                             await asyncio.sleep(60)
                                                             await removeLines(1)
 
-                                                        config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = dateOfMassMode2Refreshing
-                                                        await autoSaveConfig()
                                                         sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Checking_Complete}\n\n')
-                                                        if config['Roblox']['General']['Play_Sound_Cookie_Refresher_Mass_Mode']: MessageBeep(MB_ICONASTERISK)
-                                                        await waitingInput()
+                                                        if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work']: await playOSSound()
                                                         
+                                                        if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] or config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook']:
+                                                            await makeArchive(f'Roblox\\Cookie Refresher\\Mass Mode\\outputs\\{dateOfMassMode2Refreshing}')
+
+                                                            messageText = f'*💜 {MT_Roblox} {MT_Cookie_Refresher.lower()}*'
+
+                                                            if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot']:
+                                                                await sendMessageTelegramBot(str(config['Roblox']['General']['Outputs']['Telegram_Bot_Token']), str(config['Roblox']['General']['Outputs']['Telegram_Bot_Chat_ID']), messageText, f'Roblox\\Cookie Refresher\\Mass Mode\\outputs\\{dateOfMassMode2Refreshing}.zip')
+
+                                                            if config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook']:
+                                                                await sendMessageDiscordWebhook(str(config['Roblox']['General']['Outputs']['Discord_Webhook_URL']), messageText.replace('*', '**'), 'Roblox\\Cookie Refresher\\Mass Mode\\outputs', f'{dateOfMassMode2Refreshing}.zip')
+                                                            sys.stdout.write('\n')
+
+                                                        await waitingInput()
                                                     await refresherMassModeMore50Cookie()
                                                 case 'P' | 'З':
-                                                    config['Roblox']['General']['Play_Sound_Cookie_Refresher_Mass_Mode'] ^= True
-                                                    if config['Roblox']['General']['Play_Sound_Cookie_Refresher_Mass_Mode']: MessageBeep(MB_ICONASTERISK)
+                                                    config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work'] ^= True
+                                                    if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work']: await playOSSound()
+                                                case 'T' | 'Е':
+                                                    config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] ^= True
+                                                case 'D' | 'В':
+                                                    config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook'] ^= True
                                                 case '0':
                                                     whileTrueStage3 = False
                                                 case 'F' | 'А':
@@ -4513,9 +4772,9 @@ async def mainMenu():
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
                                                 case _:
-                                                    await removeLines(10)
+                                                    await removeLines(12)
 
-                                            await autoSaveConfigAndRemoveLinesInSettings(robloxCookieRefresherMassModeTab.upper(), ('P', 'З'), ('0', 'R', 'К'), 10)
+                                            await autoSaveConfigAndRemoveLinesInSettings(robloxCookieRefresherMassModeTab.upper(), ('P', 'З', 'T', 'Е', 'D', 'В'), ('0', 'R', 'К'), 12)
                                     case '0':
                                         whileTrueStage2 = False
                                     case 'R' | 'К':
@@ -4529,23 +4788,27 @@ async def mainMenu():
                             whileTrueStage2 = True
                             await removeLines(12)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Transaction_Analysis}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Transaction_Analysis}{ANSI.CLEAR}\n\n')
                                 TAFiles = await printFiles('Transaction_Analysis', 'Roblox\\Transaction Analysis', True)
-                                sys.stdout.write(f'{ANSI.DECOR.BOLD}{'  ┃\n' if TAFiles else ''} [{ANSI.FG.YELLOW}U{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Show_Amount_Of_Lines_In_Files_Transaction_Analysis'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Amount_Of_Lines_In_Files}\n [{ANSI.FG.YELLOW}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Play_Sound_Transaction_Analysis'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f'{ANSI.DECOR.BOLD}{'  ┃\n' if TAFiles else ''} [{ANSI.FG.YELLOW}U{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Show_Amount_Of_Lines_In_Files'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Amount_Of_Lines_In_Files}\n [{ANSI.FG.YELLOW}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}T{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Send[0]} {MT_Results_To_Telegram[0].lower() + MT_Results_To_Telegram[1:]}\n [{ANSI.FG.YELLOW}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Send[0]} {MT_Results_To_Discord[0].lower() + MT_Results_To_Discord[1:]}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 transactionAnalysisTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 if transactionAnalysisTab == '0': whileTrueStage2 = False
                                 elif transactionAnalysisTab.isdigit() and int(transactionAnalysisTab) <= len(TAFiles):
                                     await robloxTransactionAnalysis(TAFiles[int(transactionAnalysisTab) - 1])
-                                elif transactionAnalysisTab.upper() in ('S', 'Ы'):
-                                    config['Roblox']['General']['Show_Amount_Of_Lines_In_Files_Transaction_Analysis'] ^= True
-                                    await autoSaveConfig()
-                                elif transactionAnalysisTab.upper() in ('P', 'З'):
-                                    config['Roblox']['General']['Play_Sound_Transaction_Analysis'] ^= True
-                                    if config['Roblox']['General']['Play_Sound_Transaction_Analysis']: MessageBeep(MB_ICONASTERISK)
-                                    await autoSaveConfig()
-                                elif transactionAnalysisTab.upper() in ('R', 'К'):
-                                    loadConfig(configLoader['Loader']['Current_Config'])
+                                match transactionAnalysisTab.upper():
+                                    case 'S' | 'Ы':
+                                        config['Roblox']['General']['Show_Amount_Of_Lines_In_Files'] ^= True
+                                    case 'P' | 'З':
+                                        config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work'] ^= True
+                                        if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work']: await playOSSound()
+                                    case 'T' | 'Е':
+                                        config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] ^= True
+                                    case 'D' | 'В':
+                                        config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook'] ^= True
+                                    case 'R' | 'К':
+                                        loadConfig(configLoader['Loader']['Current_Config'])
 
+                                await autoSaveConfigAndRemoveLinesInSettings(transactionAnalysisTab.upper(), ('S', 'Ы', 'P', 'З', 'T', 'Е', 'D', 'В'), (), 0)
                                 await cls()
                                 await lableASCII()
                         # Панель управлением куки
@@ -4553,12 +4816,12 @@ async def mainMenu():
                             whileTrueStage2 = True
                             await removeLines(12)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Control_Panel}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enter_A_Cookie[1]}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_History_Manual}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_History_Checker}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Cookie_Control_Panel}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enter_A_Cookie[1]}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_History_Manual}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_History_Checker}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 cookieControlPanelCookieTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 match cookieControlPanelCookieTab.upper():
                                     case '1':
                                         await removeLines(9)
-                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Control_Panel}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Cookie_Control_Panel}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                         cookieControlPanelCookieEnter = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_A_Cookie[0]}:{ANSI.CLEAR} ')
 
                                         async def cookieControlPanelManualEnter():
@@ -4602,7 +4865,7 @@ async def mainMenu():
                                         await removeLines(9)
                                         whileTrueStage3 = True
                                         while whileTrueStage3:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Control_Panel}\\{MT_History_Manual}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Cookie_Control_Panel}\\{MT_History_Manual}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n')
                                             await printCCPCookiesInHistory('CookieControlPanelHistory')
                                             cookieControlPanelCookieManualHistoryFinderTab = input(f'{'  ┃\n' if config['Roblox']['CookieControlPanel']['CookieControlPanelHistory'] else ''} [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             if cookieControlPanelCookieManualHistoryFinderTab == '0': whileTrueStage3 = False
@@ -4617,7 +4880,7 @@ async def mainMenu():
                                         await removeLines(9)
                                         whileTrueStage3 = True
                                         while whileTrueStage3:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Cookie_Control_Panel}\\{MT_History_Checker}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Cookie_Control_Panel}\\{MT_History_Checker}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n')
                                             await printCCPCookiesInHistory('RobloxCookieCheckerHistory')
                                             cookieControlPanelCookieCheckerHistoryFinderTab = input(f'{'  ┃\n' if config['Roblox']['CookieControlPanel']['RobloxCookieCheckerHistory'] else ''} [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             if cookieControlPanelCookieCheckerHistoryFinderTab == '0': whileTrueStage3 = False
@@ -4645,20 +4908,16 @@ async def mainMenu():
                             columnarHeaders = [MT_Id, MT_Name, MT_Link]
                             await removeLines(12)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Misc}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Gamepasses_Parser_From_The_Place}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Badges_Parser_From_The_Place}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Upload_All_Info_Gamepasses_And_Badges}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Misc}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Gamepasses_Parser_From_The_Place}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Badges_Parser_From_The_Place}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Upload_All_Info_Gamepasses_And_Badges}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 robloxMiscTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 match robloxMiscTab.upper():
                                     # Парсер геймпассов
                                     case '1':
                                         await removeLines(9)
-                                        miscRobloxParseGamepassesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Misc}\\{MT_Gamepasses_Parser_From_The_Place}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Cancel}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_The_Place_ID}:{ANSI.CLEAR} ')
+                                        miscRobloxParseGamepassesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Misc}\\{MT_Gamepasses_Parser_From_The_Place}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Cancel}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_The_Place_ID}:{ANSI.CLEAR} ')
 
                                         async def parseRobloxGamepasses():
                                             if miscRobloxParseGamepassesTab == '0': return
-                                            if not miscRobloxParseGamepassesTab.isdigit():
-                                                return await errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID,          f'{MT_Roblox}\\{MT_Misc}\\{MT_Gamepasses_Parser_From_The_Place}')
-                                            if len(miscRobloxParseGamepassesTab) > 20:
-                                                return await errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_ID_50,   f'{MT_Roblox}\\{MT_Misc}\\{MT_Gamepasses_Parser_From_The_Place}')
 
                                             universeId = requests.get(f'https://apis.roblox.com/universes/v1/places/{miscRobloxParseGamepassesTab}/universe').json()['universeId']
 
@@ -4671,7 +4930,7 @@ async def mainMenu():
                                                 return await errorOrCorrectHandler(True, 5, MT_The_Place_Has_No_Gamepasses, f'{MT_Roblox}\\{MT_Misc}\\{MT_Gamepasses_Parser_From_The_Place}')
 
                                             gameInfo = requests.get(f'https://games.roblox.com/v1/games?universeIds={universeId}').json()
-                                            placeNameWithoutSpecial = removeTwoSpaces(sub(r'[\\/:*?"<>|]', '', removeBracketsAndIn(replace_emoji(gameInfo['data'][0]['name'], replace=''), True, True))).strip()
+                                            placeNameWithoutSpecial = await removeTwoSpaces(sub(r'[\\/:*?"<>|]', '', await removeBracketsAndIn(replace_emoji(gameInfo['data'][0]['name'], replace=''), True, True))).strip()
                                             await removeLines(3)
                                             sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Found_Data_On} {miscRobloxParseGamepassesTab} ({placeNameWithoutSpecial}):\n\n')
 
@@ -4679,12 +4938,12 @@ async def mainMenu():
                                             for gamepass in gamepassesInfo['data']:
                                                 gamepassName = str(gamepass['name']).replace('\r', '').replace('\n', '')
                                                 if config['Roblox']['Misc']['GamepassesParser']['Remove_Emojies_From_Name']:                gamepassName = replace_emoji(gamepassName, replace='')
-                                                if config['Roblox']['Misc']['GamepassesParser']['Remove_Round_Brackets_And_In_From_Name']:  gamepassName = removeBracketsAndIn(gamepassName, True, False)
-                                                if config['Roblox']['Misc']['GamepassesParser']['Remove_Square_Brackets_And_In_From_Name']: gamepassName = removeBracketsAndIn(gamepassName, False, True)
+                                                if config['Roblox']['Misc']['GamepassesParser']['Remove_Round_Brackets_And_In_From_Name']:  gamepassName = await removeBracketsAndIn(gamepassName, True, False)
+                                                if config['Roblox']['Misc']['GamepassesParser']['Remove_Square_Brackets_And_In_From_Name']: gamepassName = await removeBracketsAndIn(gamepassName, False, True)
                                                 parsedGamepasses.append([gamepass['id'], gamepassName, f'https://www.roblox.com/game-pass/{gamepass['id']}'])
 
                                             os.makedirs('Roblox\\Misc\\Gamepasses parser', exist_ok=True)
-                                            open(f'Roblox\\Misc\\Gamepasses parser\\{miscRobloxParseGamepassesTab} ({placeNameWithoutSpecial}).txt', 'w', encoding='UTF-8').write(f'\n  Meow >:3\n\n  {MT_Place_ID}: {miscRobloxParseGamepassesTab}\n  {MT_Place_Name}: {gameInfo['data'][0]['name']}\n  {MT_Place_Link}: https://www.roblox.com/games/{miscRobloxParseGamepassesTab}\n\n  [*] {MT_Gamepasses}\n{columnar(parsedGamepasses, columnarHeaders, no_borders=True)}')
+                                            open(f'Roblox\\Misc\\Gamepasses parser\\{miscRobloxParseGamepassesTab} ({placeNameWithoutSpecial}).txt', 'w', encoding='UTF-8').write(f'\n  Meow :3\n\n  {MT_Place_ID}: {miscRobloxParseGamepassesTab}\n  {MT_Place_Name}: {gameInfo['data'][0]['name']}\n  {MT_Place_Link}: https://www.roblox.com/games/{miscRobloxParseGamepassesTab}\n\n  [*] {MT_Gamepasses}\n{columnar(parsedGamepasses, columnarHeaders, no_borders=True)}')
                                             sys.stdout.write(f'  {MT_Place_ID}: {miscRobloxParseGamepassesTab}\n  {MT_Place_Name}: {gameInfo['data'][0]['name']}\n  {MT_Place_Link}: https://www.roblox.com/games/{miscRobloxParseGamepassesTab}\n\n  [{ANSI.FG.GREEN}*{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.DECOR.UNDERLINE1}{MT_Gamepasses}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n{columnar(parsedGamepasses, columnarHeaders, no_borders=True)}\n {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_The_Data_Is_Saved_In}: Roblox\\Misc\\Gamepasses parser\\{miscRobloxParseGamepassesTab} ({placeNameWithoutSpecial}).txt\n\n')
                                             await waitingInput()
 
@@ -4694,14 +4953,10 @@ async def mainMenu():
                                     # Парсер бейджей
                                     case '2':
                                         await removeLines(9)
-                                        miscRobloxParseBadgesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Cancel}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_The_Place_ID}:{ANSI.CLEAR} ')
+                                        miscRobloxParseBadgesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Cancel}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_The_Place_ID}:{ANSI.CLEAR} ')
                                         
                                         async def parseRobloxBadges():
                                             if miscRobloxParseBadgesTab == '0': return
-                                            if not miscRobloxParseBadgesTab.isdigit():
-                                                return await errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID,        f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
-                                            if len(miscRobloxParseBadgesTab) > 20:
-                                                return await errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_ID_50, f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
 
                                             requestUniverseId = requests.get(f'https://apis.roblox.com/universes/v1/places/{miscRobloxParseBadgesTab}/universe').json()['universeId']
 
@@ -4714,7 +4969,7 @@ async def mainMenu():
                                                 return await errorOrCorrectHandler(True, 5, MT_The_Place_Has_No_Badges,   f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
 
                                             requestGameInfo = requests.get(f'https://games.roblox.com/v1/games?universeIds={requestUniverseId}').json()
-                                            placeNameWithoutSpecial = removeTwoSpaces(sub(r'[\/:*?"<>|]', '', removeBracketsAndIn(replace_emoji(requestGameInfo['data'][0]['name'], replace=''), True, True))).strip()
+                                            placeNameWithoutSpecial = await removeTwoSpaces(sub(r'[\/:*?"<>|]', '', await removeBracketsAndIn(replace_emoji(requestGameInfo['data'][0]['name'], replace=''), True, True))).strip()
 
                                             await removeLines(3)
                                             sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Found_Data_On} {miscRobloxParseBadgesTab} ({placeNameWithoutSpecial}):\n\n')
@@ -4724,12 +4979,12 @@ async def mainMenu():
                                             for badge in requestBadgesInfo['data']:
                                                 badgeName = str(badge['name']).replace('\r', '').replace('\n', '')
                                                 if config['Roblox']['Misc']['BadgesParser']['Remove_Emojies_From_Name']:                badgeName = replace_emoji(badgeName, replace='')
-                                                if config['Roblox']['Misc']['BadgesParser']['Remove_Round_Brackets_And_In_From_Name']:  badgeName = removeBracketsAndIn(badgeName, True, False)
-                                                if config['Roblox']['Misc']['BadgesParser']['Remove_Square_Brackets_And_In_From_Name']: badgeName = removeBracketsAndIn(badgeName, False, True)
+                                                if config['Roblox']['Misc']['BadgesParser']['Remove_Round_Brackets_And_In_From_Name']:  badgeName = await removeBracketsAndIn(badgeName, True, False)
+                                                if config['Roblox']['Misc']['BadgesParser']['Remove_Square_Brackets_And_In_From_Name']: badgeName = await removeBracketsAndIn(badgeName, False, True)
                                                 parsedBadges.append([badge['id'], badgeName, f'https://www.roblox.com/badges/{badge['id']}'])
 
                                             os.makedirs('Roblox\\Misc\\Badges parser', exist_ok=True)
-                                            open(f'Roblox\\Misc\\Badges parser\\{miscRobloxParseBadgesTab} ({placeNameWithoutSpecial}).txt', 'w', encoding='UTF-8').write(f'\n  Meow >:3\n\n  {MT_Place_ID}: {miscRobloxParseBadgesTab}\n  {MT_Place_Name}: {requestGameInfo['data'][0]['name']}\n  {MT_Place_Link}: https://www.roblox.com/games/{miscRobloxParseBadgesTab}\n\n  [*] {MT_Badges}\n{columnar(parsedBadges, columnarHeaders, no_borders=True)}')
+                                            open(f'Roblox\\Misc\\Badges parser\\{miscRobloxParseBadgesTab} ({placeNameWithoutSpecial}).txt', 'w', encoding='UTF-8').write(f'\n  Meow :3\n\n  {MT_Place_ID}: {miscRobloxParseBadgesTab}\n  {MT_Place_Name}: {requestGameInfo['data'][0]['name']}\n  {MT_Place_Link}: https://www.roblox.com/games/{miscRobloxParseBadgesTab}\n\n  [*] {MT_Badges}\n{columnar(parsedBadges, columnarHeaders, no_borders=True)}')
                                             sys.stdout.write(f'  {MT_Place_ID}: {miscRobloxParseBadgesTab}\n  {MT_Place_Name}: {requestGameInfo['data'][0]['name']}\n  {MT_Place_Link}: https://www.roblox.com/games/{miscRobloxParseBadgesTab}\n\n  [{ANSI.FG.GREEN}*{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.DECOR.UNDERLINE1}{MT_Badges}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n{columnar(parsedBadges, columnarHeaders, no_borders=True)}\n {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_The_Data_Is_Saved_In}: Roblox\\Misc\\Badges parser\\{miscRobloxParseBadgesTab} ({placeNameWithoutSpecial}).txt\n\n')
                                             await waitingInput()
 
@@ -4744,13 +4999,13 @@ async def mainMenu():
                                                 for gamepass in place.Gamepasses.listOfGamepasses:
                                                     uploadAllGamepassesAndBadges.append([gamepass[1], gamepass[0], f'https://www.roblox.com/game-pass/{gamepass[1]}'])
                                                 os.makedirs('Roblox\\Misc\\All gamepasses and badges from program\\Gamepasses', exist_ok=True)
-                                                open(f'Roblox\\Misc\\All gamepasses and badges from program\\Gamepasses\\{place.placeNames[3]} ({sub(r'[\/:*?"<>|]', '', place.placeNames[0])}).txt', 'w', encoding='UTF-8').write(f'\n  Meow >:3\n\n  {MT_Place_ID}: {place.placeNames[3]}\n  {MT_Place_Name}: {place.placeNames[0]}\n  {MT_Place_Link}: https://www.roblox.com/games/{place.placeNames[3]}\n\n  [*] {MT_Gamepasses}\n{columnar(uploadAllGamepassesAndBadges, columnarHeaders, no_borders=True)}')
+                                                open(f'Roblox\\Misc\\All gamepasses and badges from program\\Gamepasses\\{place.placeNames[3]} ({sub(r'[\/:*?"<>|]', '', place.placeNames[0])}).txt', 'w', encoding='UTF-8').write(f'\n  Meow :3\n\n  {MT_Place_ID}: {place.placeNames[3]}\n  {MT_Place_Name}: {place.placeNames[0]}\n  {MT_Place_Link}: https://www.roblox.com/games/{place.placeNames[3]}\n\n  [*] {MT_Gamepasses}\n{columnar(uploadAllGamepassesAndBadges, columnarHeaders, no_borders=True)}')
                                             uploadAllGamepassesAndBadges = []
                                             if getattr(place, 'Badges', False):
                                                 for badge in place.Badges.listOfBadges:
                                                     uploadAllGamepassesAndBadges.append([badge[1], badge[0], f'https://www.roblox.com/badges/{badge[1]}'])
                                                 os.makedirs('Roblox\\Misc\\All gamepasses and badges from program\\Badges', exist_ok=True)
-                                                open(f'Roblox\\Misc\\All gamepasses and badges from program\\Badges\\{place.placeNames[3]} ({sub(r'[\/:*?"<>|]', '', place.placeNames[0])}).txt', 'w', encoding='UTF-8').write(f'\n  Meow >:3\n\n  {MT_Place_ID}: {place.placeNames[3]}\n  {MT_Place_Name}: {place.placeNames[0]}\n  {MT_Place_Link}: https://www.roblox.com/games/{place.placeNames[3]}\n\n  [*] {MT_Badges}\n{columnar(uploadAllGamepassesAndBadges, columnarHeaders, no_borders=True)}')    
+                                                open(f'Roblox\\Misc\\All gamepasses and badges from program\\Badges\\{place.placeNames[3]} ({sub(r'[\/:*?"<>|]', '', place.placeNames[0])}).txt', 'w', encoding='UTF-8').write(f'\n  Meow :3\n\n  {MT_Place_ID}: {place.placeNames[3]}\n  {MT_Place_Name}: {place.placeNames[0]}\n  {MT_Place_Link}: https://www.roblox.com/games/{place.placeNames[3]}\n\n  [*] {MT_Badges}\n{columnar(uploadAllGamepassesAndBadges, columnarHeaders, no_borders=True)}')    
                                         await errorOrCorrectHandler(False, 9, f'{MT_Successfully_Uploaded_In} \'Roblox\\Misc\\All gamepasses and badges from program\'', f'{MT_Roblox}\\{MT_Misc}')
                                     case '0':
                                         whileTrueStage2 = False
@@ -4779,7 +5034,7 @@ async def mainMenu():
                 whileTrueStage1 = True
                 await removeLines(amountRemoveLines)
                 while whileTrueStage1:
-                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_General}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Proxy}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Roblox}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Configs}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_General}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Proxy}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Roblox}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Configs}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                     settingsTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                     match settingsTab.upper():
                         # Общие
@@ -4787,15 +5042,15 @@ async def mainMenu():
                             whileTrueStage2 = True
                             await removeLines(10)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Language}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Updates}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Console_Title}: {config['General']['Console_Title'][:50]}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Show_Lable_MeowTool'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Lable_MeowTool}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Show_Lable_by_h1kken'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Lable_by_h1kken}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Key_To_Continue}: {MT_Any if config['General']['Press_Any_Key_To_Continue'] else 'Enter'}\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Disable_All_Warnings'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Disable_All_Warnings}\n [{ANSI.FG.PINK}8{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Fix_Console} ({MT_Bind}: F)\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Language}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Updates}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Console_Title}: {config['General']['Console_Title'][:50]}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Show_Lable_MeowTool'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Lable_MeowTool}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Show_Lable_by_h1kken'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Lable_by_h1kken}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Key_To_Continue}: {MT_Any if config['General']['Press_Any_Key_To_Continue'] else 'Enter'}\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Disable_Warnings_For_Links'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Disable_Warnings_For_Links}\n [{ANSI.FG.PINK}8{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['General']['Disable_Warnings_For_Dangerous_Actions'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Disable_Warnings_For_Dangerous_Actions}\n [{ANSI.FG.PINK}9{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Fix_Console} ({MT_Bind}: F)\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 settingsGeneralTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 match settingsGeneralTab.upper():
                                     # Язык
                                     case '1':
                                         whileTrueStage3 = True
-                                        await removeLines(14)
+                                        await removeLines(15)
                                         while whileTrueStage3:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_General}\\{MT_Language}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if str(config['General']['Language']).upper() == 'RU' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} Русский\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if str(config['General']['Language']).upper() == 'EN' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} English\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_General}\\{MT_Language}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if str(config['General']['Language']).upper() == 'RU' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} Русский\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if str(config['General']['Language']).upper() == 'EN' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} English\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                             settingsLanguageTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             match settingsLanguageTab.upper():
                                                 case '1':
@@ -4818,9 +5073,9 @@ async def mainMenu():
                                     # Обновления
                                     case '2':
                                         whileTrueStage3 = True
-                                        await removeLines(14)
+                                        await removeLines(15)
                                         while whileTrueStage3:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_General}\\{MT_Updates}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if configLoader['Updater']['Check_For_Updates'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check_For_Updates}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if configLoader['Updater']['Save_Old_Versions'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_Old_Versions}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_General}\\{MT_Updates}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if configLoader['Updater']['Check_For_Updates'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check_For_Updates}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if configLoader['Updater']['Save_Old_Versions'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_Old_Versions}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                             settingsUpdatesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             match settingsUpdatesTab.upper():
                                                 case '1':
@@ -4836,10 +5091,12 @@ async def mainMenu():
                                                     await lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
+                                                case _:
+                                                    await removeLines(8)
 
                                             await autoSaveConfigAndRemoveLinesInSettings(settingsUpdatesTab.upper(), ('1', '2'), ('0', 'R', 'К'), 8)
                                     case '3':
-                                        await removeLines(12)
+                                        await removeLines(13)
                                         sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_Not_Use_Characters_Such_As}: >, <, |, ^, &\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}\n\n')
                                         settingsTitleEnter = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_A_New_Title}:{ANSI.CLEAR} ')
 
@@ -4871,8 +5128,10 @@ async def mainMenu():
                                     case '6':
                                         config['General']['Press_Any_Key_To_Continue'] ^= True
                                     case '7':
-                                        config['General']['Disable_All_Warnings'] ^= True
-                                    case '8' | 'F' | 'А':
+                                        config['General']['Disable_Warnings_For_Links'] ^= True
+                                    case '8':
+                                        config['General']['Disable_Warnings_For_Dangerous_Actions'] ^= True
+                                    case '9' | 'F' | 'А':
                                         await cls()
                                         await lableASCII()
                                     case '0':
@@ -4880,15 +5139,15 @@ async def mainMenu():
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
                                     case _:
-                                        await removeLines(14)
+                                        await removeLines(15)
 
-                                await autoSaveConfigAndRemoveLinesInSettings(settingsGeneralTab.upper(), ('6', '7'), ('0', 'R', 'К'), 14)
+                                await autoSaveConfigAndRemoveLinesInSettings(settingsGeneralTab.upper(), ('6', '7', '8'), ('0', 'R', 'К'), 15)
                         # Прокси
                         case '2':
                             whileTrueStage2 = True
                             await removeLines(10)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Proxy}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Checker}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Proxy}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Checker}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 settingsProxyTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 match settingsProxyTab.upper():
                                     # Прокси Чекер (PC)
@@ -4896,16 +5155,16 @@ async def mainMenu():
                                         whileTrueStage3 = True
                                         await removeLines(7)
                                         while whileTrueStage3:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Proxy}\\{MT_Checker}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Waiting_Time}: {int(config['Proxy']['Checker']['Timeout'])} {MT_Seconds}.\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Proxy']['Checker']['Save_In_Custom_Folder'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_In} custom_valid.txt\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Proxy']['Checker']['Save_Without_Protocol'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_Without_Protocol}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Proxy}\\{MT_Checker}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Waiting_Time}: {int(config['Proxy']['Checker']['Timeout'])} {MT_Seconds}.\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Proxy']['Checker']['Save_In_Custom_Folder'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_In} custom_valid.txt\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Proxy']['Checker']['Save_Without_Protocol'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_Without_Protocol}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                             settingsPCTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             match settingsPCTab.upper():
                                                 case '1':
                                                     await removeLines(9)
-                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Proxy}\\{MT_Checker}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
+                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Proxy}\\{MT_Checker}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
                                                     settingsPCTimeoutChange = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_The_Waiting_Time}:{ANSI.CLEAR} ')
 
                                                     async def changeProxyTimeout():
-                                                        if settingsPCTimeoutChange == '0': return
+                                                        if settingsPCTimeoutChange == '0': return await removeLines(5)
                                                         if not settingsPCTimeoutChange.isdigit():
                                                             return await errorOrCorrectHandler(True, 5, MT_Incorrect_Value,        f'{MT_Settings}\\{MT_Proxy}\\{MT_Checker}')
                                                         if int(settingsPCTimeoutChange) > 3600:
@@ -4913,9 +5172,9 @@ async def mainMenu():
 
                                                         config['Proxy']['Checker']['Timeout'] = int(settingsPCTimeoutChange)
                                                         await autoSaveConfig()
+                                                        await removeLines(5)
 
                                                     await changeProxyTimeout()
-                                                    await removeLines(5)
                                                 case '2':
                                                     config['Proxy']['Checker']['Save_In_Custom_Folder'] ^= True
                                                 case '3':
@@ -4947,15 +5206,221 @@ async def mainMenu():
                             whileTrueStage2 = True
                             await removeLines(10)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Checker}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Sorter}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Refresher}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Transaction_Analysis}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Control_Panel}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Misc}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_General}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Checker}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Sorter}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Refresher}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Transaction_Analysis}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cookie_Control_Panel}\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Misc}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 settingsRobloxTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                 match settingsRobloxTab.upper():
-                                    # Роблокс Куки Чекер (RCC)
+                                    # Общее
                                     case '1':
                                         whileTrueStage3 = True
-                                        await removeLines(12)
+                                        await removeLines(13)
                                         while whileTrueStage3:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_General}\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Proxy']['Use_Proxy'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Proxy}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Sorting']['Sort'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Sorting}\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Main}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Places}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Custom_Places}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Show_Amount_Of_Lines_In_Files'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Amount_Of_Lines_In_Files}\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Outputs}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                            settingsRobloxGeneralTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
+                                            match settingsRobloxGeneralTab.upper():
+                                                case '1':
+                                                    config['Roblox']['General']['Show_Amount_Of_Lines_In_Files'] ^= True
+                                                case '2':
+                                                    config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work'] ^= True
+                                                    if config['Roblox']['General']['Play_Sound_At_The_End_Of_The_Work']: await playOSSound()
+                                                case '3':
+                                                    whileTrueStage4 = True
+                                                    await removeLines(9)
+                                                    while whileTrueStage4:
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Telegram_Bot}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Discord_Webhook}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                        settingsRobloxGeneralOutputsTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
+                                                        match settingsRobloxGeneralOutputsTab.upper():
+                                                            case '1':
+                                                                whileTrueStage5 = True
+                                                                await removeLines(8)
+                                                                while whileTrueStage5:
+                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Telegram_Bot}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Specify} {MT_Bot_Token.lower()}' if not str(config['Roblox']['General']['Outputs']['Telegram_Bot_Token']) else f'{MT_Bot_Token}: {config['Roblox']['General']['Outputs']['Telegram_Bot_Token']}'}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Specify} {MT_Chat_ID[1]}' if not str(config['Roblox']['General']['Outputs']['Telegram_Bot_Chat_ID']) else f'{MT_Chat_ID[0]}: {config['Roblox']['General']['Outputs']['Telegram_Bot_Chat_ID']}'}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Search_Chat_ID}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ Meow...\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Send[0]} {MT_Results_To_Telegram[0].lower() + MT_Results_To_Telegram[1:]}\n  ┃\n [{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Create_A_Telegram_Bot}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                                    settingsRobloxGeneralOutputsTGTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
+                                                                    match settingsRobloxGeneralOutputsTGTab.upper():
+                                                                        case '1':
+                                                                            await removeLines(10)
+                                                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}\n\n')
+                                                                            settingsRobloxGeneralOutputsTGBotTokenEnter = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_A_Bot_Token}:{ANSI.CLEAR} ')
+
+                                                                            async def changeTelegramBotToken():
+                                                                                if settingsRobloxGeneralOutputsTGBotTokenEnter == '0': return await removeLines(5)
+                                                                                if settingsRobloxGeneralOutputsTGBotTokenEnter.strip() == '':
+                                                                                    return await errorOrCorrectHandler(True, 5, MT_Value_Cannot_Be_Empty, f'{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Telegram_Bot}')
+
+                                                                                config['Roblox']['General']['Outputs']['Telegram_Bot_Token'] = settingsRobloxGeneralOutputsTGBotTokenEnter
+                                                                                await autoSaveConfig()
+                                                                                await removeLines(5)
+
+                                                                            await changeTelegramBotToken()
+                                                                        case '2':
+                                                                            await removeLines(10)
+                                                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}\n\n')
+                                                                            settingsRobloxGeneralOutputsTGChatIDEnter = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_A_Chat_ID}:{ANSI.CLEAR} ')
+
+                                                                            async def changeTelegramChatID():
+                                                                                if settingsRobloxGeneralOutputsTGChatIDEnter == '0': return await removeLines(5)
+                                                                                if settingsRobloxGeneralOutputsTGChatIDEnter.strip() == '':
+                                                                                    return await errorOrCorrectHandler(True, 5, MT_Value_Cannot_Be_Empty,        f'{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Telegram_Bot}')
+                                                                                if not settingsRobloxGeneralOutputsTGChatIDEnter.isdigit():
+                                                                                    return await errorOrCorrectHandler(True, 5, MT_Value_Must_Consist_Of_Digits, f'{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Telegram_Bot}')
+
+                                                                                config['Roblox']['General']['Outputs']['Telegram_Bot_Chat_ID'] = settingsRobloxGeneralOutputsTGChatIDEnter
+                                                                                await autoSaveConfig()
+                                                                                await removeLines(5)
+
+                                                                            await changeTelegramChatID()
+                                                                        case '3':
+                                                                            async def findChatID():
+                                                                                if not config['Roblox']['General']['Outputs']['Telegram_Bot_Token']:
+                                                                                    return await errorOrCorrectHandler(True, 12, f'{MT_Specify_The_Bot_Token}...', f'{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Telegram_Bot}')
+
+                                                                                await removeLines(10)
+                                                                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Wait[0]}...')
+
+                                                                                try:
+                                                                                    async with ClientSession() as session:
+                                                                                        async with session.get(f'https://api.telegram.org/bot{config['Roblox']['General']['Outputs']['Telegram_Bot_Token']}/getUpdates') as response:
+                                                                                            data = await response.json()
+
+                                                                                    username = data['result'][-1]['message']['chat']['username']
+                                                                                    await removeLines(1)
+                                                                                    whileTrueStageChatID = True
+                                                                                    while whileTrueStageChatID:
+                                                                                        sys.stdout.write(f'\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_You[2]} {username}?{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Yes}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_No}{ANSI.CLEAR}\n\n')
+                                                                                        confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
+                                                                                        match confirmTheAction.upper():
+                                                                                            case 'Y' | 'Н':
+                                                                                                whileTrueStageChatID = False
+                                                                                                config['Roblox']['General']['Outputs']['Telegram_Bot_Chat_ID'] = str(data['result'][-1]['message']['chat']['id'])
+                                                                                                await autoSaveConfig()
+                                                                                                await removeLines(8)
+                                                                                            case 'N' | 'Т':
+                                                                                                return await errorOrCorrectHandler(True, 8, f'{ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Send_Any_Message_To_The_Bot_And_Try_Again}...', f'{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Telegram_Bot}')
+                                                                                            case _:
+                                                                                                await removeLines(7)
+                                                                                except KeyError:
+                                                                                    return await errorOrCorrectHandler(True, 2, f'{ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Possibly_A_Typo_In_The_Bot_Token}...',          f'{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Telegram_Bot}')
+                                                                                except IndexError:
+                                                                                    return await errorOrCorrectHandler(True, 2, f'{ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Send_Any_Message_To_The_Bot_And_Try_Again}...', f'{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Telegram_Bot}')
+                                                                                except (TelegramNetworkError, ClientConnectorDNSError):
+                                                                                    return await errorOrCorrectHandler(True, 2, f'{ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Possibly_The_Internet_Is_Unstable}...',         f'{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Telegram_Bot}')
+                                                                                except Exception as e:
+                                                                                    return await errorOrCorrectHandler(True, 2, f'{ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.CLEAR + ANSI.DECOR.BOLD} | {MT_Unknown_Error}: {e}',                           f'{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Telegram_Bot}')
+
+                                                                            await findChatID()
+                                                                        case '4':
+                                                                            async def testMeowTelegram():
+                                                                                if not config['Roblox']['General']['Outputs']['Telegram_Bot_Token']:
+                                                                                    return await errorOrCorrectHandler(True, 12, MT_Specify_The_Bot_Token, f'')
+                                                                                if not config['Roblox']['General']['Outputs']['Telegram_Bot_Chat_ID']:
+                                                                                    return await errorOrCorrectHandler(True, 12, MT_Specify_The_Chat_ID,   f'')
+
+                                                                                await removeLines(10)
+                                                                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Wait[0]}...')
+                                                                                sys.stdout.flush()
+                                                                                await sendMessageTelegramBot(
+                                                                                    config['Roblox']['General']['Outputs']['Telegram_Bot_Token'],
+                                                                                    config['Roblox']['General']['Outputs']['Telegram_Bot_Chat_ID'],
+                                                                                    'Meow :3'
+                                                                                )
+                                                                                sys.stdout.write('\n')
+                                                                                await waitingInput()
+
+                                                                            await testMeowTelegram()
+                                                                        case '5':
+                                                                            config['Roblox']['General']['Outputs']['Send_Results_To_Telegram_Bot'] ^= True
+                                                                        case 'C' | 'С':
+                                                                            await openLink('https://t.me/BotFather', f'{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Telegram_Bot}', 12)
+                                                                        case '0':
+                                                                            whileTrueStage5 = False
+                                                                        case 'F' | 'А':
+                                                                            await cls()
+                                                                            await lableASCII()
+                                                                        case 'R' | 'К':
+                                                                            loadConfig(configLoader['Loader']['Current_Config'])
+                                                                        case _:
+                                                                            await removeLines(12)
+
+                                                                    await autoSaveConfigAndRemoveLinesInSettings(settingsRobloxGeneralOutputsTGTab.upper(), ('5'), ('0', 'R', 'К'), 12)
+                                                            case '2':
+                                                                whileTrueStage5 = True
+                                                                await removeLines(8)
+                                                                while whileTrueStage5:
+                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Discord_Webhook}{ANSI.CLEAR}\n\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'{MT_Specify} {MT_Webhook_URL[1]}' if not str(config['Roblox']['General']['Outputs']['Discord_Webhook_URL']) else f'{MT_Webhook_URL[0]}: {config['Roblox']['General']['Outputs']['Discord_Webhook_URL'].replace('https://discord.com/api/webhooks', '..')}'}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ Meow...\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Send[0]} {MT_Results_To_Discord[0].lower() + MT_Results_To_Discord[1:]}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                                    settingsRobloxGeneralOutputsDSTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
+                                                                    match settingsRobloxGeneralOutputsDSTab.upper():
+                                                                        case '1':
+                                                                            await removeLines(8)
+                                                                            sys.stdout.write(f'\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Format}: https://discord.com/api/webhooks/../..\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}\n\n')
+                                                                            settingsRobloxGeneralOutputsDSWebhookURLEnter = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_A_Webhook_URL}:{ANSI.CLEAR} ')
+
+                                                                            async def changeDiscordWebhookURL():
+                                                                                if settingsRobloxGeneralOutputsDSWebhookURLEnter == '0': return await removeLines(7)
+                                                                                if settingsRobloxGeneralOutputsDSWebhookURLEnter.strip() == '':
+                                                                                    return await errorOrCorrectHandler(True, 7, MT_Value_Cannot_Be_Empty, f'{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Discord_Webhook}')
+
+                                                                                config['Roblox']['General']['Outputs']['Discord_Webhook_URL'] = settingsRobloxGeneralOutputsDSWebhookURLEnter
+                                                                                await autoSaveConfig()
+                                                                                await cls()
+                                                                                await lableASCII()
+
+                                                                            await changeDiscordWebhookURL()
+                                                                        case '2':
+                                                                            async def testMeowDiscord():
+                                                                                if not config['Roblox']['General']['Outputs']['Discord_Webhook_URL']:
+                                                                                    return await errorOrCorrectHandler(True, 8, MT_Specify_The_Webhook_URL, f'{MT_Settings}\\{MT_Roblox}\\{MT_General}\\{MT_Outputs}\\{MT_Discord_Webhook}')
+
+                                                                                await removeLines(7)
+                                                                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Wait[0]}...')
+                                                                                sys.stdout.flush()
+                                                                                await sendMessageDiscordWebhook(
+                                                                                    config['Roblox']['General']['Outputs']['Discord_Webhook_URL'],
+                                                                                    'Meow :3'
+                                                                                )
+                                                                                sys.stdout.write('\n')
+                                                                                await waitingInput()
+
+                                                                            await testMeowDiscord()
+                                                                        case '3':
+                                                                            config['Roblox']['General']['Outputs']['Send_Results_To_Discord_Webhook'] ^= True
+                                                                        case '0':
+                                                                            whileTrueStage5 = False
+                                                                        case 'F' | 'А':
+                                                                            await cls()
+                                                                            await lableASCII()
+                                                                        case 'R' | 'К':
+                                                                            loadConfig(configLoader['Loader']['Current_Config'])
+                                                                        case _:
+                                                                            await removeLines(9)
+
+                                                                    await autoSaveConfigAndRemoveLinesInSettings(settingsRobloxGeneralOutputsDSTab.upper(), ('3'), ('0', 'R', 'К'), 9)
+                                                            case '0':
+                                                                whileTrueStage4 = False
+                                                            case 'F' | 'А':
+                                                                await cls()
+                                                                await lableASCII()
+                                                            case 'R' | 'К':
+                                                                loadConfig(configLoader['Loader']['Current_Config'])
+                                                            case _:
+                                                                await removeLines(8)
+
+                                                        await autoSaveConfigAndRemoveLinesInSettings(settingsRobloxGeneralOutputsTab.upper(), (), ('0', 'R', 'К'), 8)
+                                                case '0':
+                                                    whileTrueStage3 = False
+                                                case 'F' | 'А':
+                                                    await cls()
+                                                    await lableASCII()
+                                                case 'R' | 'К':
+                                                    loadConfig(configLoader['Loader']['Current_Config'])
+                                                case _:
+                                                    await removeLines(9)
+
+                                            await autoSaveConfigAndRemoveLinesInSettings(settingsRobloxGeneralTab.upper(), ('1', '2'), ('0', 'R', 'К'), 9)
+                                    # Роблокс Куки Чекер (RCC)
+                                    case '2':
+                                        whileTrueStage3 = True
+                                        await removeLines(13)
+                                        while whileTrueStage3:
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_General}\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Proxy']['Use_Proxy'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Proxy}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Sorting']['Sort'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Sorting}\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Main}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Places}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Custom_Places}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                             settingsRCCTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             match settingsRCCTab.upper():
                                                 # Общее
@@ -4963,7 +5428,7 @@ async def mainMenu():
                                                     whileTrueStage4 = True
                                                     await removeLines(12)
                                                     while whileTrueStage4:
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['General']['First_Check_All_Cookies_For_Valid'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_First_Check_All_Cookies_For_Valid}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Number_Of_Threads_For_Valid_Checker}: {config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker'] if str(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker']).isdigit() and (0 < int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker']) <= 500) else 10}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Number_Of_Threads_For_Main_Checker}: {config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker'] if str(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']).isdigit() and (0 < int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']) <= 500) else 10}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['General']['Use_SSL'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Use_SSL}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['General']['Name_Output_File_The_Same_As_Input_File'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Name_Output_File_The_Same_As_Input_File}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Output_Filename}: {config['Roblox']['CookieChecker']['General']['Output_Filename'] if not any(char in config['Roblox']['CookieChecker']['General']['Output_Filename'] for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|']) and len(config['Roblox']['CookieChecker']['General']['Output_Filename']) <= 50 else 'output'}\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['General']['Output_Total'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Output_Total}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['General']['First_Check_All_Cookies_For_Valid'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_First_Check_All_Cookies_For_Valid}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Number_Of_Threads_For_Valid_Checker}: {config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker'] if str(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker']).isdigit() and (0 < int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker']) <= 500) else 10}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Number_Of_Threads_For_Main_Checker}: {config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker'] if str(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']).isdigit() and (0 < int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']) <= 500) else 10}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['General']['Use_SSL'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Use_SSL}\n [{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['General']['Name_Output_File_The_Same_As_Input_File'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Name_Output_File_The_Same_As_Input_File}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Output_Filename}: {config['Roblox']['CookieChecker']['General']['Output_Filename'] if not any(char in config['Roblox']['CookieChecker']['General']['Output_Filename'] for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|']) and len(config['Roblox']['CookieChecker']['General']['Output_Filename']) <= 50 else 'output'}\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['General']['Output_Total'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Output_Total}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsRCCGeneralTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                         match settingsRCCGeneralTab.upper():
                                                             case '1':
@@ -4972,7 +5437,7 @@ async def mainMenu():
                                                                 whileTrueStage5 = True
                                                                 await removeLines(13)
                                                                 while whileTrueStage5:
-                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                     settingsRCCGeneralValidThreadsTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Number_Of_Threads}:{ANSI.CLEAR} ')
 
                                                                     async def changeRCCNumberOfThreadsForValid():
@@ -4992,7 +5457,7 @@ async def mainMenu():
                                                                 whileTrueStage5 = True
                                                                 await removeLines(13)
                                                                 while whileTrueStage5:
-                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                     settingsRCCGeneralCheckerThreadsTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Number_Of_Threads}:{ANSI.CLEAR} ')
 
                                                                     async def changeRCCNumberOfThreadsForChecker():
@@ -5048,7 +5513,7 @@ async def mainMenu():
                                                     whileTrueStage4 = True
                                                     await removeLines(12)
                                                     while whileTrueStage4:
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Proxy}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Format}: {ANSI.FG.GRAY}protocol://{ANSI.CLEAR + ANSI.DECOR.BOLD}ip:port:username:password\n  ┃\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Proxy']['Use_Proxy'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Use_Proxy}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Auto_Protocol_If_Not_Specified}: {config['Roblox']['CookieChecker']['Proxy']['Auto_Protocol_If_Not_Specified'] if config['Roblox']['CookieChecker']['Proxy']['Auto_Protocol_If_Not_Specified'] in ('http', 'socks4', 'socks5') else 'http'}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Proxy}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Format}: {ANSI.FG.GRAY}protocol://{ANSI.CLEAR + ANSI.DECOR.BOLD}ip:port:username:password\n  ┃\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Proxy']['Use_Proxy'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Use_Proxy}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Auto_Protocol_If_Not_Specified}: {config['Roblox']['CookieChecker']['Proxy']['Auto_Protocol_If_Not_Specified'] if config['Roblox']['CookieChecker']['Proxy']['Auto_Protocol_If_Not_Specified'] in ('http', 'socks4', 'socks5') else 'http'}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsRCCProxyTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                         match settingsRCCProxyTab.upper():
                                                             case '1':
@@ -5059,7 +5524,7 @@ async def mainMenu():
                                                                 whileTrueStage5 = True
                                                                 await removeLines(10)
                                                                 while whileTrueStage5:
-                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Proxy}\\{MT_Auto_Protocol}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'http' or config['Roblox']['CookieChecker']['Proxy']['Auto_Protocol_If_Not_Specified'] not in ('http', 'socks4', 'socks5') else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} http\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'socks4' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} socks4\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'socks5' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} socks5\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Proxy}\\{MT_Auto_Protocol}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'http' or config['Roblox']['CookieChecker']['Proxy']['Auto_Protocol_If_Not_Specified'] not in ('http', 'socks4', 'socks5') else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} http\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'socks4' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} socks4\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'socks5' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} socks5\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                     settingsRCCProxyAutoProtocolTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                                     match settingsRCCProxyAutoProtocolTab.upper():
                                                                         case '1':
@@ -5096,7 +5561,7 @@ async def mainMenu():
                                                     await removeLines(12)
                                                     while whileTrueStage4:
                                                         global cookieDataCategories; cookieDataCategories = getCookieDataForSort()[0]
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}\\{MT_Sorting}{ANSI.CLEAR}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Sorting}{ANSI.CLEAR}\n\n')
                                                         printSortCategories(cookieDataCategories)
                                                         sys.stdout.write(f'{ANSI.DECOR.BOLD}  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Sorting']['Sort'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Sort}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsRCCGeneralSortTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -5108,7 +5573,7 @@ async def mainMenu():
                                                                 await lableASCII()
                                                                 while whileTrueStage5:
                                                                     sortValues = await getSortValuesFromCategory(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1])
-                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}{ANSI.CLEAR}\n\n')
+                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}{ANSI.CLEAR}\n\n')
                                                                     await printSortValuesInCategory(sortValues, list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1])
                                                                     sys.stdout.write(f'{ANSI.DECOR.BOLD}{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n' if sortValues else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Add_A_Parameter}\n [{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Sorting'][list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1]][0] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Sort}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                     settingsRCCGeneralSortCategoryTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -5118,7 +5583,7 @@ async def mainMenu():
                                                                         await cls()
                                                                         await lableASCII()
                                                                         while whileTrueStage6:
-                                                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}\\{sortValues[int(settingsRCCGeneralSortCategoryTab) - 1]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Sorting'][list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1]][1][sortValues.index(sortValues[int(settingsRCCGeneralSortCategoryTab) - 1])][1] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Sort}\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}\\{sortValues[int(settingsRCCGeneralSortCategoryTab) - 1]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Sorting'][list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1]][1][sortValues.index(sortValues[int(settingsRCCGeneralSortCategoryTab) - 1])][1] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Sort}\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                             settingsRCCGeneralSortValueContextMenuTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                                             match settingsRCCGeneralSortValueContextMenuTab.upper():
                                                                                 case 'C' | 'С':
@@ -5129,11 +5594,11 @@ async def mainMenu():
                                                                                     whileTrueStage6 = False
                                                                                     await removeLines(7)
                                                                                 case 'D' | 'В':
-                                                                                    if not config['General']['Disable_All_Warnings']:
+                                                                                    if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
                                                                                         whileTrueStage7 = True
                                                                                         await removeLines(7)
                                                                                         while whileTrueStage7:
-                                                                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}\\{sortValues[int(settingsRCCGeneralSortCategoryTab) - 1]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
+                                                                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}\\{sortValues[int(settingsRCCGeneralSortCategoryTab) - 1]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
                                                                                             confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                                                             match confirmTheAction.upper():
                                                                                                 case 'Y' | 'Н':
@@ -5141,12 +5606,10 @@ async def mainMenu():
                                                                                                     whileTrueStage7 = False
                                                                                                     config['Roblox']['CookieChecker']['Sorting'][list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1]][1].pop(int(settingsRCCGeneralSortCategoryTab) - 1)
                                                                                                     await autoSaveConfig()
-                                                                                                    await removeLines(8)
                                                                                                 case 'N' | 'Т':
                                                                                                     whileTrueStage7 = False
-                                                                                                    await removeLines(8)
-                                                                                                case _:
-                                                                                                    await removeLines(8)
+
+                                                                                            await removeLines(8)
                                                                                     else:
                                                                                         whileTrueStage6 = False
                                                                                         config['Roblox']['CookieChecker']['Sorting'][list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1]][1].pop(int(settingsRCCGeneralSortCategoryTab) - 1)
@@ -5168,17 +5631,17 @@ async def mainMenu():
                                                                     elif settingsRCCGeneralSortCategoryTab.upper() in ('A', 'Ф'):
                                                                         await cls()
                                                                         await lableASCII()
-                                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
+                                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
                                                                         settingsRCCGeneralSortParameterAdd = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_The_Parameter_Value}:{ANSI.CLEAR} ')
 
                                                                         async def addSortParameter():
                                                                             if settingsRCCGeneralSortParameterAdd == '0': return
                                                                             if not settingsRCCGeneralSortParameterAdd.isdigit():
-                                                                                return await errorOrCorrectHandler(True, 5, MT_The_Parameter_Can_Only_Be_A_Number,       f'{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}')
+                                                                                return await errorOrCorrectHandler(True, 5, MT_The_Parameter_Can_Only_Be_A_Number,       f'{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}')
                                                                             if int(settingsRCCGeneralSortParameterAdd) in [parameter[0] for parameter in config['Roblox']['CookieChecker']['Sorting'][list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1]][1]]:
-                                                                                return await errorOrCorrectHandler(True, 5, MT_Parameter_With_This_Value_Already_Exists, f'{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}')
+                                                                                return await errorOrCorrectHandler(True, 5, MT_Parameter_With_This_Value_Already_Exists, f'{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}')
                                                                             if len(str(settingsRCCGeneralSortParameterAdd)) > 20:
-                                                                                return await errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Parameter_20,         f'{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_General}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}')
+                                                                                return await errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Parameter_20,         f'{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Sorting}\\{' '.join(list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1].split('_'))}')
 
                                                                             config['Roblox']['CookieChecker']['Sorting'][list(cookieDataCategories)[int(settingsRCCGeneralSortTab) - 1]][1].append([int(settingsRCCGeneralSortParameterAdd), False])
                                                                             await autoSaveConfig()
@@ -5218,7 +5681,7 @@ async def mainMenu():
                                                     whileTrueStage4 = True
                                                     await removeLines(12)
                                                     while whileTrueStage4:
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Main}{ANSI.CLEAR}\n\n  {ANSI.FG.RED}*{ANSI.CLEAR + ANSI.DECOR.BOLD}   - +1 {MT_Request.lower()}{ANSI.CLEAR}\n  {ANSI.FG.YELLOW}* {ANSI.FG.BLUE}*{ANSI.CLEAR + ANSI.DECOR.BOLD} - {MT_Everything_Or_Something_Is_On} +1 {MT_Request.lower()}{ANSI.CLEAR}\n  {ANSI.FG.GREEN}*{ANSI.CLEAR + ANSI.DECOR.BOLD}   - {MT_Everything_Is_On_Or_Off} +1 {MT_Request.lower()}{ANSI.CLEAR}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Main}{ANSI.CLEAR}\n\n  {ANSI.FG.RED}*{ANSI.CLEAR + ANSI.DECOR.BOLD}   - +1 {MT_Request.lower()}{ANSI.CLEAR}\n  {ANSI.FG.YELLOW}* {ANSI.FG.BLUE}*{ANSI.CLEAR + ANSI.DECOR.BOLD} - {MT_Everything_Or_Something_Is_On} +1 {MT_Request.lower()}{ANSI.CLEAR}\n  {ANSI.FG.GREEN}*{ANSI.CLEAR + ANSI.DECOR.BOLD}   - {MT_Everything_Is_On_Or_Off} +1 {MT_Request.lower()}{ANSI.CLEAR}\n\n')
                                                         printRCCGeneral()
                                                         sys.stdout.write(f'{ANSI.DECOR.BOLD}  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsRCCMainTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -5236,7 +5699,7 @@ async def mainMenu():
                                                             await cls()
                                                             await lableASCII()
                                                             while whileTrueStage5:
-                                                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Main}\\{nameOfCategory}\n\n{ANSI.CLEAR}')
+                                                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Main}\\{nameOfCategory}\n\n{ANSI.CLEAR}')
                                                                 await RCCGeneralCategory(True, nameOfCategory_)
                                                                 sys.stdout.write(f'{ANSI.DECOR.BOLD}{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_List'] else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {labels[nameOfCategory][0]}\n [{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['Main'][nameOfCategory_] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                 settingsRCCGeneralCategoryTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -5247,7 +5710,7 @@ async def mainMenu():
                                                                     await lableASCII()
                                                                     while whileTrueStage6:
                                                                         categoryItems = await RCCGeneralCategory(categoryName=nameOfCategory_)
-                                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Main}\\{nameOfCategory}\\{categoryItems[int(settingsRCCGeneralCategoryTab) - 1][-2]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if categoryItems[int(settingsRCCGeneralCategoryTab) - 1][-1] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check}\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Main}\\{nameOfCategory}\\{categoryItems[int(settingsRCCGeneralCategoryTab) - 1][-2]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if categoryItems[int(settingsRCCGeneralCategoryTab) - 1][-1] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check}\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                         settingsRCCGeneralCustomGamepassContextMenuTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                                         match settingsRCCGeneralCustomGamepassContextMenuTab.upper():
                                                                             case 'C' | 'С':
@@ -5255,11 +5718,11 @@ async def mainMenu():
                                                                                 await autoSaveConfig()
                                                                                 await removeLines(7)
                                                                             case 'D' | 'В':
-                                                                                if not config['General']['Disable_All_Warnings']:
+                                                                                if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
                                                                                     whileTrueStage7 = True
                                                                                     await removeLines(7)
                                                                                     while whileTrueStage7:
-                                                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Main}\\{nameOfCategory}\\{categoryItems[int(settingsRCCGeneralCategoryTab) - 1][1]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
+                                                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Main}\\{nameOfCategory}\\{categoryItems[int(settingsRCCGeneralCategoryTab) - 1][1]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
                                                                                         confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                                                         match confirmTheAction.upper():
                                                                                             case 'Y' | 'Н':
@@ -5267,12 +5730,10 @@ async def mainMenu():
                                                                                                 whileTrueStage7 = False
                                                                                                 removeItemFromCategory(config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_List'], categoryItems[int(settingsRCCGeneralCategoryTab) - 1][-2])
                                                                                                 await autoSaveConfig()
-                                                                                                await removeLines(8)
                                                                                             case 'N' | 'Т':
                                                                                                 whileTrueStage7 = False
-                                                                                                await removeLines(8)
-                                                                                            case _:
-                                                                                                await removeLines(8)
+
+                                                                                        await removeLines(8)
                                                                                 else:
                                                                                     whileTrueStage6 = False
                                                                                     removeItemFromCategory(config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_List'], categoryItems[int(settingsRCCGeneralCategoryTab) - 1][-2])
@@ -5292,7 +5753,7 @@ async def mainMenu():
                                                                 elif settingsRCCGeneralCategoryTab.upper() in ('A', 'Ф'):
                                                                     await cls()
                                                                     await lableASCII()
-                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Main}\\{nameOfCategory}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
+                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Main}\\{nameOfCategory}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
                                                                     settingsRCCGeneralCategoryItemAdd = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {labels[nameOfCategory][1]}:{ANSI.CLEAR} ')
                                                                     match nameOfCategory:
                                                                         case 'Custom Gamepasses':
@@ -5386,7 +5847,7 @@ async def mainMenu():
                                                     whileTrueStage4 = True
                                                     await removeLines(12)
                                                     while whileTrueStage4:
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Places}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Places}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n')
                                                         printRCCPlaces()
                                                         sys.stdout.write(f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsRCCPlacesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -5409,7 +5870,7 @@ async def mainMenu():
                                                     whileTrueStage4 = True
                                                     await removeLines(12)
                                                     while whileTrueStage4:
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n')
                                                         await printRCCCustomPlaces()
                                                         sys.stdout.write(f'{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places'] else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Add_A_Place_By_ID}\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieChecker']['CustomPlaces']['Show_Game_ID_Next_To_The_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Place_ID_Next_To_The_Name}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsRCCCustomPlacesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -5419,7 +5880,7 @@ async def mainMenu():
                                                         elif settingsRCCCustomPlacesTab.upper() in ('A', 'Ф'):
                                                             await cls()
                                                             await lableASCII()
-                                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
+                                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Checker}\\{MT_Custom_Places}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
                                                             settingsRCCCustomPlaceAdd = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_The_Place_ID}:{ANSI.CLEAR} ')
 
                                                             async def addCustomPlace():
@@ -5444,7 +5905,7 @@ async def mainMenu():
 
                                                                 customPlaceInfo = requests.get(f'https://games.roblox.com/v1/games?universeIds={universeId}').json()
 
-                                                                normalPlaceName = str(removeEmojies(removeBracketsAndIn(customPlaceInfo['data'][0]['name'], True, True))).replace('\"', '').strip()
+                                                                normalPlaceName = str(await removeEmojies(await removeBracketsAndIn(customPlaceInfo['data'][0]['name'], True, True))).replace('\"', '').strip()
                                                                 if normalPlaceName != '':
                                                                     abbreviatedPlaceName = ''.join([word[0] for word in normalPlaceName.split()])
                                                                 else:
@@ -5490,11 +5951,11 @@ async def mainMenu():
                                                 case _:
                                                     await removeLines(12)
                                     # Роблокс Куки Сортер (RCS)
-                                    case '2':
+                                    case '3':
                                         whileTrueStage3 = True
-                                        await removeLines(12)
+                                        await removeLines(13)
                                         while whileTrueStage3:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Sorter}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Output_Filename}: {config['Roblox']['CookieSorter']['Output_Filename']}.txt\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Sorter}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Output_Filename}: {config['Roblox']['CookieSorter']['Output_Filename']}.txt\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                             settingsRCPTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             match settingsRCPTab.upper():
                                                 case '1':
@@ -5527,18 +5988,18 @@ async def mainMenu():
                                                 case _:
                                                     await removeLines(7)
                                     # Роблокс Куки Рефрешер (RCR)
-                                    case '3':
+                                    case '4':
                                         whileTrueStage3 = True
-                                        await removeLines(12)
+                                        await removeLines(13)
                                         while whileTrueStage3:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Refresher}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Single_Mode}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Mass_Mode}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Refresher}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Single_Mode}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Mass_Mode}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                             settingsRCRTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             match settingsRCRTab.upper():
                                                 case '1':
                                                     whileTrueStage4 = True
                                                     await removeLines(8)
                                                     while whileTrueStage4:
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Single_Mode}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if 1 in config['Roblox']['CookieRefresher']['SingleMode']['Cookie_Save_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save[1]} \'_XXXXXXXXXXXXXX...XXXXXXXXXXXXXX -> {MT_New_Cookie.lower()}\' {MT_In.lower()} refreshed_cookies_mode_1.txt\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if 2 in config['Roblox']['CookieRefresher']['SingleMode']['Cookie_Save_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save[1]} \'{MT_New_Cookie.lower()}\' {MT_In.lower()} refreshed_cookies_mode_2.txt\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if 3 in config['Roblox']['CookieRefresher']['SingleMode']['Cookie_Save_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save[1]} \'{MT_New_Cookie.lower()}\' {MT_In.lower()} refreshed_cookies_mode_3\\_XXXXXXXXXXXXXX...XXXXXXXXXXXXXX.txt\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Single_Mode}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if 1 in config['Roblox']['CookieRefresher']['SingleMode']['Cookie_Save_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save[1]} \'_XXXXXXXXXXXXXX...XXXXXXXXXXXXXX -> {MT_New_Cookie.lower()}\' {MT_In.lower()} refreshed_cookies_mode_1.txt\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if 2 in config['Roblox']['CookieRefresher']['SingleMode']['Cookie_Save_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save[1]} \'{MT_New_Cookie.lower()}\' {MT_In.lower()} refreshed_cookies_mode_2.txt\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if 3 in config['Roblox']['CookieRefresher']['SingleMode']['Cookie_Save_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save[1]} \'{MT_New_Cookie.lower()}\' {MT_In.lower()} refreshed_cookies_mode_3\\_XXXXXXXXXXXXXX...XXXXXXXXXXXXXX.txt\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsRCRSingleModeTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                         match settingsRCRSingleModeTab.upper():
                                                             case '1' | '2' | '3':
@@ -5561,11 +6022,11 @@ async def mainMenu():
                                                     whileTrueStage4 = True
                                                     await removeLines(8)
                                                     while whileTrueStage4:
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if 1 in config['Roblox']['CookieRefresher']['MassMode']['Cookie_Save_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save[1]} \'_XXXXXXXXXXXXXX...XXXXXXXXXXXXXX -> {MT_New_Cookie.lower()}\' {MT_In.lower()} refreshed_cookies_mode_1.txt\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if 2 in config['Roblox']['CookieRefresher']['MassMode']['Cookie_Save_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save[1]} \'{MT_New_Cookie.lower()}\' {MT_In.lower()} refreshed_cookies_mode_2.txt\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if 3 in config['Roblox']['CookieRefresher']['MassMode']['Cookie_Save_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save[1]} \'{MT_New_Cookie.lower()}\' {MT_In.lower()} refreshed_cookies_mode_3\\_XXXXXXXXXXXXXX...XXXXXXXXXXXXXX.txt\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieRefresher']['MassMode']['Save_Invalid_Cookies'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_Invalid_Cookies}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Mass_Mode}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if 1 in config['Roblox']['CookieRefresher']['MassMode']['Cookie_Save_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save[1]} \'_XXXXXXXXXXXXXX...XXXXXXXXXXXXXX -> {MT_New_Cookie.lower()}\' {MT_In.lower()} refreshed_cookies_mode_1.txt\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if 2 in config['Roblox']['CookieRefresher']['MassMode']['Cookie_Save_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save[1]} \'{MT_New_Cookie.lower()}\' {MT_In.lower()} refreshed_cookies_mode_2.txt\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if 3 in config['Roblox']['CookieRefresher']['MassMode']['Cookie_Save_Mode'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save[1]} \'{MT_New_Cookie.lower()}\' {MT_In.lower()} refreshed_cookies_mode_3\\_XXXXXXXXXXXXXX...XXXXXXXXXXXXXX.txt\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieRefresher']['MassMode']['Save_Invalid_Cookies'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_Invalid_Cookies}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsRCRMassModeTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                         match settingsRCRMassModeTab.upper():
                                                             case '1' | '2' | '3':
-                                                                caseValue = int(settingsRCRSingleModeTab)
+                                                                caseValue = int(settingsRCRMassModeTab)
                                                                 saveModes = config['Roblox']['CookieRefresher']['MassMode']['Cookie_Save_Mode']
                                                                 if caseValue in saveModes: saveModes.remove(caseValue)
                                                                 else:                      saveModes.append(caseValue)
@@ -5594,11 +6055,11 @@ async def mainMenu():
                                                 case _:
                                                     await removeLines(8)
                                     # Анализ транзакций
-                                    case '4':
+                                    case '5':
                                         whileTrueStage3 = True
-                                        await removeLines(12)
+                                        await removeLines(13)
                                         while whileTrueStage3:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_General}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Proxy']['Use_Proxy'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Proxy}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Places}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_General}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Proxy']['Use_Proxy'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Proxy}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Places}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                             settingsTransactionAnalysisTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             match settingsTransactionAnalysisTab.upper():
                                                 # Общие
@@ -5606,7 +6067,7 @@ async def mainMenu():
                                                     whileTrueStage4 = True
                                                     await removeLines(9)
                                                     while whileTrueStage4:
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['General']['First_Check_All_Cookies_For_Valid'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_First_Check_All_Cookies_For_Valid}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Number_Of_Threads_For_Valid_Checker}: {config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Valid_Checker'] if str(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Valid_Checker']) <= 500) else 10}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Number_Of_Threads_For_Transaction_Analysis}: {config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis'] if str(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) <= 500) else 10}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['General']['Use_SSL'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Use_SSL}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['General']['Save_All_Places_In_One_File'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_All_Places_In_One_File}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['General']['Save_Places_To_Different_Files'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_Places_To_Different_Files}\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['General']['Add_Nick_After_Cookie_In_Folder_Names'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Add_Nick_After_Cookie_In_Folder_Names}\n [{ANSI.FG.PINK}8{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['General']['Add_Robux_After_Place_In_File_Names'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Add_Robux_After_Place_In_File_Names}\n [{ANSI.FG.PINK}9{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Indentation_Option}: {MT_Max_Indentation if config['Roblox']['TransactionAnalysis']['General']['Indentation_Options'] == 'MaxIndent' else MT_No_Indentation}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['General']['First_Check_All_Cookies_For_Valid'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_First_Check_All_Cookies_For_Valid}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Number_Of_Threads_For_Valid_Checker}: {config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Valid_Checker'] if str(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Valid_Checker']) <= 500) else 10}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Number_Of_Threads_For_Transaction_Analysis}: {config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis'] if str(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) <= 500) else 10}\n [{ANSI.FG.PINK}4{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['General']['Use_SSL'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Use_SSL}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}5{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['General']['Save_All_Places_In_One_File'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_All_Places_In_One_File}\n [{ANSI.FG.PINK}6{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['General']['Save_Places_To_Different_Files'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_Places_To_Different_Files}\n [{ANSI.FG.PINK}7{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['General']['Add_Nick_After_Cookie_In_Folder_Names'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Add_Nick_After_Cookie_In_Folder_Names}\n [{ANSI.FG.PINK}8{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['General']['Add_Robux_After_Place_In_File_Names'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Add_Robux_After_Place_In_File_Names}\n [{ANSI.FG.PINK}9{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Indentation_Option}: {MT_Max_Indentation if config['Roblox']['TransactionAnalysis']['General']['Indentation_Options'] == 'MaxIndent' else MT_No_Indentation}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsTransactionAnalysisGeneralTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                         match settingsTransactionAnalysisGeneralTab.upper():
                                                             case '1':
@@ -5615,7 +6076,7 @@ async def mainMenu():
                                                                 whileTrueStage5 = True
                                                                 await removeLines(15)
                                                                 while whileTrueStage5:
-                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                     settingsTAGeneralValidCheckerThreadsTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Number_Of_Threads}:{ANSI.CLEAR} ')
 
                                                                     async def changeTANumberOfThreadsForValidChecker():
@@ -5635,7 +6096,7 @@ async def mainMenu():
                                                                 whileTrueStage5 = True
                                                                 await removeLines(15)
                                                                 while whileTrueStage5:
-                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_General}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                     settingsTAGeneralTransactionAnalysisThreadsTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Number_Of_Threads}:{ANSI.CLEAR} ')
 
                                                                     async def changeTANumberOfThreadsForTransactionsAnalysis():
@@ -5679,7 +6140,7 @@ async def mainMenu():
                                                     whileTrueStage4 = True
                                                     await removeLines(9)
                                                     while whileTrueStage4:
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Proxy}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Format}: {ANSI.FG.GRAY}protocol://{ANSI.CLEAR + ANSI.DECOR.BOLD}ip:port:username:password\n  ┃\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Proxy']['Use_Proxy'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Use_Proxy}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Auto_Protocol_If_Not_Specified}: {config['Roblox']['TransactionAnalysis']['Proxy']['Auto_Protocol_If_Not_Specified'] if config['Roblox']['TransactionAnalysis']['Proxy']['Auto_Protocol_If_Not_Specified'] in ('http', 'socks4', 'socks5') else 'http'}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Proxy}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Format}: {ANSI.FG.GRAY}protocol://{ANSI.CLEAR + ANSI.DECOR.BOLD}ip:port:username:password\n  ┃\n [{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Proxy']['Use_Proxy'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Use_Proxy}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Auto_Protocol_If_Not_Specified}: {config['Roblox']['TransactionAnalysis']['Proxy']['Auto_Protocol_If_Not_Specified'] if config['Roblox']['TransactionAnalysis']['Proxy']['Auto_Protocol_If_Not_Specified'] in ('http', 'socks4', 'socks5') else 'http'}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsTAProxyTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                         match settingsTAProxyTab.upper():
                                                             case '1':
@@ -5688,7 +6149,7 @@ async def mainMenu():
                                                                 whileTrueStage5 = True
                                                                 await removeLines(10)
                                                                 while whileTrueStage5:
-                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Proxy}\\{MT_Auto_Protocol}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'http' or config['Roblox']['TransactionAnalysis']['Proxy']['Auto_Protocol_If_Not_Specified'] not in ('http', 'socks4', 'socks5') else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} http\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'socks4' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} socks4\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'socks5' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} socks5\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Proxy}\\{MT_Auto_Protocol}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'http' or config['Roblox']['TransactionAnalysis']['Proxy']['Auto_Protocol_If_Not_Specified'] not in ('http', 'socks4', 'socks5') else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} http\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'socks4' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} socks4\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Proxy']['Auto_Protocol_If_Not_Specified'] == 'socks5' else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} socks5\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                                     settingsTAProxyAutoProtocolTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                                     match settingsTAProxyAutoProtocolTab.upper():
                                                                         case '1':
@@ -5723,7 +6184,7 @@ async def mainMenu():
                                                     whileTrueStage4 = True
                                                     await removeLines(9)
                                                     while whileTrueStage4:
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n\n')
                                                         await printTAPlaces()
                                                         sys.stdout.write(f'{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places'] else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Add_A_Place_By_ID}\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Places']['Show_Game_ID_Next_To_The_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Show_Place_ID_Next_To_The_Name}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         settingsTAPlacesTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -5733,7 +6194,7 @@ async def mainMenu():
                                                         elif settingsTAPlacesTab.upper() in ('A', 'Ф'):
                                                             await cls()
                                                             await lableASCII()
-                                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
+                                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
                                                             settingsTAPlaceAdd = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_The_Place_ID}:{ANSI.CLEAR} ')
 
                                                             async def addPlace():
@@ -5752,7 +6213,7 @@ async def mainMenu():
 
                                                                 placeInfo = requests.get(f'https://games.roblox.com/v1/games?universeIds={universeId}').json()
 
-                                                                normalPlaceName = removeEmojies(removeSpecialChars(removeBracketsAndIn(placeInfo['data'][0]['name'], True, True))).strip()
+                                                                normalPlaceName = await removeEmojies(await removeSpecialChars(await removeBracketsAndIn(placeInfo['data'][0]['name'], True, True))).strip()
                                                                 if not normalPlaceName:
                                                                     normalPlaceName = f'Unknown_{settingsRCCCustomPlaceAdd}'
 
@@ -5790,11 +6251,11 @@ async def mainMenu():
                                                 case _:
                                                     await removeLines(9)
                                     # Панель управления куком
-                                    case '5':
+                                    case '6':
                                         whileTrueStage3 = True
-                                        await removeLines(12)
+                                        await removeLines(13)
                                         while whileTrueStage3:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Control_Panel}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieControlPanel']['Use_SSL'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Use_SSL}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieControlPanel']['Save_Cookies_Added_Manually'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_Cookies_Added_Manually}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieControlPanel']['Save_Cookies_Checked_By_Checker'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_Cookies_Checked_By_Checker}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Cookie_Control_Panel}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieControlPanel']['Use_SSL'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Use_SSL}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieControlPanel']['Save_Cookies_Added_Manually'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_Cookies_Added_Manually}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['CookieControlPanel']['Save_Cookies_Checked_By_Checker'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Save_Cookies_Checked_By_Checker}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                             settingsCookieControlPanelTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             match settingsCookieControlPanelTab.upper():
                                                 case '1':
@@ -5815,18 +6276,18 @@ async def mainMenu():
 
                                             await autoSaveConfigAndRemoveLinesInSettings(settingsCookieControlPanelTab.upper(), ('1', '2', '3'), ('0', 'R', 'К'), 9)
                                     # Разное
-                                    case '6':
+                                    case '7':
                                         whileTrueStage3 = True
-                                        await removeLines(12)
+                                        await removeLines(13)
                                         while whileTrueStage3:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Misc}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Gamepasses_Parser_From_The_Place}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Badges_Parser_From_The_Place}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Misc}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Gamepasses_Parser_From_The_Place}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Badges_Parser_From_The_Place}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                             settingsRobloxMiscTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             match settingsRobloxMiscTab.upper():
                                                 case '1':
                                                     whileTrueStage4 = True
                                                     await removeLines(8)
                                                     while whileTrueStage4:
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Misc}\\{MT_Gamepasses_Parser_From_The_Place}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['Misc']['GamepassesParser']['Remove_Emojies_From_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Remove_Emojies}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['Misc']['GamepassesParser']['Remove_Round_Brackets_And_In_From_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Remove_Round_Brackets}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['Misc']['GamepassesParser']['Remove_Square_Brackets_And_In_From_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Remove_Square_Brackets}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Misc}\\{MT_Gamepasses_Parser_From_The_Place}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['Misc']['GamepassesParser']['Remove_Emojies_From_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Remove_Emojies}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['Misc']['GamepassesParser']['Remove_Round_Brackets_And_In_From_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Remove_Round_Brackets}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['Misc']['GamepassesParser']['Remove_Square_Brackets_And_In_From_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Remove_Square_Brackets}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         miscRobloxGamepassesParserTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                         match miscRobloxGamepassesParserTab.upper():
                                                             case '1':
@@ -5850,7 +6311,7 @@ async def mainMenu():
                                                     whileTrueStage4 = True
                                                     await removeLines(8)
                                                     while whileTrueStage4:
-                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['Misc']['BadgesParser']['Remove_Emojies_From_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Remove_Emojies}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['Misc']['BadgesParser']['Remove_Round_Brackets_And_In_From_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Remove_Round_Brackets}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['Misc']['BadgesParser']['Remove_Square_Brackets_And_In_From_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Remove_Square_Brackets}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                                                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['Misc']['BadgesParser']['Remove_Emojies_From_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Remove_Emojies}\n [{ANSI.FG.PINK}2{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['Misc']['BadgesParser']['Remove_Round_Brackets_And_In_From_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Remove_Round_Brackets}\n [{ANSI.FG.PINK}3{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['Misc']['BadgesParser']['Remove_Square_Brackets_And_In_From_Name'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Remove_Square_Brackets}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                                         miscRobloxBadgesParserTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                                         match miscRobloxBadgesParserTab.upper():
                                                             case '1':
@@ -5883,21 +6344,21 @@ async def mainMenu():
                                                     await removeLines(8)
                                     case '0':
                                         whileTrueStage2 = False
-                                        await removeLines(12)
+                                        await removeLines(13)
                                     case 'F' | 'А':
                                         await cls()
                                         await lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                        await removeLines(12)
+                                        await removeLines(13)
                                     case _:
-                                        await removeLines(12)
+                                        await removeLines(13)
                         # Настройки - Конфиги
                         case '4':
                             whileTrueStage2 = True
                             await removeLines(10)
                             while whileTrueStage2:
-                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Configs}\n\n')
+                                sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Configs}\n\n')
                                 printConfigs(configFiles())
                                 sys.stdout.write(f'{ANSI.DECOR.BOLD}  ┃\n [{ANSI.FG.YELLOW}U{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}R{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Reload_Config} ({MT_Bind}: R)\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if configLoader['Saver']['Auto_Save_Changes'] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Auto_Save_Changes}\n [{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Create_Config}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                                 configsTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -5908,7 +6369,7 @@ async def mainMenu():
                                     await cls()
                                     await lableASCII()
 
-                                    nameOfNewConfig = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_Settings}\\{MT_Configs}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Cancel}\n\n [{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Name_For_New_Config}:{ANSI.CLEAR} ')
+                                    nameOfNewConfig = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Configs}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Cancel}\n\n [{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Name_For_New_Config}:{ANSI.CLEAR} ')
                                     
                                     async def createConfig():
                                         if nameOfNewConfig == '0': return
@@ -5948,19 +6409,19 @@ async def mainMenu():
                 whileTrueStage1 = True
                 await removeLines(amountRemoveLines)
                 while whileTrueStage1:
-                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{MT_About_The_Program}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_You_Are_Using_Version_Of_Program}\n [{ANSI.FG.PINK}U{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {ANSI.DECOR.UNDERLINE1}{MT_Open_Latest_Changes}{ANSI.CLEAR}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}G{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {ANSI.DECOR.UNDERLINE1}{MT_Open_MeowTool_On_GitHub}{ANSI.CLEAR}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}L{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {ANSI.DECOR.UNDERLINE1}{MT_Open_A_Topic_On_LolzTeam}{ANSI.CLEAR}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {ANSI.DECOR.UNDERLINE1}{MT_Open_The_Showcase_On_YouTube}{ANSI.CLEAR}\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}T{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {ANSI.DECOR.UNDERLINE1}{MT_Open_PM_With_Developer_In_Telegram}{ANSI.CLEAR + ANSI.DECOR.BOLD} (@L1feeK)\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_About_The_Program}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_You_Are_Using_Version_Of_Program}\n [{ANSI.FG.PINK}U{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Open_Latest_Changes}\n [{ANSI.FG.PINK}G{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Open_MeowTool_On_GitHub}\n [{ANSI.FG.PINK}L{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Open_A_Topic_On_LolzTeam}\n [{ANSI.FG.PINK}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Open_The_Showcase_On_YouTube}\n [{ANSI.FG.PINK}T{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Open_PM_With_Developer_In_Telegram} (@L1feeK)\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                     aboutTheProgramTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                     match aboutTheProgramTab.upper():
                         case 'U' | 'Г':
-                            webbrowser.open('https://github.com/h1kken/MeowTool/blob/meow/Changelog.md#v201')
+                            await openLink(f'https://github.com/h1kken/MeowTool/blob/meow/Changelog.md#{VERSIONS['MeowTool'].replace('.', '')}', MT_About_The_Program, 12)
                         case 'G' | 'П':
-                            webbrowser.open('https://github.com/h1kken/MeowTool')
+                            await openLink('https://github.com/h1kken/MeowTool',                                                                 MT_About_The_Program, 12)
                         case 'L' | 'Д':
-                            webbrowser.open('https://lolz.live/threads/8858338')
+                            await openLink('https://lolz.live/threads/8858338',                                                                  MT_About_The_Program, 12)
                         case 'Y' | 'Н':
-                            webbrowser.open('https://www.youtube.com/live/S_BODxV5vXk')
+                            await openLink('https://www.youtube.com/live/S_BODxV5vXk',                                                           MT_About_The_Program, 12)
                         case 'T' | 'Е':
-                            webbrowser.open('https://t.me/L1feeK')
+                            await openLink('https://t.me/L1feeK',                                                                                MT_About_The_Program, 12)
                         case '0':
                             whileTrueStage1 = False
                         case 'F' | 'А':
@@ -5971,25 +6432,24 @@ async def mainMenu():
                         case _:
                             await removeLines(12)
 
-                    await autoSaveConfigAndRemoveLinesInSettings(aboutTheProgramTab.upper(), (), ('U', 'Г', 'G', 'П', 'L', 'Д', 'Y', 'Н', 'T', 'Е', '0', 'R', 'К'), 12)
+                    await autoSaveConfigAndRemoveLinesInSettings(aboutTheProgramTab.upper(), (), ('0', 'R', 'К'), 12)
             case 'Meow':
-                await errorOrCorrectHandler(False, amountRemoveLines, 'Meow >:3', 'Hewhewhew~')
+                await errorOrCorrectHandler(False, amountRemoveLines, 'Meow :3', 'Hewhewhew~')
             # Закрыть программу
             case '0':
-                if not config['General']['Disable_All_Warnings']:
+                if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
                     whileTrueStage1 = True
                     await removeLines(amountRemoveLines)
                     while whileTrueStage1:
-                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}MeowTool:\\{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
+                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
                         confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                         match confirmTheAction.upper():
                             case 'Y' | 'Н':
                                 sys.exit()
                             case 'N' | 'Т':
                                 whileTrueStage1 = False
-                                await removeLines(8)
-                            case _:
-                                await removeLines(8)
+
+                        await removeLines(8)
                 else:
                     sys.exit()
             case 'F' | 'А':
@@ -6002,15 +6462,13 @@ async def mainMenu():
                 await removeLines(amountRemoveLines)
 
 if __name__ == '__main__':
-    sys.stdout.write(f'\n  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Настраиваемся к комфорту и уюту... >:3{ANSI.CLEAR}\r')
+    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Настраиваемся к комфорту и уюту... :3{ANSI.CLEAR}\r')
     if sys.platform == 'win32': asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Сортируем папки по полочкам... >:3    {ANSI.CLEAR}\r')
+    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Сортируем папки по полочкам... :3    {ANSI.CLEAR}\r')
     createFoldersAndFiles()
-    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Мило просим у конфига настройки... >:3{ANSI.CLEAR}\r')
+    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Мило просим у конфига настройки... :3{ANSI.CLEAR}\r')
     asyncio.run(loadConfigLoader())
-    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Надеемся на честность переводов... >:3{ANSI.CLEAR}\r')
+    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Надеемся на честность переводов... :3{ANSI.CLEAR}\r')
     translateMT(config['General']['Language'])
-    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK + ANSI.DECOR.BOLD}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Почти готово, ещё парочку часов... >:3{ANSI.CLEAR}\r')
-    while True:
-        try: asyncio.run(mainMenu())
-        except OSError: pass
+    sys.stdout.write(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.CLEAR + ANSI.DECOR.BOLD}] Почти готово, ещё парочку часов... :3{ANSI.CLEAR}\r')
+    asyncio.run(mainMenu())
