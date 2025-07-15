@@ -121,7 +121,7 @@ while True:
         [G] - GET
         [P] - POST
 
-      [?] {TOKEN} Bot's token (without {})
+      [?] {TOKEN}: Bot token (without {})
 
       [G] Chat ID with bot: https://api.telegram.org/bot{TOKEN}/getUpdates (message to bot before check)
 '''
@@ -129,7 +129,7 @@ while True:
 ### Версии
 
 VERSIONS = {
-    'MeowTool': 'v2.1.0'
+    'MeowTool': 'v2.1.1'
 }
 
 ### ANSI коды
@@ -1302,7 +1302,7 @@ async def robloxGetConnector(category: str, proxies: list = None):
         autoProtocol = config['Roblox'][category]['Proxy']['Auto_Protocol_If_Not_Specified']
         choosenProxy = f'{autoProtocol if autoProtocol in ('http', 'socks4', 'socks5') else 'http'}:{choosenProxy}'
     else:
-        choosenProxy = str(choosenProxy).replace('https://', 'http:').replace('socks4://', 'socks4:').replace('socks5://', 'socks5:')
+        choosenProxy = str(choosenProxy).replace('http://', 'http:').replace('https://', 'http:').replace('socks4://', 'socks4:').replace('socks5://', 'socks5:')
 
     protocol, ip, port, username, password = choosenProxy.split(':')
 
@@ -3479,7 +3479,7 @@ async def robloxCookieSorter():
              if file.lower().endswith('.txt')]
 
     if not files:
-        return await errorOrCorrectHandler(True, 8, MT_No_Cookie_Was_Found, f'{MT_Roblox}\\{MT_Cookie_Sorter}')
+        return await errorOrCorrectHandler(True, 10, MT_No_Cookie_Was_Found, f'{MT_Roblox}\\{MT_Cookie_Sorter}')
 
     dateOfCookieSorting = datetime.now().strftime('%d.%m.%Y - %H.%M.%S')
     cookieSortingList = set()
@@ -3568,7 +3568,7 @@ async def startMassModeRCR(cookieRoblox: str, dateRefreshing: str):
     cookie = {'.ROBLOSECURITY': cookieRoblox}
 
     isValid = await isResponseStatusFromCookie(cookie)
-    isSetCookie = await startSingleModeRCR(cookie) if isValid[3] else ''
+    isSetCookie = await startSingleModeRCR(cookie) if isValid == 200 else ''
 
     try:
         newCookie = search(COOKIE_PATTERN, str(isSetCookie)).group(0)[:-1]
@@ -3608,35 +3608,34 @@ async def printTAPlaces():
         await autoSaveConfig()
 
 async def TAPlaceContextMenu(placeIndex: int):
-    listOfTAPlaces = [str(customPlace) for customPlace in config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places']
-                      if str(customPlace).isdigit() and str(customPlace) in config['Roblox']['TransactionAnalysis']['Places']]
+    placeID = str(config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places'][placeIndex])
 
     async def printIgnoreNames():
-        for index, ignoreName in enumerate(config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List']):
-            sys.stdout.write(f' {ANSI.DECOR.BOLD}{f'[{ANSI.FG.PINK}{index + 1}{ANSI.CLEAR + ANSI.DECOR.BOLD}]'.rjust(len(str(len(config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List']))) + 15)} ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if ignoreName[1] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {ignoreName[0]}\n')
+        for index, ignoreName in enumerate(config['Roblox']['TransactionAnalysis']['Places'][f'{placeID}_Ignore_List']):
+            sys.stdout.write(f' {ANSI.DECOR.BOLD}{f'[{ANSI.FG.PINK}{index + 1}{ANSI.CLEAR + ANSI.DECOR.BOLD}]'.rjust(len(str(len(config['Roblox']['TransactionAnalysis']['Places'][f'{placeID}_Ignore_List']))) + 15)} ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if ignoreName[1] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {ignoreName[0]}\n')
 
     whileTrueStage5 = True
     await cls()
     await lableASCII()
     while whileTrueStage5:
-        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Ignore_List}\n  ┃\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][2] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check}\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][placeID][0]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}1{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Ignore_List}\n  ┃\n {ANSI.CLEAR + ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Places'][placeID][2] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Check}\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
         settingsTAPlacesPlaceTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
         match settingsTAPlacesPlaceTab.upper():
             case '1':
                 whileTrueStage6 = True
                 await removeLines(9)
                 while whileTrueStage6:
-                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}\\{MT_Ignore_List}{ANSI.CLEAR}\n\n')
+                    sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][placeID][0]}\\{MT_Ignore_List}{ANSI.CLEAR}\n\n')
                     await printIgnoreNames()
-                    sys.stdout.write(f'{ANSI.DECOR.BOLD}{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Ignore_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_Not_Ignore_All}\n  ┃\n' if config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List'] else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Add_A_Transaction}\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][3] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Discover_New_Names_For_Ignore_List}\n [{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][4] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Count_Robux_In_Total}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
+                    sys.stdout.write(f'{ANSI.DECOR.BOLD}{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Ignore_All}\n [{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_Not_Ignore_All}\n  ┃\n' if config['Roblox']['TransactionAnalysis']['Places'][f'{placeID}_Ignore_List'] else ''} [{ANSI.FG.YELLOW}A{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Add_A_Transaction}\n [{ANSI.FG.YELLOW}S{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Places'][placeID][3] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Discover_New_Names_For_Ignore_List}\n [{ANSI.FG.YELLOW}C{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if config['Roblox']['TransactionAnalysis']['Places'][placeID][4] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Count_Robux_In_Total}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                     settingsTAIgnoreListTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                     if settingsTAIgnoreListTab == '0': whileTrueStage6 = False
-                    elif settingsTAIgnoreListTab.isdigit() and int(settingsTAIgnoreListTab) <= len(config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List']):
+                    elif settingsTAIgnoreListTab.isdigit() and int(settingsTAIgnoreListTab) <= len(config['Roblox']['TransactionAnalysis']['Places'][f'{placeID}_Ignore_List']):
                         whileTrueStage7 = True
-                        ignoreItem = config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List'][int(settingsTAIgnoreListTab) - 1]
+                        ignoreItem = config['Roblox']['TransactionAnalysis']['Places'][f'{placeID}_Ignore_List'][int(settingsTAIgnoreListTab) - 1]
                         await cls()
                         await lableASCII()
-                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}\\{MT_Ignore_List}\\{ignoreItem[0]}{ANSI.CLEAR}\n\n')
+                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][placeID][0]}\\{MT_Ignore_List}\\{ignoreItem[0]}{ANSI.CLEAR}\n\n')
                         while whileTrueStage7:
                             sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}I{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {f'[{ANSI.FG.GREEN}+{ANSI.CLEAR + ANSI.DECOR.BOLD}]' if ignoreItem[1] else f'[{ANSI.FG.RED}-{ANSI.CLEAR + ANSI.DECOR.BOLD}]'} {MT_Ignore}\n [{ANSI.FG.RED}D{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Back}{ANSI.CLEAR}\n\n')
                             settingsTAIgnoreListIgnoreNameTab = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
@@ -3649,14 +3648,14 @@ async def TAPlaceContextMenu(placeIndex: int):
                                         whileTrueStage8 = True
                                         await removeLines(7)
                                         while whileTrueStage8:
-                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}\\{MT_Ignore_List}\\{ignoreItem[0]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
+                                            sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][placeID][0]}\\{MT_Ignore_List}\\{ignoreItem[0]}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
                                             confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                                             match confirmTheAction.upper():
                                                 case 'Y' | 'Н':
                                                     whileTrueStage7 = False
                                                     whileTrueStage8 = False
 
-                                                    try: config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List'].remove(ignoreItem)
+                                                    try: config['Roblox']['TransactionAnalysis']['Places'][f'{placeID}_Ignore_List'].remove(ignoreItem)
                                                     except Exception: pass
                                                 case 'N' | 'Т':
                                                     whileTrueStage8 = False
@@ -3664,7 +3663,7 @@ async def TAPlaceContextMenu(placeIndex: int):
                                         whileTrueStage7 = False
                                         await removeLines(7)
 
-                                        try: config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List'].remove(ignoreItem)
+                                        try: config['Roblox']['TransactionAnalysis']['Places'][f'{placeID}_Ignore_List'].remove(ignoreItem)
                                         except Exception: pass
 
                                     await autoSaveConfig()
@@ -3678,41 +3677,41 @@ async def TAPlaceContextMenu(placeIndex: int):
                     elif settingsTAIgnoreListTab.upper() in ('A', 'Ф'):
                         await cls()
                         await lableASCII()
-                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][0]}\\{MT_Ignore_List}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
+                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][placeID][0]}\\{MT_Ignore_List}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}0{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Cancel}{ANSI.CLEAR}\n\n')
                         settingsTAPlaceIgnoreNameAdd = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_A_Transaction_Name}:{ANSI.CLEAR} ')
 
                         async def addIgnoreName():
                             if settingsTAPlaceIgnoreNameAdd == '0': return
                             if len(settingsTAPlaceIgnoreNameAdd) > 50:
-                                return await errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Name_50,               f'{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{listOfTAPlaces[placeIndex]}\\{MT_Ignore_List}')
-                            if ([settingsTAPlaceIgnoreNameAdd, False] in config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List']) or ([settingsTAPlaceIgnoreNameAdd, True] in config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List']):
-                                return await errorOrCorrectHandler(True, 5, MT_Transaction_With_This_Name_Already_Exists, f'{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{listOfTAPlaces[placeIndex]}\\{MT_Ignore_List}')
+                                return await errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Name_50,               f'{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{placeID}\\{MT_Ignore_List}')
+                            if ([settingsTAPlaceIgnoreNameAdd, False] in config['Roblox']['TransactionAnalysis']['Places'][f'{placeID}_Ignore_List']) or ([settingsTAPlaceIgnoreNameAdd, True] in config['Roblox']['TransactionAnalysis']['Places'][f'{placeID}_Ignore_List']):
+                                return await errorOrCorrectHandler(True, 5, MT_Transaction_With_This_Name_Already_Exists, f'{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{placeID}\\{MT_Ignore_List}')
 
-                            config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List'].append([settingsTAPlaceIgnoreNameAdd, False])
+                            config['Roblox']['TransactionAnalysis']['Places'][f'{placeID}_Ignore_List'].append([settingsTAPlaceIgnoreNameAdd, False])
                             await autoSaveConfig()
 
                         await addIgnoreName()
                     elif settingsTAIgnoreListTab in ('+', '='):
-                        for ignoreName in config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List']:
+                        for ignoreName in config['Roblox']['TransactionAnalysis']['Places'][f'{placeID}_Ignore_List']:
                             try: ignoreName[1] = True
                             except Exception: pass
                         await autoSaveConfig()
                     elif settingsTAIgnoreListTab in ('-', '_'):
-                        for ignoreName in config['Roblox']['TransactionAnalysis']['Places'][f'{listOfTAPlaces[placeIndex]}_Ignore_List']:
+                        for ignoreName in config['Roblox']['TransactionAnalysis']['Places'][f'{placeID}_Ignore_List']:
                             try: ignoreName[1] = False
                             except Exception: pass
                         await autoSaveConfig()
                     elif settingsTAIgnoreListTab.upper() in ('S', 'Ы'):
-                        config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][3] ^= True
+                        config['Roblox']['TransactionAnalysis']['Places'][placeID][3] ^= True
                         await autoSaveConfig()
                     elif settingsTAIgnoreListTab.upper() in ('C', 'С'):
-                        config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][4] ^= True
+                        config['Roblox']['TransactionAnalysis']['Places'][placeID][4] ^= True
                         await autoSaveConfig()
 
                     await cls()
                     await lableASCII()
             case 'C' | 'С':
-                config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][2] ^= True
+                config['Roblox']['TransactionAnalysis']['Places'][placeID][2] ^= True
                 await autoSaveConfig()
                 await removeLines(9)
             case 'D' | 'В':
@@ -3720,20 +3719,20 @@ async def TAPlaceContextMenu(placeIndex: int):
                     whileTrueStage6 = True
                     await removeLines(9)
                     while whileTrueStage6:
-                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][1][0] if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][1][0] != f'Unknown_Normal_{listOfTAPlaces[placeIndex]}' else config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][1][1] if config['Roblox']['TransactionAnalysis']['Places'][listOfTAPlaces[placeIndex]][1][1] != f'Unknown_Default_{listOfTAPlaces[placeIndex]}' else f'Unknown_{listOfTAPlaces[placeIndex]}'}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
+                        sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}P{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.FG.CYAN}M:\\{MT_Settings}\\{MT_Roblox}\\{MT_Transaction_Analysis}\\{MT_Places}\\{config['Roblox']['TransactionAnalysis']['Places'][placeID][1][0] if config['Roblox']['TransactionAnalysis']['Places'][placeID][1][0] != f'Unknown_Normal_{placeID}' else config['Roblox']['TransactionAnalysis']['Places'][placeID][1][1] if config['Roblox']['TransactionAnalysis']['Places'][placeID][1][1] != f'Unknown_Default_{placeID}' else f'Unknown_{placeID}'}{ANSI.CLEAR}\n\n {ANSI.DECOR.BOLD}[{ANSI.FG.YELLOW}?{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Do_You_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_I_Am_Sure}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n [{ANSI.FG.RED}N{ANSI.CLEAR + ANSI.DECOR.BOLD}] ┃ {MT_Not_Yet}{ANSI.CLEAR}\n\n')
                         confirmTheAction = input(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}<{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Enter_Something}:{ANSI.CLEAR} ')
                         match confirmTheAction.upper():
                             case 'Y' | 'Н':
                                 whileTrueStage5 = False
                                 whileTrueStage6 = False
 
-                                try: config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places'].remove(listOfTAPlaces[placeIndex])
+                                try: config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places'].remove(int(placeID))
                                 except Exception: pass
 
-                                try: config['Roblox']['TransactionAnalysis']['Places'].remove(f'{listOfTAPlaces[placeIndex]}_Ignore_List')
+                                try: config['Roblox']['TransactionAnalysis']['Places'].remove(placeID)
                                 except Exception: pass
 
-                                try: listOfTAPlaces.remove(listOfTAPlaces[placeIndex])
+                                try: config['Roblox']['TransactionAnalysis']['Places'].remove(f'{placeID}_Ignore_List')
                                 except Exception: pass
                             case 'N' | 'Т':
                                 whileTrueStage6 = False
@@ -3743,13 +3742,13 @@ async def TAPlaceContextMenu(placeIndex: int):
                     whileTrueStage5 = False
                     await removeLines(9)
 
-                    try: config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places'].remove(listOfTAPlaces[placeIndex])
+                    try: config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places'].remove(int(placeID))
                     except Exception: pass
 
-                    try: config['Roblox']['TransactionAnalysis']['Places'].remove(f'{listOfTAPlaces[placeIndex]}_Ignore_List')
+                    try: config['Roblox']['TransactionAnalysis']['Places'].remove(placeID)
                     except Exception: pass
 
-                    try: listOfTAPlaces.remove(listOfTAPlaces[placeIndex])
+                    try: config['Roblox']['TransactionAnalysis']['Places'].remove(f'{placeID}_Ignore_List')
                     except Exception: pass
 
                 await autoSaveConfig()
@@ -4331,7 +4330,7 @@ def loadConfig(configName: str):
     global config
     os.makedirs('Settings\\Configs', exist_ok=True)
     if not os.path.exists(f'Settings\\Configs\\{configName}.toml'):
-        config = defaultConfig()
+        config = loads(open(f'Settings\\Configs\\{configLoader['Loader']['Current_Config']}.toml', 'r', encoding='UTF-8').read())
     else:
         config = loads(open(f'Settings\\Configs\\{configName}.toml', 'r', encoding='UTF-8').read())
         validateConfigSettings(config, defaultConfig())
@@ -4605,7 +4604,9 @@ async def mainMenu():
                                         async def refresherSingleModeCookie():
                                             if robloxCookieRefresherCookieEnter == '0': return await removeLines(5)
                                             if not search(COOKIE_PATTERN, robloxCookieRefresherCookieEnter):
-                                                return await errorOrCorrectHandler(True, 3, MT_Incorrect_Cookie, f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Single_Mode}')
+                                                await cls()
+                                                await lableASCII()
+                                                return await errorOrCorrectHandler(True, 0, MT_Incorrect_Cookie, f'{MT_Roblox}\\{MT_Cookie_Refresher}\\{MT_Single_Mode}')
 
                                             await cls()
                                             await lableASCII()
@@ -4681,7 +4682,7 @@ async def mainMenu():
 
                                                         await asyncio.gather(*refreshTasks)
 
-                                                        config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = dateOfMassMode1Refreshing
+                                                        config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = datetime.now().strftime('%d.%m.%Y - %H.%M.%S')
                                                         await autoSaveConfig()
 
                                                         sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.CYAN}~{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Checking_Complete}\n\n')
@@ -4724,13 +4725,13 @@ async def mainMenu():
 
                                                         while True:
                                                             refreshTasks = []
-                                                            while len(correctedCookieList) and len(refreshTasks) < 50:
+                                                            while correctedCookieList and len(refreshTasks) < 50:
                                                                 refreshTask = asyncio.create_task(startMassModeRCR(correctedCookieList[0], dateOfMassMode2Refreshing))
                                                                 refreshTasks.append(refreshTask)
                                                                 correctedCookieList.remove(correctedCookieList[0])
                                                             await asyncio.gather(*refreshTasks)
 
-                                                            config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = dateOfMassMode2Refreshing
+                                                            config['Roblox']['CookieRefresher']['MassMode']['Last_Refresh'] = datetime.now().strftime('%d.%m.%Y - %H.%M.%S')
                                                             await autoSaveConfig()
 
                                                             if not correctedCookieList:
@@ -4811,7 +4812,7 @@ async def mainMenu():
                                 await autoSaveConfigAndRemoveLinesInSettings(transactionAnalysisTab.upper(), ('S', 'Ы', 'P', 'З', 'T', 'Е', 'D', 'В'), (), 0)
                                 await cls()
                                 await lableASCII()
-                        # Панель управлением куки
+                        # Панель управления куком
                         case '5':
                             whileTrueStage2 = True
                             await removeLines(12)
@@ -4833,24 +4834,22 @@ async def mainMenu():
 
                                             cookieRoblox  = {'.ROBLOSECURITY': cookieControlPanelCookieEnter}
                                             headersRoblox = None # {'User-Agent': ua.random}
+                                            useSSL = True if config['Roblox']['CookieControlPanel']['Use_SSL'] else False
 
-                                            try:
-                                                isAccountInformation = requests.get('https://www.roblox.com/my/settings/json', cookies=cookieRoblox).json()
-                                            except requests.exceptions.JSONDecodeError:
+                                            responseStatus = await isResponseStatusFromCookie(cookieRoblox, headersRoblox, None, useSSL)
+                                            if responseStatus != 200:
                                                 await cls()
                                                 await lableASCII()
                                                 return await errorOrCorrectHandler(True, 0, MT_Invalid_Cookie, f'{MT_Roblox}\\{MT_Cookie_Control_Panel}{ANSI.CLEAR + ANSI.DECOR.BOLD}')
-
-                                            isID = isAccountInformation['UserId']
 
                                             getGlobalCheckListGamepasses()
                                             getGlobalCheckListBadges()
                                             getGlobalCheckListCustomGamepasses()
                                             getGlobalCheckListFavoritePlaces()
                                             getGlobalCheckListBundles()
-                                            
-                                            responseStatus, isID, resultsRCC = await isResponseDataFromCookie(cookieRoblox, headersRoblox, 'roblox', None, True)
-                                            
+
+                                            _, isID, resultsRCC = await isResponseDataFromCookie(cookieRoblox, headersRoblox, None, useSSL, True)
+
                                             if f'{cookieControlPanelCookieEnter[115:130]}...{cookieControlPanelCookieEnter[-15:-1]}' not in config['Roblox']['CookieControlPanel']['CookieControlPanelHistory']:
                                                 config['Roblox']['CookieControlPanel']['CookieControlPanelHistory'][f'{cookieControlPanelCookieEnter[115:130]}...{cookieControlPanelCookieEnter[-15:-1]}'] = [resultsRCC[1][2] if resultsRCC[1][2] else '?', isID if config['Roblox']['CookieChecker']['Main']['ID'] else '?', resultsRCC[2][2] if resultsRCC[2][2] else '?', resultsRCC[3][2] if resultsRCC[3][2] else '?', resultsRCC[4][2] if resultsRCC[4][2] else '?', resultsRCC[4][5] if resultsRCC[4][5] else '?', resultsRCC[5][2] if resultsRCC[5][2] else '?', resultsRCC[6][2] if resultsRCC[6][2] else '?', resultsRCC[7][2] if config['Roblox']['CookieChecker']['Main']['Pending'] else '?', resultsRCC[7][3] if config['Roblox']['CookieChecker']['Main']['Donate_1_Year'] else '?', resultsRCC[8][2] if resultsRCC[8][2] else '?', resultsRCC[8][5] if resultsRCC[8][5] else '?', resultsRCC[9][2] if resultsRCC[9][2] else '?', resultsRCC[10][2] if resultsRCC[10][2] else '?', resultsRCC[11][2] if resultsRCC[11][2] else '?', resultsRCC[12][2] if resultsRCC[12][2] else '?', resultsRCC[13][2] if resultsRCC[13][2] else '?', resultsRCC[14][2] if resultsRCC[14][2] else '?', resultsRCC[15][2] if resultsRCC[15][2] else '?', resultsRCC[16][2] if resultsRCC[16][2] else '?', resultsRCC[17][2] if resultsRCC[17][2] else '?', resultsRCC[18][2] if resultsRCC[18][2] else '?', resultsRCC[19][2] if resultsRCC[19][2] else '?', resultsRCC[20][2] if resultsRCC[20][2] else '?', resultsRCC[21][2] if resultsRCC[21][2] else '?', resultsRCC[22][2] if resultsRCC[22][2] else '?', resultsRCC[23][2] if resultsRCC[23][2] else '?', resultsRCC[24][2] if resultsRCC[24][2] else '?', resultsRCC[25][2] if resultsRCC[25][2] else '?', resultsRCC[26][2] if resultsRCC[26][2] else '?', resultsRCC[27][2] if resultsRCC[27][2] else '?', resultsRCC[28][2] if resultsRCC[28][2] else '?', resultsRCC[29][2] if resultsRCC[29][2] else '?', resultsRCC[30][2] if resultsRCC[30][2] else '?', resultsRCC[31][2] if resultsRCC[31][2] else '?', cookieControlPanelCookieEnter]
                                                 if config['Roblox']['CookieControlPanel']['Save_Cookies_Added_Manually']:
@@ -4918,6 +4917,8 @@ async def mainMenu():
 
                                         async def parseRobloxGamepasses():
                                             if miscRobloxParseGamepassesTab == '0': return
+                                            if miscRobloxParseGamepassesTab.strip() == '':
+                                                return await errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID,          f'{MT_Roblox}\\{MT_Misc}\\{MT_Gamepasses_Parser_From_The_Place}')
 
                                             universeId = requests.get(f'https://apis.roblox.com/universes/v1/places/{miscRobloxParseGamepassesTab}/universe').json()['universeId']
 
@@ -4930,7 +4931,7 @@ async def mainMenu():
                                                 return await errorOrCorrectHandler(True, 5, MT_The_Place_Has_No_Gamepasses, f'{MT_Roblox}\\{MT_Misc}\\{MT_Gamepasses_Parser_From_The_Place}')
 
                                             gameInfo = requests.get(f'https://games.roblox.com/v1/games?universeIds={universeId}').json()
-                                            placeNameWithoutSpecial = await removeTwoSpaces(sub(r'[\\/:*?"<>|]', '', await removeBracketsAndIn(replace_emoji(gameInfo['data'][0]['name'], replace=''), True, True))).strip()
+                                            placeNameWithoutSpecial = str(await removeTwoSpaces(sub(r'[\\/:*?"<>|]', '', await removeBracketsAndIn(replace_emoji(gameInfo['data'][0]['name'], replace=''), True, True)))).strip()
                                             await removeLines(3)
                                             sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Found_Data_On} {miscRobloxParseGamepassesTab} ({placeNameWithoutSpecial}):\n\n')
 
@@ -4957,26 +4958,28 @@ async def mainMenu():
                                         
                                         async def parseRobloxBadges():
                                             if miscRobloxParseBadgesTab == '0': return
-
-                                            requestUniverseId = requests.get(f'https://apis.roblox.com/universes/v1/places/{miscRobloxParseBadgesTab}/universe').json()['universeId']
-
-                                            if requestUniverseId == None:
+                                            if miscRobloxParseBadgesTab.strip() == '':
                                                 return await errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID,        f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
 
-                                            requestBadgesInfo = requests.get(f'https://badges.roblox.com/v1/universes/{requestUniverseId}/badges?limit=100&sortOrder=Asc').json()
+                                            universeId = requests.get(f'https://apis.roblox.com/universes/v1/places/{miscRobloxParseBadgesTab}/universe').json()['universeId']
 
-                                            if not requestBadgesInfo['data']:
+                                            if universeId == None:
+                                                return await errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID,        f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
+
+                                            badgesInfo = requests.get(f'https://badges.roblox.com/v1/universes/{universeId}/badges?limit=100&sortOrder=Asc').json()
+
+                                            if not badgesInfo['data']:
                                                 return await errorOrCorrectHandler(True, 5, MT_The_Place_Has_No_Badges,   f'{MT_Roblox}\\{MT_Misc}\\{MT_Badges_Parser_From_The_Place}')
 
-                                            requestGameInfo = requests.get(f'https://games.roblox.com/v1/games?universeIds={requestUniverseId}').json()
-                                            placeNameWithoutSpecial = await removeTwoSpaces(sub(r'[\/:*?"<>|]', '', await removeBracketsAndIn(replace_emoji(requestGameInfo['data'][0]['name'], replace=''), True, True))).strip()
+                                            gameInfo = requests.get(f'https://games.roblox.com/v1/games?universeIds={universeId}').json()
+                                            placeNameWithoutSpecial = str(await removeTwoSpaces(sub(r'[\/:*?"<>|]', '', await removeBracketsAndIn(replace_emoji(gameInfo['data'][0]['name'], replace=''), True, True)))).strip()
 
                                             await removeLines(3)
                                             sys.stdout.write(f' {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_Found_Data_On} {miscRobloxParseBadgesTab} ({placeNameWithoutSpecial}):\n\n')
 
                                             parsedBadges = []
 
-                                            for badge in requestBadgesInfo['data']:
+                                            for badge in badgesInfo['data']:
                                                 badgeName = str(badge['name']).replace('\r', '').replace('\n', '')
                                                 if config['Roblox']['Misc']['BadgesParser']['Remove_Emojies_From_Name']:                badgeName = replace_emoji(badgeName, replace='')
                                                 if config['Roblox']['Misc']['BadgesParser']['Remove_Round_Brackets_And_In_From_Name']:  badgeName = await removeBracketsAndIn(badgeName, True, False)
@@ -4984,8 +4987,8 @@ async def mainMenu():
                                                 parsedBadges.append([badge['id'], badgeName, f'https://www.roblox.com/badges/{badge['id']}'])
 
                                             os.makedirs('Roblox\\Misc\\Badges parser', exist_ok=True)
-                                            open(f'Roblox\\Misc\\Badges parser\\{miscRobloxParseBadgesTab} ({placeNameWithoutSpecial}).txt', 'w', encoding='UTF-8').write(f'\n  Meow :3\n\n  {MT_Place_ID}: {miscRobloxParseBadgesTab}\n  {MT_Place_Name}: {requestGameInfo['data'][0]['name']}\n  {MT_Place_Link}: https://www.roblox.com/games/{miscRobloxParseBadgesTab}\n\n  [*] {MT_Badges}\n{columnar(parsedBadges, columnarHeaders, no_borders=True)}')
-                                            sys.stdout.write(f'  {MT_Place_ID}: {miscRobloxParseBadgesTab}\n  {MT_Place_Name}: {requestGameInfo['data'][0]['name']}\n  {MT_Place_Link}: https://www.roblox.com/games/{miscRobloxParseBadgesTab}\n\n  [{ANSI.FG.GREEN}*{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.DECOR.UNDERLINE1}{MT_Badges}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n{columnar(parsedBadges, columnarHeaders, no_borders=True)}\n {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_The_Data_Is_Saved_In}: Roblox\\Misc\\Badges parser\\{miscRobloxParseBadgesTab} ({placeNameWithoutSpecial}).txt\n\n')
+                                            open(f'Roblox\\Misc\\Badges parser\\{miscRobloxParseBadgesTab} ({placeNameWithoutSpecial}).txt', 'w', encoding='UTF-8').write(f'\n  Meow :3\n\n  {MT_Place_ID}: {miscRobloxParseBadgesTab}\n  {MT_Place_Name}: {gameInfo['data'][0]['name']}\n  {MT_Place_Link}: https://www.roblox.com/games/{miscRobloxParseBadgesTab}\n\n  [*] {MT_Badges}\n{columnar(parsedBadges, columnarHeaders, no_borders=True)}')
+                                            sys.stdout.write(f'  {MT_Place_ID}: {miscRobloxParseBadgesTab}\n  {MT_Place_Name}: {gameInfo['data'][0]['name']}\n  {MT_Place_Link}: https://www.roblox.com/games/{miscRobloxParseBadgesTab}\n\n  [{ANSI.FG.GREEN}*{ANSI.CLEAR + ANSI.DECOR.BOLD}] {ANSI.DECOR.UNDERLINE1}{MT_Badges}{ANSI.CLEAR + ANSI.DECOR.BOLD}\n{columnar(parsedBadges, columnarHeaders, no_borders=True)}\n {ANSI.DECOR.BOLD}[{ANSI.FG.GREEN}>{ANSI.CLEAR + ANSI.DECOR.BOLD}] {MT_The_Data_Is_Saved_In}: Roblox\\Misc\\Badges parser\\{miscRobloxParseBadgesTab} ({placeNameWithoutSpecial}).txt\n\n')
                                             await waitingInput()
 
                                         await parseRobloxBadges()
@@ -6180,6 +6183,7 @@ async def mainMenu():
                                                                 await removeLines(10)
 
                                                         await autoSaveConfigAndRemoveLinesInSettings(settingsTAProxyTab.upper(), ('1'), ('0', 'R', 'К'), 10)
+                                                # Плейсы
                                                 case '3':
                                                     whileTrueStage4 = True
                                                     await removeLines(9)
@@ -6213,7 +6217,7 @@ async def mainMenu():
 
                                                                 placeInfo = requests.get(f'https://games.roblox.com/v1/games?universeIds={universeId}').json()
 
-                                                                normalPlaceName = await removeEmojies(await removeSpecialChars(await removeBracketsAndIn(placeInfo['data'][0]['name'], True, True))).strip()
+                                                                normalPlaceName = str(await removeEmojies(await removeSpecialChars(await removeBracketsAndIn(placeInfo['data'][0]['name'], True, True)))).strip()
                                                                 if not normalPlaceName:
                                                                     normalPlaceName = f'Unknown_{settingsRCCCustomPlaceAdd}'
 
