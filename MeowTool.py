@@ -129,7 +129,7 @@ while True:
 ### Версии
 
 VERSIONS = {
-    'MeowTool': 'v2.1.1'
+    'MeowTool': 'v2.1.2'
 }
 
 ### ANSI коды
@@ -4330,11 +4330,14 @@ def loadConfig(configName: str):
     global config
     os.makedirs('Settings\\Configs', exist_ok=True)
     if not os.path.exists(f'Settings\\Configs\\{configName}.toml'):
-        config = loads(open(f'Settings\\Configs\\{configLoader['Loader']['Current_Config']}.toml', 'r', encoding='UTF-8').read())
+        if not os.path.exists(f'Settings\\Configs\\{configLoader['Loader']['Current_Config']}.toml'):
+            config = defaultConfig()
+        else:
+            config = loads(open(f'Settings\\Configs\\{configLoader['Loader']['Current_Config']}.toml', 'r', encoding='UTF-8').read())
     else:
         config = loads(open(f'Settings\\Configs\\{configName}.toml', 'r', encoding='UTF-8').read())
         validateConfigSettings(config, defaultConfig())
-        
+
     configLoader['Loader']['Current_Config'] = configName
     open('Settings\\Configs\\.Loader.toml', 'w', encoding='UTF-8').write(dumps(configLoader))
     open(f'Settings\\Configs\\{configName}.toml', 'w', encoding='UTF-8').write(dumps(config))
