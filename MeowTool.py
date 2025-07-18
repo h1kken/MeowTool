@@ -2717,7 +2717,7 @@ def getGlobalCheckListGamepasses():
                 if config['Roblox']['CookieChecker'][place.__name__][gamepass[2]]:
                     checkListGamepasses.append(gamepass[1])
     for customPlace in config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places']:
-        if config['Roblox']['CookieChecker']['CustomPlaces'][str(customPlace)][0] and f'{customPlace}_Gamepasses' in config['Roblox']['CookieChecker']['CustomPlaces']:
+        if config['Roblox']['CookieChecker']['CustomPlaces'][str(customPlace)][2] and f'{customPlace}_Gamepasses' in config['Roblox']['CookieChecker']['CustomPlaces']:
             for gamepass in config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlace}_Gamepasses']:
                 if gamepass[2]:
                     checkListGamepasses.append(gamepass[0])
@@ -2730,7 +2730,7 @@ def getGlobalCheckListBadges():
                 if config['Roblox']['CookieChecker'][place.__name__][badge[2]]:
                     checkListBadges.append(badge[1])
     for customPlace in config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places']:
-        if config['Roblox']['CookieChecker']['CustomPlaces'][str(customPlace)][0] and f'{customPlace}_Badges' in config['Roblox']['CookieChecker']['CustomPlaces']:
+        if config['Roblox']['CookieChecker']['CustomPlaces'][str(customPlace)][2] and f'{customPlace}_Badges' in config['Roblox']['CookieChecker']['CustomPlaces']:
             for badge in config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlace}_Badges']:
                 if badge[2]:
                     checkListBadges.append(badge[0])
