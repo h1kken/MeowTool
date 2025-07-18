@@ -129,7 +129,7 @@ while True:
 ### Версии
 
 VERSIONS = {
-    'MeowTool': 'v2.1.2'
+    'MeowTool': 'v2.1.3'
 }
 
 ### ANSI коды
