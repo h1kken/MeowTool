@@ -57,6 +57,7 @@ while True:
         os.makedirs('Logs', exist_ok=True)
         logging.basicConfig(filename=os.path.join('Logs', f'log {datetime.now().strftime('%d.%m.%Y - %H.%M.%S')}.log'), level=logging.ERROR, encoding='UTF-8')
         logging.exception(' [!] Oh noo... :<')
+        sys.exit()
 
 # MeowTool :3
 
@@ -214,7 +215,7 @@ r'''
 ### Версии
 
 VERSIONS = {
-    'MeowTool': 'v2.2.0'
+    'MeowTool': 'v2.2.1'
 }
 
 ### ANSI коды
@@ -235,6 +236,7 @@ class ANSI:
         UNDERLINEON  = '\033[4m'  # UI
         UNDERLINEOFF = '\033[24m' # UI
         FLASHING     = '\033[5m'  # UI
+        FLASHINGOFF  = '\033[25m' # UI
     # Clear all decorations and colors
     CLEAR = '\033[0m'
 
@@ -298,9 +300,10 @@ def translateLoad(language: str) -> None:
         MT_Enter_Something                               = 'Введи что-то'
 
 def translateMT(language: str) -> None:
-    global MT_Symbols, MT_Add_Symbols_Between_Warning_And_Cookie, MT_Try, MT_Tickets, MT_Output_Total, MT_Available_Formats, MT_Move_Cookie_To_The_Next_Line, MT_First_Number_Must_Be_Less_Than_Second_One, MT_Specify_Two_Numbers_Separated_By_A_Space, MT_Both_Parameters_Must_Be_Numbers, MT_From, MT_To, MT_Sort_By_Zero, MT_Sort_Numbers_From_To, MT_Sort_Numbers_From, MT_Sort_By_Group_Name, MT_Sort_By_Bundle_Name, MT_Sort_By_Place_Name, MT_Sort_By_Badge_Name, MT_Sort_By_Gamepass_Name, MT_Sort_By_Number, MT_Enter_Something, MT_Eep, MT_Number, MT_Names, MT_Place_Number, MT_Place_Names, MT_Name_Number, MT_Output_Mode, MT_Non_Empty, MT_Duplicates, MT_On, MT_Account_Duplicate, MT_Automatically_Find_The_Chat_ID, MT_Manually_Find_The_Chat_ID, MT_Bye, MT_Conversion_Error, MT_We_Out_Now, MT_Oh_Noo_My_Home_It_Is_Over, MT_Response_Code, MT_Server_Could_Not_Process_The_Request, MT_Rate_Limit_Has_Been_Reached, MT_Proxy_Error, MT_Waiting_Time_Exceeded, MT_Do_Not_Exceed_The_Thread_Limit, MT_File_Is_Too_Big, MT_Break_Old_Cookies, MT_Banned, MT_Account_Banned, MT_Invalid_Token_Format, MT_Invalid_URL_Format, MT_Send_Any_Message_To_The_Bot_And_Try_Again, MT_Specify_The_Bot_Token, MT_Specify_The_Chat_ID, MT_Specify_The_Webhook_URL, MT_Following_The_Link, MT_Message_Was_Sent, MT_Enter_A_Bot_Token, MT_Enter_A_Chat_ID, MT_Enter_A_Webhook_URL, MT_Send, MT_You, MT_Results_To_Telegram, MT_Results_To_Discord, MT_Create_A_Bot, MT_Search_Chat_ID, MT_Telegram, MT_Discord, MT_Specify, MT_Value_Must_Consist_Of_Digits, MT_Value_Cannot_Be_Empty, MT_Successfully, MT_Unsuccessfully, MT_Possibly_The_Internet_Is_Unstable, MT_Possibly_A_Typo_In_The_Bot_Token, MT_Possibly_A_Typo_In_The_Chat_ID, MT_Unknown_Error, MT_Possibly_A_Typo_In_The_Webhook_URL, MT_Unknown_Server_Response_Code, MT_Bot_Token, MT_Chat_ID, MT_Telegram_Bot, MT_Webhook_URL, MT_Discord_Webhook, MT_Outputs, MT_Spent, MT_Transactions, MT_Status, MT_Play_The_Sound_At_The_End_Of_The_Work, MT_Show_Amount_Of_Lines_In_Files, MT_Count_Robux_In_Total, MT_Cookie, MT_Format, MT_Enable_At_Least_One_Place_To_Start_Analysis, MT_Number_Of_Threads_For_Transaction_Analysis, MT_Output_Filename, MT_Name_Output_File_The_Same_As_Input_File, MT_Transaction_With_This_Name_Already_Exists, MT_Enter_A_Transaction_Name, MT_Add_A_Transaction, MT_Ignore, MT_Ignore_All, MT_Do_Not_Ignore_All, MT_Important, MT_Ignore_List, MT_Discover_New_Names_For_Ignore_List, MT_Save_Old_Versions, MT_Updates, MT_Yes, MT_No, MT_Max_Indentation, MT_No_Indentation, MT_Transaction_Analysis, MT_Save_All_Places_In_One_File, MT_Save_Places_To_Different_Files, MT_Add_Nick_After_Cookie_In_Folder_Names, MT_Add_Robux_After_Place_In_File_Names, MT_Indentation_By_The_Longest_Place_Name , MT_Item, MT_Price, MT_Date, MT_Open_MeowTool_On_GitHub, MT_You_Are_Using_Version_Of_Program, MT_Open_A_Topic_On_LolzTeam, MT_Open_The_Showcase_On_YouTube, MT_Open_PM_With_Developer_In_Telegram, MT_Open_Latest_Changes, MT_About_The_Program, MT_Check_For_Updates, MT_No_Cookies_Found, MT_All_Cookies_Were_Invalid, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Cookie_Was_Found, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Was_Not_Created, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_This_Characters, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_Warnings_For_Links, MT_Disable_Warnings_For_Dangerous_Actions, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_Save_Cookies_Checked_By_Checker, MT_Start_Refresher, MT_Wait, MT_Can_Run, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_Parameter_Must_Be_A_Number, MT_Add_A_Parameter, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Nickname, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_In, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_String, MT_Incorrect_Length_Of_ID, MT_Incorrect_Length_Of_Parameter, MT_Incorrect_Length_Of_Name, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Sorting, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_A_Bundle_By_ID, MT_Add_A_Place_By_ID, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_Enter_New_Filename, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Such_A_Parameter_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_Filename, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time_60, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Checking_Complete, MT_Sorting_File, MT_Sorting_Complete, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Sorter, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta, MT_Only_Goodness, MT_Hi
+    global MT_Can_Break_USA_Cookie, MT_Symbols, MT_Add_Symbols_Between_Warning_And_Cookie, MT_Try, MT_Tickets, MT_Output_Total, MT_Available_Formats, MT_Move_Cookie_To_The_Next_Line, MT_First_Number_Must_Be_Less_Than_Second_One, MT_Specify_Two_Numbers_Separated_By_A_Space, MT_Both_Parameters_Must_Be_Numbers, MT_From, MT_To, MT_Sort_By_Zero, MT_Sort_Numbers_From_To, MT_Sort_Numbers_From, MT_Sort_By_Group_Name, MT_Sort_By_Bundle_Name, MT_Sort_By_Place_Name, MT_Sort_By_Badge_Name, MT_Sort_By_Gamepass_Name, MT_Sort_By_Number, MT_Enter_Something, MT_Eep, MT_Number, MT_Names, MT_Place_Number, MT_Place_Names, MT_Name_Number, MT_Output_Mode, MT_Non_Empty, MT_Duplicates, MT_On, MT_Account_Duplicate, MT_Automatically_Find_The_Chat_ID, MT_Manually_Find_The_Chat_ID, MT_Bye, MT_Conversion_Error, MT_We_Out_Now, MT_Oh_Noo_My_Home_It_Is_Over, MT_Response_Code, MT_Server_Could_Not_Process_The_Request, MT_Rate_Limit_Has_Been_Reached, MT_Proxy_Error, MT_Waiting_Time_Exceeded, MT_Do_Not_Exceed_The_Thread_Limit, MT_File_Is_Too_Big, MT_Break_Old_Cookies, MT_Banned, MT_Account_Banned, MT_Invalid_Token_Format, MT_Invalid_URL_Format, MT_Send_Any_Message_To_The_Bot_And_Try_Again, MT_Specify_The_Bot_Token, MT_Specify_The_Chat_ID, MT_Specify_The_Webhook_URL, MT_Following_The_Link, MT_Message_Was_Sent, MT_Enter_A_Bot_Token, MT_Enter_A_Chat_ID, MT_Enter_A_Webhook_URL, MT_Send, MT_You, MT_Results_To_Telegram, MT_Results_To_Discord, MT_Create_A_Bot, MT_Search_Chat_ID, MT_Telegram, MT_Discord, MT_Specify, MT_Value_Must_Consist_Of_Digits, MT_Value_Cannot_Be_Empty, MT_Successfully, MT_Unsuccessfully, MT_Possibly_The_Internet_Is_Unstable, MT_Possibly_A_Typo_In_The_Bot_Token, MT_Possibly_A_Typo_In_The_Chat_ID, MT_Unknown_Error, MT_Possibly_A_Typo_In_The_Webhook_URL, MT_Unknown_Server_Response_Code, MT_Bot_Token, MT_Chat_ID, MT_Telegram_Bot, MT_Webhook_URL, MT_Discord_Webhook, MT_Outputs, MT_Spent, MT_Transactions, MT_Status, MT_Play_The_Sound_At_The_End_Of_The_Work, MT_Show_Amount_Of_Lines_In_Files, MT_Count_Robux_In_Total, MT_Cookie, MT_Format, MT_Enable_At_Least_One_Place_To_Start_Analysis, MT_Number_Of_Threads_For_Transaction_Analysis, MT_Output_Filename, MT_Name_Output_File_The_Same_As_Input_File, MT_Transaction_With_This_Name_Already_Exists, MT_Enter_A_Transaction_Name, MT_Add_A_Transaction, MT_Ignore, MT_Ignore_All, MT_Do_Not_Ignore_All, MT_Important, MT_Ignore_List, MT_Discover_New_Names_For_Ignore_List, MT_Save_Old_Versions, MT_Updates, MT_Yes, MT_No, MT_Max_Indentation, MT_No_Indentation, MT_Transaction_Analysis, MT_Save_All_Places_In_One_File, MT_Save_Places_To_Different_Files, MT_Add_Nick_After_Cookie_In_Folder_Names, MT_Add_Robux_After_Place_In_File_Names, MT_Indentation_By_The_Longest_Place_Name , MT_Item, MT_Price, MT_Date, MT_Open_MeowTool_On_GitHub, MT_You_Are_Using_Version_Of_Program, MT_Open_A_Topic_On_LolzTeam, MT_Open_The_Showcase_On_YouTube, MT_Open_PM_With_Developer_In_Telegram, MT_Open_Latest_Changes, MT_About_The_Program, MT_Check_For_Updates, MT_No_Cookies_Found, MT_All_Cookies_Were_Invalid, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Cookie_Was_Found, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Was_Not_Created, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_This_Characters, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_Warnings_For_Links, MT_Disable_Warnings_For_Dangerous_Actions, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_Save_Cookies_Checked_By_Checker, MT_Start_Refresher, MT_Wait, MT_Can_Run, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_Parameter_Must_Be_A_Number, MT_Add_A_Parameter, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Nickname, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_In, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_String, MT_Incorrect_Length_Of_ID, MT_Incorrect_Length_Of_Parameter, MT_Incorrect_Length_Of_Name, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Sorting, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_A_Bundle_By_ID, MT_Add_A_Place_By_ID, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_Enter_New_Filename, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Such_A_Parameter_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_Filename, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time_60, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Checking_Complete, MT_Sorting_File, MT_Sorting_Complete, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Sorter, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta, MT_Only_Goodness, MT_Hi
     match str(language).upper():
         case 'EN':
+            MT_Can_Break_USA_Cookie                        = 'Can break USA cookie'
             MT_Symbols                                     = 'Symbols'
             MT_Add_Symbols_Between_Warning_And_Cookie      = 'Add symbols between _|WARNING|_ and cookie'
             MT_Try                                         = 'Try'
@@ -589,6 +592,7 @@ def translateMT(language: str) -> None:
             MT_Only_Goodness                               = 'Only goodness'
             MT_Hi                                          = 'Hi'
         case _: # 'RU'
+            MT_Can_Break_USA_Cookie                        = 'Может сломать USA куки'
             MT_Symbols                                     = 'Символы'
             MT_Add_Symbols_Between_Warning_And_Cookie      = 'Добавлять символы между _|WARNING|_ и куки'
             MT_Try                                         = 'Попытка'
@@ -931,7 +935,7 @@ async def playSystemSound() -> None:
     sys.stdout.write('\a')
     sys.stdout.flush()
 
-async def removeLines(amountOfLines: int):
+async def removeLines(amountOfLines: int) -> None:
     if amountOfLines:
         sys.stdout.write(f'\033[{amountOfLines}A\033[J')
 
@@ -979,7 +983,7 @@ async def amountOfLines(*pathArgs: str) -> str:
 
 async def waitingInput() -> None:
     options = [MT_Press_Any_Key_To_Continue, getch] if config['General']['Press_Any_Key_To_Continue'] else [MT_Press_Enter_To_Continue, input]
-    sys.stdout.write(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {ANSI.DECOR.FLASHING}{options[0]}...')
+    sys.stdout.write(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {ANSI.DECOR.FLASHING}{options[0]}...{ANSI.DECOR.FLASHINGOFF}')
     sys.stdout.flush()
     options[1]()
     cls()
@@ -3205,15 +3209,19 @@ async def getTransactionsForYearRoblox(cookie: str, proxies: list[str], userId: 
     ] if config['Roblox']['CookieChecker']['Main']['Donate_1_Year'] else ['', '', '']
     return returner
 
+# <need rewrite>
 async def getDonateAllTimeRoblox(cookie: str, proxies: list[str], userId: int | str, outputMode: str = 'NameNumber') -> list:
     if not (config['Roblox']['CookieChecker']['Main']['Donate_All_Time'] or config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']):
         return ['', '', '', '', '', '', '']
     isDonateAllTime = 0
-    isCustomGamepasses = deepcopy(checkListCustomGamepasses)
     nextCursor = ''
     currentPage = 0
     donateAllTimeMaxPages = config['Roblox']['CookieChecker']['Main']['Donate_All_Time_Max_Check_Pages']
-    customGamepassesMaxPages = config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages']
+    if config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']:
+        isCustomGamepasses = deepcopy(checkListCustomGamepasses)
+        customGamepassesMaxPages = config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages']
+    else:
+        customGamepassesMaxPages = -1
     maximumPage = max(donateAllTimeMaxPages, customGamepassesMaxPages)
     while nextCursor is not None and currentPage != maximumPage:
         data = await sendGetRequestRoblox(f'https://economy.roblox.com/v2/users/{userId}/transactions?transactionType=2&limit=100&cursor={nextCursor}', cookie, proxies)
@@ -3232,14 +3240,17 @@ async def getDonateAllTimeRoblox(cookie: str, proxies: list[str], userId: int | 
         isDonateAllTime
     ] if config['Roblox']['CookieChecker']['Main']['Donate_All_Time'] else ['', '', '']
 
-    amountOfCustomGamepasses = sum(isCustomGamepasses.values())
-    color, value = [ANSI.FG.GREEN, await formatCustomGamepassesOutput(isCustomGamepasses, outputMode)] if amountOfCustomGamepasses else [ANSI.FG.RED, '0']
-    returner += [
-        f'{ANSI.FG.CYAN}Custom Gamepasses: {color}{value}{ANSI.FG.WHITE} | ',
-        f'Custom Gamepasses: {value} | ',
-        [removeSpecialChars(name) for name, amount in isCustomGamepasses.items() if amount],
-        amountOfCustomGamepasses
-    ] if config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses'] else ['', '', '']
+    if config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']:
+        amountOfCustomGamepasses = sum(isCustomGamepasses.values())
+        color, value = [ANSI.FG.GREEN, await formatCustomGamepassesOutput(isCustomGamepasses, outputMode)] if amountOfCustomGamepasses else [ANSI.FG.RED, '0']
+        returner += [
+            f'{ANSI.FG.CYAN}Custom Gamepasses: {color}{value}{ANSI.FG.WHITE} | ',
+            f'Custom Gamepasses: {value} | ',
+            [removeSpecialChars(name) for name, amount in isCustomGamepasses.items() if amount],
+            amountOfCustomGamepasses
+        ]
+    else:
+        returner += ['', '', '', '']
     return returner
 
 async def getRapRoblox(cookie: str, proxies: list[str], userId: int | str) -> list:
@@ -3371,7 +3382,7 @@ async def getFavoritePlacesRoblox(cookie: str, proxies: list[str], userId: int |
 
 async def getBundlesRoblox(cookie: str, proxies: list[str], userId: int | str, outputMode: str = 'Names') -> list:
     if not config['Roblox']['CookieChecker']['Main']['Bundles']:
-        return ['', '', '', '', '', '', '', '', '', '']
+        return ['', '', '', '', '', '', '', '', '', '', '', '']
     isBundles = {}
     amountOfFoundBundles = 0
     amountOfCheckBundles = len(checkListBundles)
@@ -3388,7 +3399,7 @@ async def getBundlesRoblox(cookie: str, proxies: list[str], userId: int | str, o
         nextCursor = data['nextPageCursor']
         currentPage += 1
 
-    isBundlesNames = isBundles.values()
+    isBundlesNames = list(isBundles.values())
     color, value = [ANSI.FG.GREEN, await formatNNOutput(isBundlesNames, outputMode)] if amountOfFoundBundles else [ANSI.FG.RED, '0']
     returner  = [
         f'{ANSI.FG.CYAN}Bundles: {color}{value}{ANSI.FG.WHITE} | ',
@@ -3923,9 +3934,9 @@ async def robloxCookieChecker(file: str) -> None:
             if key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium']:
                 totalDataCurrent[f'{key} Percent'] = percentValue
 
-        bundlesIds = [id[0] for id in config['Roblox']['CookieChecker']['Main']['Bundles_List']]
+        bundlesIds = [id[0] for id in config['Roblox']['CookieChecker']['Main']['Bundles_List'] if id[2]]
         for bundle in [[192, 'Korblox'], [201, 'Headless']]:
-            totalDataCurrent[bundle[1]] = f'{ANSI.FG.GRAY}Off{ANSI.FG.WHITE}' if bundle[0] not in bundlesIds or not config['Roblox']['CookieChecker']['Main']['Bundles_List'][bundlesIds.index(bundle[0])][2] else 0
+            totalDataCurrent[bundle[1]] = f'{ANSI.FG.GRAY}Off{ANSI.FG.WHITE}' if (not config['Roblox']['CookieChecker']['Main']['Bundles'] or bundle[0] not in bundlesIds) else 0
 
         async def printTotalOutputRCC() -> None:
             sys.stdout.write(rf'''
@@ -3953,6 +3964,7 @@ async def robloxCookieChecker(file: str) -> None:
   {ANSI.FG.GRAY}\  | {                                        ANSI.FG.CYAN}Groups Funds{     ANSI.FG.WHITE}: {totalDataCurrent['Groups Funds']}
    {ANSI.FG.GRAY}{'‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾'}{ANSI.FG.WHITE}
 '''.lstrip('\n'))
+            sys.stdout.flush()
 
     createGlobalCheckListGamepassesRCC()
     createGlobalCheckListBadgesRCC()
@@ -3961,7 +3973,7 @@ async def robloxCookieChecker(file: str) -> None:
     createGlobalCheckListBundlesRCC()
 
     outputModes = {}
-    for category in ['Gamepasses', 'Custom_Gamepasses', 'Badges', 'Bundles', 'Favorite_Places', 'Groups_Owned', 'Roblox_Badges']:
+    for category in ['Gamepasses', 'Custom_Gamepasses', 'Badges', 'Favorite_Places', 'Bundles', 'Groups_Owned', 'Roblox_Badges']:
         outputModes[category] = str(config['Roblox']['CookieChecker']['Main'][f'{category}_Output_Mode'])
 
     if config['Roblox']['CookieChecker']['Sorting']['Sort']:
@@ -3999,9 +4011,8 @@ async def robloxCookieChecker(file: str) -> None:
                 else:
                     sortOptions[category] = {'sort': False}
         else:
-            if sortOptions['Bundles']['sort']:
-                for id, name in {'192': 'Korblox', '201': 'Headless'}.items():
-                    sortOptions[name] = {'sort': True if id in checkListBundles else False}
+            for id, name in {'192': 'Korblox', '201': 'Headless'}.items():
+                sortOptions[name] = {'sort': True if (sortOptions['Bundles']['sort'] and id in checkListBundles) else False}
 
     categoriesNames = {
         'Country_Registration'      : 'Country Registration',
@@ -4267,6 +4278,9 @@ async def robloxCookieChecker(file: str) -> None:
 def printGeneralRCC():
     length = len(str(len(cookieData.listOfCookieData))) + 12
     for index, data in enumerate(cookieData.listOfCookieData):
+        if data[0] == 'Card':
+            sys.stdout.write(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][data[1]])} {data[0]}{getattr(ANSI.FG, data[2], False)}* {ANSI.FG.WHITE}({ANSI.FG.RED}{MT_Can_Break_USA_Cookie}{ANSI.FG.WHITE})\n')
+            continue
         sys.stdout.write(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][data[1]])} {data[0]}{getattr(ANSI.FG, data[2], False)}*{ANSI.FG.WHITE}\n')
 
 async def generalCategoryRCC(printItems: bool = False, categoryName = '') -> list:
@@ -5376,7 +5390,7 @@ async def addBundleRoblox(bundleId: str, visualPath: str):
         response = await sendGetRequest(f'https://catalog.roblox.com/v1/bundles/{bundleId}/details', 'ALL')
         match response.status:
             case 200:
-                bundleName = (await response.json())['name']
+                bundleName = str((await response.json())['name']).strip()
                 config['Roblox']['CookieChecker']['Main']['Bundles_List'].append([int(bundleId), bundleName, False])
                 await autoSaveConfig()
             case 400:
