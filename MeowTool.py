@@ -32,24 +32,24 @@ IMPORTS = {
 
 while True:
     try:
-        import colorama;                   colorama.init()
+        import colorama;               colorama.init()
         sys.stdout.write(f'\n  \033[1m[\033[95m<3\033[37m] Заботимся о зависимостях... :3\r')
-        from tomlkit                       import TOMLDocument, table, document, nl, comment, loads, dumps
-        from tomlkit.items                 import Table, Item, Array
-        from aiohttp                       import TCPConnector, ClientSession, ClientResponse, ClientOSError, ServerDisconnectedError
-        from aiohttp.http_exceptions       import TransferEncodingError
-        from aiohttp.client_exceptions     import ClientPayloadError
-        from aiohttp_socks                 import ProxyConnector, ProxyError
-        from requests.exceptions           import InvalidURL, InvalidSchema, MissingSchema
+        from tomlkit                   import TOMLDocument, table, document, nl, comment, loads, dumps
+        from tomlkit.items             import Table, Item, Array
+        from aiohttp                   import TCPConnector, ClientSession, ClientResponse, ClientOSError, ServerDisconnectedError
+        from aiohttp.http_exceptions   import TransferEncodingError
+        from aiohttp.client_exceptions import ClientPayloadError
+        from aiohttp_socks             import ProxyConnector, ProxyError
+        from requests.exceptions       import InvalidURL, InvalidSchema, MissingSchema
         import aiofiles
-        from aiogram                       import Bot
-        from aiogram.types                 import FSInputFile
-        from aiogram.enums                 import ParseMode
-        from aiogram.exceptions            import TelegramBadRequest, TelegramNetworkError, TelegramUnauthorizedError
-        from aiogram.utils.token           import TokenValidationError
-        from discord_webhook               import DiscordWebhook, DiscordEmbed
-        from emoji                         import replace_emoji
-        from columnar                      import columnar
+        from aiogram                   import Bot
+        from aiogram.types             import FSInputFile
+        from aiogram.enums             import ParseMode
+        from aiogram.exceptions        import TelegramBadRequest, TelegramNetworkError, TelegramUnauthorizedError
+        from aiogram.utils.token       import TokenValidationError
+        from discord_webhook           import DiscordWebhook, DiscordEmbed
+        from emoji                     import replace_emoji
+        from columnar                  import columnar
         break
     except ModuleNotFoundError as me:
         subprocess.run([sys.executable, '-m', 'pip', 'install', IMPORTS[str(me)[17:-1]]])
@@ -171,6 +171,7 @@ r'''
           [P] [C+]             X-CSRF-Token:              https://auth.roblox.com/v2/logout                                                    > [HEADERS]['X-CSRF-Token']
           [P] [C+]             Authentication Ticket:     https://auth.roblox.com/v1/authentication-ticket                                     > [HEADERS]['rbx-authentication-ticket']
           [P] [C+]             Set Cookie:                https://auth.roblox.com/v1/authentication-ticket/redeem                              > [HEADERS]['Set-Cookie'] (the first 'Set-Cookie' may not contain a new cookie, so you need to get a second one)
+
          _____
         [Group]
           [?] {GroupId} : Group ID | without {}
@@ -192,6 +193,10 @@ r'''
           [G]      [LIM]       Gamepasses:                https://games.roblox.com/v1/games/{UniverseId}/game-passes                           > ['name'], ['id']        in [JSON]['data']
           [G]      [LIM]       Badges:                    https://badges.roblox.com/v1/universes/{UniverseId}/badges                           > ['name'], ['id']        in [JSON]['data']
           [G]      [LIM]       Products:                  https://apis.roblox.com/experience-store/v1/universes/{UniverseId}/store             > ['Name'], ['ProductId'] in [JSON]['developerProducts']
+
+          [?] How to join place with API:
+           1. Server ID: https://games.roblox.com/v1/games/{placeId}/servers/0?sortOrder=1&excludeFullGames=true&limit=25
+           2. 
 
 
    ______________
@@ -215,7 +220,7 @@ r'''
 ### Версии
 
 VERSIONS = {
-    'MeowTool': 'v2.2.1'
+    'MeowTool': 'v2.2.2'
 }
 
 ### ANSI коды
@@ -1619,7 +1624,7 @@ async def getCookiesFromFileRoblox(pathToCookies: str, pathError: str, amoutOfLi
             for line in file:
                 cookie = search(COOKIE_PATTERN, line.strip())
                 if not cookie:
-                    cookie = search(COOKIE_PATTERN_NO_WARNING, line)
+                    cookie = search(COOKIE_PATTERN_NO_WARNING, line.strip())
                     if not cookie:
                         continue
 
@@ -3758,7 +3763,6 @@ async def sortDictPlacesDataRoblox(locker: str, path: str, allDataString: str, d
         return
 
     placesPath  = os.path.join(path, 'Places')
-    generalPath = os.path.join(placesPath, '.All.txt')
     os.makedirs(placesPath, exist_ok=True)
     for placeName, listOfItems in data.items():
         if not listOfItems:
@@ -3769,7 +3773,7 @@ async def sortDictPlacesDataRoblox(locker: str, path: str, allDataString: str, d
                 await file.write(allDataString)
 
     async with locker:
-        async with aiofiles.open(generalPath, 'a', encoding='UTF-8') as file:
+        async with aiofiles.open(os.path.join(placesPath, '.All.txt'), 'a', encoding='UTF-8') as file:
             await file.write(allDataString)
 
 async def sortListNamesDataRoblox(isSort: bool, locker: str, path: str, allDataString: str, data: list[str]) -> None:
@@ -5113,7 +5117,7 @@ async def robloxTransactionAnalysis(file: str) -> None:
         counters[counter]  += 1
         counters['cookie'] += 1
         sys.stdout.write(message)
-        if not isOutputTotal:
+        if isOutputTotal:
             await printTotalOutputRTA()
 
     # Проверка транзакций
@@ -6183,7 +6187,7 @@ async def mainMenu() -> None:
                             while whileTrueStage2:
                                 sys.stdout.write(f' [{ANSI.FG.CYAN}P{ANSI.FG.WHITE}] {ANSI.FG.CYAN}M:\\{MT_Roblox}\\{MT_Transaction_Analysis}{ANSI.FG.WHITE}\n\n')
                                 RTAFiles = await printFiles(os.path.join('Roblox', 'Transaction Analysis'), isPrintFiles=True)
-                                sys.stdout.write(f'{'  ┃\n' if RTAFiles else ''} [{ANSI.FG.YELLOW}U{ANSI.FG.WHITE}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}G{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['Output_Total'])} {MT_Output_Total}\n [{ANSI.FG.YELLOW}S{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Show_Amount_Of_Lines_In_Files'])} {MT_Show_Amount_Of_Lines_In_Files}\n [{ANSI.FG.YELLOW}P{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['Play_Sound_At_The_End_Of_The_Work'])} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}T{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'])} {MT_Send[3]} {MT_Results_To_Telegram[0].lower()}{MT_Results_To_Telegram[1:]}\n [{ANSI.FG.YELLOW}D{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'])} {MT_Send[3]} {MT_Results_To_Discord[0].lower()}{MT_Results_To_Discord[1:]}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
+                                sys.stdout.write(f'{'  ┃\n' if RTAFiles else ''} [{ANSI.FG.YELLOW}U{ANSI.FG.WHITE}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}G{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['Output_Total'])} {MT_Output_Total}\n [{ANSI.FG.YELLOW}P{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['General']['Proxy']['Use_Proxy'])} {MT_Use_Proxy}\n [{ANSI.FG.YELLOW}L{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Show_Amount_Of_Lines_In_Files'])} {MT_Show_Amount_Of_Lines_In_Files}\n [{ANSI.FG.YELLOW}S{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['Play_Sound_At_The_End_Of_The_Work'])} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}T{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'])} {MT_Send[3]} {MT_Results_To_Telegram[0].lower()}{MT_Results_To_Telegram[1:]}\n [{ANSI.FG.YELLOW}D{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'])} {MT_Send[3]} {MT_Results_To_Discord[0].lower()}{MT_Results_To_Discord[1:]}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                 transactionAnalysisTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                 match transactionAnalysisTab:
                                     case '0':
@@ -6192,9 +6196,11 @@ async def mainMenu() -> None:
                                         await robloxTransactionAnalysis(RTAFiles[int(transactionAnalysisTab) - 1])
                                     case 'G' | 'П':
                                         config['Outputs']['Output_Total'] ^= True
-                                    case 'S' | 'Ы':
-                                        config['General']['Show_Amount_Of_Lines_In_Files'] ^= True
                                     case 'P' | 'З':
+                                        config['Roblox']['General']['Proxy']['Use_Proxy'] ^= True
+                                    case 'L' | 'Д':
+                                        config['General']['Show_Amount_Of_Lines_In_Files'] ^= True
+                                    case 'S' | 'Ы':
                                         config['Outputs']['Play_Sound_At_The_End_Of_The_Work'] ^= True
                                         if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
                                             await playSystemSound()
@@ -7161,7 +7167,7 @@ async def mainMenu() -> None:
                                                             case '1':
                                                                 config['Roblox']['TransactionAnalysis']['General']['First_Check_All_Cookies_For_Valid'] ^= True
                                                             case '2' | '3':
-                                                                await removeLines(11)
+                                                                await removeLines(10)
                                                                 sys.stdout.write(f' [{ANSI.FG.CYAN}P{ANSI.FG.WHITE}] {ANSI.FG.CYAN}M:\\{visualPath}{ANSI.FG.WHITE}\n\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                                                 settingsRTAGeneralThreadsEnter = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Number_Of_Threads}: ').strip()
                                                                 match settingsTransactionAnalysisGeneralTab:
