@@ -1,0 +1,147 @@
+____________
+ [*] Roblox
+
+   _____________
+   [*] Robux: ⏣
+
+   ___________________
+   [*] Cookie Variants
+     [?] {...} – Random Symbols
+
+     [?] _|_{...}
+     [?] _||_{...}
+     [?] _|{...}|_{...}
+
+     [?] Pattern: r'_\|(?:_|[^\s\r\n]*?\|_)\S{100,}'
+
+   _______
+   [*] API
+     [?] Ways to get the APIs:
+       [?] Cloud:    https://create.roblox.com/docs/en-us/cloud
+       [?] Swagger:  https://accountsettings.roblox.com//docs/index.html ('accountsettings' can be changed to other category, for example: https://badges.roblox.com//docs/index.html)
+         [?] GitHub: https://github.com/matthewdean/roblox-web-apis  ‾\/‾ categories, links opens in Swagger
+         [?] Fandom: https://roblox.fandom.com/wiki/List_of_web_APIs _/
+       [?] DevTools: https://www.roblox.com > F12 > Network > Fetch/XHR (sometimes 'All' also useful)
+
+     [?] Enums: https://create.roblox.com/docs/reference/engine/enums (can be used for find types like asset, bundle etc.)
+
+     [?] Methods:
+       [G] – GET
+       [P] – POST
+
+     [?] Response Codes:
+       200 – valid
+       302 – invalid (works only for https://www.roblox.com/my/settings/json (with disabled redirect))
+       401 – invalid
+       403 – banned
+       429 – rate-limit
+       500 – internal server error (99% roblox issue, try again)
+
+     [?] Response contents:
+       [JSON]    – response.json()
+       [HEADERS] – response.headers
+       [STATUS]  – response.status
+
+     [?] Need cookie:
+       [C+] – Yes
+       [C-] – No
+       [C=] – Yes if (profile == Private) else No
+      _______
+     [Account]
+       [?] {UserId} : User ID | without {}
+
+       [?] Flags:
+         [LIM] &limit=            (maximum items per page)
+         [CNT] &count=            (maximum items per page)
+         [CSR] &cursor=           (next page)
+         [NSR] &nextCursor=       (next page)
+         [ESI] &exclusiveStartId= (next page, last item's ID)
+
+       [G] [C+]             Valid:                     https://users.roblox.com/v1/users/authenticated                                      > [STATUS]
+       [G] [C+]             Banned:                    https://usermoderation.roblox.com/v1/not-approved                                    > [JSON]
+       [G] [C+]             Account Information:       https://www.roblox.com/my/settings/json                                              > [JSON]
+                                                        [^] ID:                          ['UserId']
+                                                        [^] Name:                        ['Name']
+                                                        [^] Display Name:                ['DisplayName']
+                                                        [^] Registration Date (In Days): ['AccountAgeInDays']
+                                                        [^] Premium:                     ['IsPremium']
+                                                        [^] Can Trade:                   ['CanTrade']
+                                                        [^] Email Setted:                ['MyAccountSecurityModel']['IsEmailSet']
+                                                        [^] Email Verified:              ['MyAccountSecurityModel']['IsEmailVerified']
+                                                        [^] 2FA:                         ['MyAccountSecurityModel']['IsTwoStepEnabled']
+                                                        [^] Pin:                         ['IsAccountPinEnabled']
+                                                        [^] Above 13:                    ['UserAbove13']
+       [G] [C+]             Country Registration:      https://users.roblox.com/v1/users/authenticated/country-code                         > [JSON]['countryCode']
+       [G] [C-]             Registration Date (D.M.Y): https://users.roblox.com/v1/users/{UserId}                                           > [JSON]['created']
+       [G] [C+]             Robux:                     https://economy.roblox.com/v1/users/{UserId}/currency                                > [JSON]['robux']
+       [G] [C+]             Billing:                   https://billing.roblox.com/v1/credit                                                 > [JSON]['robuxAmount']
+       [G] [C+]             Transactions For Year:     https://economy.roblox.com/v2/users/{UserId}/transaction-totals?timeFrame=Year&transactionType=summary
+                                                        [^] Pending:                     ['pendingRobuxTotal']
+                                                        [^] Donate:                      ['outgoingRobuxTotal']
+       [G] [C+] [LIM] [CSR] Transactions For All Time: https://economy.roblox.com/v2/users/{UserId}/transactions?transactionType=2          > ['currency']['amount']                for item in [JSON]['data']
+       [G] [C=] [LIM] [CSR] Rap:                       https://inventory.roblox.com/v1/users/{UserId}/assets/collectibles                   > ['recentAveragePrice']                for item in [JSON]['data']
+       [G] [C+]             Cards:                     https://apis.roblox.com/payments-gateway/v1/payment-profiles                         > len([JSON])
+       [G] [C=] [CNT] [ESI] Gamepasses:                https://apis.roblox.com/game-passes/v1/users/{UserId}/game-passes                    > ['name'],         ['gamePassId']      for item in [JSON]['gamePasses']
+       [G] [C=] [LIM] [CSR] Badges:                    https://badges.roblox.com/v1/users/{UserId}/badges                                   > ['name'],         ['id']              for item in [JSON]['data']
+       [G] [C=]             Badges (Faster):           https://badges.roblox.com/v1/users/{UserId}/badges/awarded-dates?badgeIds=           >                   ['id']              for item in [JSON]['data']
+       [G] [C-] [LIM] [CSR] Favorite Places:           https://games.roblox.com/v2/users/{UserId}/favorite/games                            > ['name'],         ['rootPlace']['id'] for item in [JSON]['data']
+       [G] [C=] [LIM] [CSR] Bundles:                   https://catalog.roblox.com/v1/users/{UserId}/bundles/1                               > ['name'],         ['id']              for item in [JSON]['data']
+       [G] [C-]             Groups:                    https://groups.roblox.com/v1/users/{UserId}/groups/roles?includeLocked=true          > ['role']['rank'], ['group']['id']     for item in [JSON]['data']
+       [G] [C+]             Inventory Privacy:         https://apis.roblox.com/user-settings-api/v1/user-settings/settings-and-options      > [JSON]['whoCanSeeMyInventory']['currentValue']
+       [G] [C+]             Trade Privacy:             https://accountsettings.roblox.com/v1/trade-privacy                                  > [JSON]['tradePrivacy']
+       [G] [C+]       [NSR] Sessions:                  https://apis.roblox.com/token-metadata-service/v1/sessions                           > [JSON]['sessions']
+       [G] [C+]             Phone:                     https://accountinformation.roblox.com/v1/phone                                       > [JSON]['phone']
+       [G] [C+]             Age Group:                 https://apis.roblox.com/user-settings-api/v1/account-insights/age-group              > [JSON]['ageGroupTranslationKey']
+                                                        [^] 13-: Label.AgeBandUnder13
+                                                        [^] 13+: Label.AgeBandOver13
+                                                        [^] 18-: Label.AgeBandUnder18
+                                                        [^] 18+: Label.AgeBandOver18
+       [G] [C+]             Verified Age:              https://apis.roblox.com/age-verification-service/v1/age-verification/verified-age    > [JSON]['isVerified']
+       [G] [C+]             Verified Voice:            https://voice.roblox.com/v1/settings                                                 > [JSON]['isVerifiedForVoice']
+       [G] [C-]             Friends Count:             https://friends.roblox.com/v1/users/{UserId}/friends/count                           > [JSON]['count']
+       [G] [C-]             Followers Count:           https://friends.roblox.com/v1/users/{UserId}/followers/count                         > [JSON]['count']
+       [G] [C-]             Followings Count:          https://friends.roblox.com/v1/users/{UserId}/followings/count                        > [JSON]['count']
+       [G] [C-]             Roblox Badges:             https://accountinformation.roblox.com/v1/users/{UserId}/roblox-badges                > ['name']                              for item in [JSON]
+       [P] [C-]             Check Reged Usernames:     https://users.roblox.com/v1/usernames/users                                          > ['requestedUsername']                 for item in [JSON]['data']
+       [P] [C+]             X-CSRF-Token:              https://auth.roblox.com/v2/logout                                                    > [HEADERS]['X-CSRF-Token']
+       [P] [C+]             Authentication Ticket:     https://auth.roblox.com/v1/authentication-ticket                                     > [HEADERS]['rbx-authentication-ticket']
+       [P] [C-]             Set Cookie:                https://auth.roblox.com/v1/authentication-ticket/redeem                              > [HEADERS]['Set-Cookie'] (the first 'Set-Cookie' may not contain a new cookie, so you need to get a second one)
+
+      _____
+     [Group]
+       [?] {GroupId} : Group ID | without {}
+
+       [G] [C+]             Group Pending For Year:    https://apis.roblox.com/transaction-records/v1/groups/{GroupId}/revenue/summary/year > [JSON]['pendingRobux']
+       [G] [C+]             Group Funds:               https://economy.roblox.com/v1/groups/{GroupId}/currency                              > [JSON]['robux']
+
+      _____
+     [Place]
+       [?] {PlaceId}    : Place ID    ‾\/‾ without {}
+       [?] {UniverseId} : Universe ID _/
+
+       [?] Flags:
+         [UIS] ?universeIds= (IDs separated by commas)
+         [LIM] &limit=       (maximum items per page)
+
+       [G]                  Universe ID:               https://apis.roblox.com/universes/v1/places/{PlaceId}/universe                       > ['universeId']          in [JSON]
+       [G]            [UIS] Place Information:         https://games.roblox.com/v1/games                                                    > ['name']                in [JSON]['data']
+       [G]      [LIM]       Gamepasses:                https://games.roblox.com/v1/games/{UniverseId}/game-passes                           > ['name'], ['id']        in [JSON]['data']
+       [G]      [LIM]       Badges:                    https://badges.roblox.com/v1/universes/{UniverseId}/badges                           > ['name'], ['id']        in [JSON]['data']
+       [G]      [LIM]       Products:                  https://apis.roblox.com/experience-store/v1/universes/{UniverseId}/store             > ['Name'], ['ProductId'] in [JSON]['developerProducts']
+
+______________
+ [*] Telegram
+
+   ________________
+   [*] Create a bot
+     [?] BotFather: https://t.me/BotFather
+
+   _______
+   [*] API
+     [?] Methods:
+       [G] – GET
+       [P] – POST
+
+     [?] {Token}: Bot token from BotFather
+
+     [G] Chat ID with bot: https://api.telegram.org/bot{Token}/getUpdates (message to bot before check)
