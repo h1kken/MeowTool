@@ -2986,7 +2986,7 @@ async def getProfileInformationRoblox(
         'FavoriteExperiences',
         'RobloxBadges',
         'PlayerBadges',
-        'Statistics'
+        'Statistics',
         'Experiences',
         'CreationsModels',
         'Clothing',
@@ -3482,7 +3482,6 @@ async def getGroupsInformationRoblox(cookies: dict, proxies: list[str] | None, u
 async def getGroupsPendingRoblox(cookies: dict, proxies: list[str] | None, groupsIds: list[int | str]) -> list:
     if not config['Roblox']['CookieChecker']['Main']['Groups_Pending']:
         return ['', '', '']
-
     groupsPending = 0
     if groupsIds:
         for groupId in groupsIds:
@@ -3498,7 +3497,6 @@ async def getGroupsPendingRoblox(cookies: dict, proxies: list[str] | None, group
 async def getGroupsFundsRoblox(cookies: dict, proxies: list[str] | None, groupsIds: list[int | str]) -> list:
     if not config['Roblox']['CookieChecker']['Main']['Groups_Funds']:
         return ['', '', '']
-
     groupsFunds = 0
     if groupsIds:
         for groupId in groupsIds:
@@ -3544,7 +3542,7 @@ async def getVoiceRoblox(cookies: dict, proxies: list[str] | None) -> list:
     ]
 
 async def getFriendsRoblox(cookies: dict, proxies: list[str] | None, userId: str):
-    response = await getProfileInformationRoblox(cookies, userId, 'Clothing', proxies=proxies)
+    response = await getProfileInformationRoblox(cookies, userId, 'UserProfileHeader', 'Actions', 'About', 'CurrentlyWearing', 'ContentPosts', 'Friends', 'Collections', 'Communities', 'FavoriteExperiences', 'RobloxBadges', 'PlayerBadges', 'Statistics', 'Experiences', 'CreationsModels', 'Clothing', 'Store', proxies=proxies)
     logging.info(response)
 
 async def getRobloxBadgesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'Names') -> list:
@@ -5477,6 +5475,10 @@ def defaultConfigLoaderSettings() -> TOMLDocument:
     configLoader['Updater']['Check_For_Updates'] = True
     configLoader['Updater']['Save_Old_Versions'] = False
 
+    # Advanced
+    configLoader.add('Advanced', table())
+    configLoader['Advanced']['Standard_Event_Loop_Policy'] = False
+
     # MeowTool
     configLoader.add('MeowTool', table())
     configLoader['MeowTool']['First_Launch'] = True
@@ -5492,7 +5494,7 @@ def loadConfigLoader() -> None:
     
     try:
         configLoader = loads(open(loaderPath, 'r', encoding='utf-8').read())
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Checking_Integrity_Config_Loader}... :3{spaces}\r')
+        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Checking_Integrity_Config_Loader}... :3{S}\r')
         validateConfigSettings(configLoader, defaultConfigLoaderSettings())
     except Exception as e:
         logger.exception(f'< [LOAD_CONFIG_LOADER] > {MT_Critical_Error}: {e}... :<')
@@ -5713,7 +5715,7 @@ def loadConfig(configName: str) -> None:
     configPath = configsPath / f'{configName}.toml'
     if configPath.exists():
         config = loads(open(configPath, 'r', encoding='utf-8').read())
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Checking_Integrity_Config}... :3{spaces}\r')
+        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Checking_Integrity_Config}... :3{S}\r')
         validateConfigSettings(config, defaultConfigSettings())
     else:
         configPath = configsPath / f'{configLoader['Loader']['Current_Config']}.toml'
@@ -7260,18 +7262,14 @@ async def mainMenu() -> None:
 
 if __name__ == '__main__':
     try:
-        spaces = ' '*20
-        systemLocale = locale.getlocale()[0].lower()
+        S = ' '*20
+        systemLocale = str(locale.getlocale()[0]).lower()
         translateLoad(systemLocale)
-        # Выбор цикла событий
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Cozying_Up_For_Comfort_And_Snugness}... :3{spaces}\r')
-        if sys.platform.lower().startswith('win'):
-            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
         # Проверка папок
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Tidying_Folders_Onto_Their_Little_Shelves}... :3{spaces}\r')
+        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Tidying_Folders_Onto_Their_Little_Shelves}... :3{S}\r')
         createFoldersAndFiles()
         # Инициализация логгера
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Waking_Up_Our_Eared_Helper}... :3{spaces}\r')
+        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Waking_Up_Our_Eared_Helper}... :3{S}\r')
         logsPath = Path('Logs')
         logsPath.mkdir(exist_ok=True)
         logging.basicConfig(
@@ -7284,16 +7282,23 @@ if __name__ == '__main__':
         logger = logging.getLogger('MeowTool')
         logger.info(f'< [MEOWTOOL] > {MT_Eared_Assistant_Is_Watching}... :3')
         # Загрузка конфиг лоадера
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_We_Will_Find_Out_Name_Your_Config_From_Loader}... :3{spaces}\r')
+        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_We_Will_Find_Out_Name_Your_Config_From_Loader}... :3{S}\r')
         loadConfigLoader()
+        # Выбор цикла событий
+        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Cozying_Up_For_Comfort_And_Snugness}... :3{S}\r')
+        if sys.platform.lower().startswith('win'):
+            if configLoader['Advanced']['Standard_Event_Loop_Policy']:
+                asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+            else:
+                asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
         # Проверка обновлений
         if configLoader['Updater']['Check_For_Updates']:
             asyncio.run(checkUpdates())
         # Загрузка конфига
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Asking_The_Config_Pretty_Please_For_Settings}... :3{spaces}\r')
+        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Asking_The_Config_Pretty_Please_For_Settings}... :3{S}\r')
         loadConfig(getConfigOnLoad())
         # Инициализация перевода
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Crossing_Paws_For_Honest_Translations}... :3{spaces}\r')
+        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Crossing_Paws_For_Honest_Translations}... :3{S}\r')
         if configLoader['MeowTool']['First_Launch']:
             configsPath = Path('Settings', 'Configs')
             if 'russia' not in systemLocale:
@@ -7305,14 +7310,14 @@ if __name__ == '__main__':
                 file.write(dumps(configLoader))
         translateMT(config['General']['Language'])
         # Переименование консоли
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Fantasizing_About_The_Name}... :3{spaces}\r')
+        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Fantasizing_About_The_Name}... :3{S}\r')
         consoleTitle = str(config['General']['Console_Title']).strip()
         if (not consoleTitle or len(consoleTitle) > 50 or any(char in consoleTitle for char in ['<', '>', '|', '^', '&'])):
             os.system('title MeowTool... Meow :3')
         else:
             os.system(f'title {consoleTitle}')
         # Запуск меню
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Almost_There_Just_A_Little_Couple_Of_Hours}... :3{spaces}\r')
+        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Almost_There_Just_A_Little_Couple_Of_Hours}... :3{S}\r')
         asyncio.run(mainMenu())
     except (SystemExit, KeyboardInterrupt, EOFError):
         raise
