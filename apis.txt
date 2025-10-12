@@ -50,7 +50,7 @@ ____________
      [Account]
        [?] {UserId} : User ID | without {}
 
-       [?] Flags:
+       [?] Params:
          [LIM] &limit=            (maximum items per page)
          [CNT] &count=            (maximum items per page)
          [CSR] &cursor=           (next page)
@@ -119,7 +119,7 @@ ____________
        [?] {PlaceId}    : Place ID    ‾\/‾ without {}
        [?] {UniverseId} : Universe ID _/
 
-       [?] Flags:
+       [?] Params:
          [UIS] ?universeIds= (IDs separated by commas)
          [LIM] &limit=       (maximum items per page)
 
