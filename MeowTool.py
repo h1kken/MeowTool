@@ -3,6 +3,7 @@ osSep = os.sep
 import sys
 cmdWriter = sys.stdout.write
 cmdFlusher = sys.stdout.flush
+from dotenv import load_dotenv; load_dotenv()
 import time
 import subprocess
 import asyncio
@@ -13,6 +14,7 @@ import random
 import re
 import zipfile
 import logging
+import logging.handlers
 import webbrowser
 import locale
 import msvcrt
@@ -55,7 +57,7 @@ while True:
         from columnar import columnar
         break
     except ModuleNotFoundError as me:
-        subprocess.run([sys.executable, '-m', 'pip', 'install', IMPORTS[str(me)[17:-1]]], check=True)
+        subprocess.run([sys.executable, '-m', 'pip', 'install', IMPORTS[str(me)[17:-1]]])
     except Exception:
         logsPath = Path('Logs')
         logsPath.mkdir(exist_ok=True)
@@ -823,6 +825,9 @@ def lableASCII() -> None:
     cmdWriter(ANSI.FG.WHITE)
     cmdFlusher()
 
+def currentDate(outputFormat: str):
+    return datetime.now().strftime(outputFormat)
+
 def cls() -> None:
     if os.name == 'nt': os.system('cls')
     else: os.system('clear')
@@ -970,7 +975,7 @@ def openFile(path: Path, *, highlightFile: bool = False, filename: str = '') -> 
         subprocess.run([command, path.parent])
 
 async def closeProgram() -> None:
-    logger.info(f'< [MEOWTOOL] > {MT_We_Out_Now}...')
+    logger.info(f'{MT_We_Out_Now}...')
     cls()
     lableASCII()
     cmdWriter(f'{'' if (config['General']['Show_Lable_MeowTool'] or config['General']['Show_Lable_by_h1kken']) else ' '} [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Bye}... *{MT_Eep.lower()}* :<')
@@ -998,7 +1003,7 @@ def createFoldersAndFiles() -> None:
             
 def saveOldVersionOfProgram(userProgramName: str) -> None:
     if configLoader['Updater']['Save_Old_Versions']:
-        dateOfSave = datetime.now().strftime('%d.%m.%Y - %H.%M.%S')
+        dateOfSave = currentDate('%d.%m.%Y - %H.%M.%S')
         savePath = Path('Versions', f'{VERSION} ({dateOfSave})')
         savePath.mkdir(parents=True, exist_ok=True)
         shutil.move(userProgramName, savePath / userProgramName)
@@ -1295,7 +1300,7 @@ async def proxyChecker(file: str) -> None:
 '''.lstrip('\n'))
 
     maxResponseTime = int(config['Proxy']['Checker']['Timeout']) if str(config['Proxy']['Checker']['Timeout']).isdigit() else 10
-    isAlsoSaveGoodInCustomFile = config['Proxy']['Checker']['Save_Good_In_Custom_File']
+    isSaveGoodInCustomFile = config['Proxy']['Checker']['Save_Good_In_Custom_File']
     isSaveWithoutProtocol = config['Proxy']['Checker']['Save_Without_Protocol']
     amountOfProxiesFromFile = len(proxiesFromFile)
     counters = {
@@ -1306,7 +1311,7 @@ async def proxyChecker(file: str) -> None:
     }
     proxySaveLock   = asyncio.Lock()
     proxyOutputLock = asyncio.Lock()
-    dateOfCheck = datetime.now().strftime('%d.%m.%Y - %H.%M.%S')
+    dateOfCheck = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Proxy', 'Checker', 'outputs', dateOfCheck)
     semaphore = asyncio.Semaphore(int(config['Proxy']['Checker']['Number_Of_Threads_For_Checker']) if str(config['Proxy']['Checker']['Number_Of_Threads_For_Checker']).isdigit() and (0 < int(config['Proxy']['Checker']['Number_Of_Threads_For_Checker']) <= 1000) else 20)
 
@@ -1318,7 +1323,7 @@ async def proxyChecker(file: str) -> None:
                     return
             proxy = f'{proxy}\n' if isSaveWithoutProtocol else f'{protocol}://{proxy}\n'
             await file.write(proxy)
-        if isAlsoSaveGoodInCustomFile and result == 'good':
+        if isSaveGoodInCustomFile and result == 'good':
             async with aiofiles.open(savePath / f'custom_good.txt', 'a', encoding='utf-8') as file:
                 await file.write(proxy)
 
@@ -3002,6 +3007,12 @@ async def getProfileInformationRoblox(
     }
     return await (await sendPostRequestRoblox('https://apis.roblox.com/profile-platform-api/v1/profiles/get', json=json, cookies=cookies, proxies=proxies)).json()
 
+async def getMixedInformationRoblox():
+    if not (
+        
+    ):
+        return
+
 async def getAccountInformationRoblox(cookies: dict[str, str], proxies: list[str] | None):
     return await sendGetRequestRoblox('https://www.roblox.com/my/settings/json', cookies=cookies, proxies=proxies)
 
@@ -3542,8 +3553,8 @@ async def getVoiceRoblox(cookies: dict, proxies: list[str] | None) -> list:
     ]
 
 async def getFriendsRoblox(cookies: dict, proxies: list[str] | None, userId: str):
-    response = await getProfileInformationRoblox(cookies, userId, 'UserProfileHeader', 'Actions', 'About', 'CurrentlyWearing', 'ContentPosts', 'Friends', 'Collections', 'Communities', 'FavoriteExperiences', 'RobloxBadges', 'PlayerBadges', 'Statistics', 'Experiences', 'CreationsModels', 'Clothing', 'Store', proxies=proxies)
-    logging.info(response)
+    response = await getProfileInformationRoblox(cookies, userId, 'UserProfileHeader', 'RobloxBadges', 'Statistics', proxies=proxies)
+    logger.info(response)
 
 async def getRobloxBadgesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'Names') -> list:
     if not config['Roblox']['CookieChecker']['Main']['Roblox_Badges']:
@@ -3970,7 +3981,7 @@ async def robloxCookieChecker(file: str) -> None:
     bannedLock     = asyncio.Lock()
     duplicatesLock = asyncio.Lock()
     moveCookieNextLine = '\n' if config['Roblox']['CookieChecker']['General']['Move_Cookie_To_The_Next_Line'] else ' '
-    dateOfCheck = datetime.now().strftime('%d.%m.%Y - %H.%M.%S')
+    dateOfCheck = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Roblox', 'Cookie Checker', 'outputs', dateOfCheck)
     semaphore = asyncio.Semaphore(int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']) if str(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']).isdigit() and (0 < int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']) <= 100) else 20)
 
@@ -4594,7 +4605,7 @@ async def robloxCookieSorter() -> None:
     if not cookieSortingList:
         return errorOrCorrectHandler(True, 10, MT_No_Cookie_Was_Found, (MT_Roblox, MT_Cookie_Sorter))
 
-    dateOfSorting = datetime.now().strftime('%d.%m.%Y - %H.%M.%S')
+    dateOfSorting = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Roblox', 'Cookie Sorter', 'outputs', dateOfSorting)
     savePath.mkdir(parents=True, exist_ok=True)
     with open(savePath / f'{filename}.txt', 'a', encoding='utf-8') as file:
@@ -4700,7 +4711,7 @@ async def cookieRefresherSingleMode(string: str):
     except InvalidCookie:
         return errorOrCorrectHandler(True, 3, MT_Invalid_Cookie, generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Single_Mode))
 
-    await saveCookieRCR('SingleMode', f'{cookie[115:130]}...{cookie[-15:-1]}', isNewCookie, Path('Roblox', 'Cookie Refresher', 'Single Mode', 'outputs', datetime.now().strftime('%d.%m.%Y - %H.%M.%S')))
+    await saveCookieRCR('SingleMode', f'{cookie[115:130]}...{cookie[-15:-1]}', isNewCookie, Path('Roblox', 'Cookie Refresher', 'Single Mode', 'outputs', currentDate('%d.%m.%Y - %H.%M.%S')))
 
     removeLines(3)
     cmdWriter(f' {generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Single_Mode)}\n\n{isNewCookie}\n\n')
@@ -4720,7 +4731,7 @@ async def cookieRefresherMassMode(file: str) -> None:
     if not cookiesFromFile:
         return
 
-    dateOfRefreshing = datetime.now().strftime('%d.%m.%Y - %H.%M.%S')
+    dateOfRefreshing = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Roblox', 'Cookie Refresher', 'Mass Mode', 'outputs', dateOfRefreshing)
 
     await asyncio.gather(
@@ -4991,7 +5002,7 @@ async def robloxTransactionAnalysis(file: str) -> None:
     bannedLock     = asyncio.Lock()
     duplicatesLock = asyncio.Lock()
     isOutputTotal = config['Outputs']['Output_Total']
-    dateOfCheck = datetime.now().strftime('%d.%m.%Y - %H.%M.%S')
+    dateOfCheck = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Roblox', 'Transaction Analysis', 'outputs', dateOfCheck)
     semaphore = asyncio.Semaphore(int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) if str(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) <= 100) else 20)
     minuses = '-'*52
@@ -5517,21 +5528,19 @@ def defaultConfigSettings() -> TOMLDocument:
 
     # General
     config.add('General', table())
-    cG = config['General']
-    cG['Language'] = 'RU'
-    cG['Console_Title'] = 'MeowTool... Meow :3'
-    cG['Show_Lable_MeowTool'] = True
-    cG['Show_Lable_by_h1kken'] = False
-    cG['Press_Any_Key_To_Continue'] = True
-    cG['Disable_Warnings_For_Links'] = False
-    cG['Disable_Warnings_For_Dangerous_Actions'] = False
-    cG['Show_Amount_Of_Lines_In_Files'] = False
+    config['General']['Language'] = 'RU'
+    config['General']['Console_Title'] = 'MeowTool... Meow :3'
+    config['General']['Show_Lable_MeowTool'] = True
+    config['General']['Show_Lable_by_h1kken'] = False
+    config['General']['Press_Any_Key_To_Continue'] = True
+    config['General']['Disable_Warnings_For_Links'] = False
+    config['General']['Disable_Warnings_For_Dangerous_Actions'] = False
+    config['General']['Show_Amount_Of_Lines_In_Files'] = False
 
     # Outputs
     config.add('Outputs', table())
-    cO = config['Outputs']
-    cO['Output_Total'] = True
-    cO['Play_Sound_At_The_End_Of_The_Work'] = False
+    config['Outputs']['Output_Total'] = True
+    config['Outputs']['Play_Sound_At_The_End_Of_The_Work'] = False
 
     # Outputs - Telegram Bot
     config['Outputs'].add('TelegramBot', table())
@@ -5716,6 +5725,7 @@ def loadConfig(configName: str) -> None:
     if configPath.exists():
         config = loads(open(configPath, 'r', encoding='utf-8').read())
         cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Checking_Integrity_Config}... :3{S}\r')
+        cmdFlusher()
         validateConfigSettings(config, defaultConfigSettings())
     else:
         configPath = configsPath / f'{configLoader['Loader']['Current_Config']}.toml'
@@ -5862,8 +5872,55 @@ def configContextMenu(chosenConfig: str) -> None:
         
         autoSaveConfigAndRemoveLinesInSettings(configTab, (), ('1', '2', '3', '5', '0'), 13)
 
+### Логгер
+
+class Logger:
+    def __init__(self, name: str, *, stream=False, level=logging.DEBUG):
+        self._logger = logging.getLogger(name)
+        self._logger.setLevel(level)
+        self._path = Path('Logs', f'log ({currentDate('%d.%m.%Y %H.%M.%S')}).log')
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        
+        if not self._logger.handlers:
+            formatter = logging.Formatter('%(asctime)s > [%(name)s] > %(levelname)s | %(message)s')
+
+            if stream:
+                consoleHandler = logging.StreamHandler()
+                consoleHandler.setLevel(logging.DEBUG)
+                consoleHandler.setFormatter(formatter)
+                self._logger.addHandler(consoleHandler)
+            
+            fileHandler = logging.handlers.RotatingFileHandler(
+                filename=self._path,
+                maxBytes=1024*1024*5,
+                backupCount=5,
+                encoding='utf-8'
+            )
+            fileHandler.setFormatter(formatter)
+            fileHandler.setLevel(logging.DEBUG)
+            self._logger.addHandler(fileHandler)
+            
+        self._logger.info(f'{MT_Eared_Assistant_Is_Watching}... :3')
+    
+    def debug(self, message: str = ''):
+        self._logger.debug(message)
+    
+    def info(self, message: str = ''):
+        self._logger.info(message)
+    
+    def warning(self, message: str = ''):
+        self._logger.warning(message)
+    
+    def error(self, message: str = ''):
+        self._logger.error(message)
+    
+    def exception(self, message: str = ''):
+        self._logger.exception(message)
+
+### Меню
+
 async def mainMenu() -> None:
-    cookies = {'.ROBLOSECURITY': '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_CAEaAhAB.D2F98F5F1288AA388923841C7C6E40D264FFA16911059888450AF74EE7F8844E600FD70BBA4603AAB35BB8A8377113256C8B21345F61213D4ACBA2ED6597E6958D247B8FC8ACF1CF31919121601600F7FC1FA028D4EA98CEACC3148E12994A9EB86E16AC879662E888BDF98025D0DA5FAEA76977602A7FE52933D36A6895B2DF8671DEC7DF1E08FFD9169B99B987258B95BBF2776021DBBB0355F34359633AF28CE9AE33EE73B59DE808E76C4B2B11FBB719AB6E19814C93607BD65342F3BCE3066CA6738FBA48221E6086884B9F6D691DA54D565D5762A0332CA7A0CBE005045B8B980EEE4E602C2F9EF4AC40DE4B0BEF4B69D10ADD1B90ACD4A743E6ADB881865A9DA5065538CCBB66BA9E3DD13F80F5088F49165658A80CE9098D59A256433D33FAAC81143969B5EB412F061A45880403BFF68CA55182B9719C1D73C83E9F7230F8DC7FD1D4541BBA6E8C34841C539CD1A09C558FD4756FDBB2FCA18DB9B78E1D769EC5FF0C6325A48B74BD8CE69D4E4757FBCE08ED6247F3DF832A5E1353A2202488A28C92085F991ACC93CCD5CC27C82E7EFF7EEC00DB98DB0811E455678F3B550AE60DC29AE8F2977D676322CE413F87B9F0CA5D9FE0223F861F6BDCF5F07D664B6B7368303648E11210DEF3C7D1339DD97C1C7BBD26B2922688F9FDFA4B2B6ABF045551EAF0E46CF8ADEDB312B09D4970237EDD01B6B554918AAFC54584C43F98283E835C26756A45839A2391B70425235C7480BACB48A8BC8643CBB8C20A183191D71B53D481859ADCE4B77D50D76B2F1A59DDD49D1FDCC9EE263672FB0FD5EAF256E6424A5A25BAFAEB3686073579F7A4FC344D2D66CF0E5E6CEA42B657EA3669F0322DCC927CB06FBEBB2DFE39E34DE9EFC57608A9FDFC255A548EFA01B43F11944F2D70EEEB058F52941AEC20A1C2389531A2E12AA39D0F522E105A45FDEC76512BA93AA74B574CFBAECBACA7283D02AAA93D1A550A923E8BB146C353DE01DFCC009B25E3AE01AABADC98746824B429007438162745CA226994C74EB15569088362804480B9F17EB0C1807843042B704A2DFC2874C85618404CC662637EEE161BC6A07C225FF052F6FA78EA3670047D3DD25A00A17ED6CA1DCBA41D581059C1B0DCE92A8BC687C787EDA71B7D86454366BE49E99931A7120B2E213592493BAC2CC3F1DBA752F75A047E1CC0D14BFD41DEA2470BE80A4989B8EC4A1FF6CB3F768924274781926E19EC4ADADB4AD307'}
+    cookies = {'.ROBLOSECURITY': os.getenv('ROBLOSECURITY')}
     await getFriendsRoblox(cookies, None, '1273976600')
     cls()
     lableASCII()
@@ -7265,22 +7322,12 @@ if __name__ == '__main__':
         S = ' '*20
         systemLocale = str(locale.getlocale()[0]).lower()
         translateLoad(systemLocale)
+        # Инициализация логгера
+        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Waking_Up_Our_Eared_Helper}... :3{S}\r')
+        logger = Logger('MeowTool')
         # Проверка папок
         cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Tidying_Folders_Onto_Their_Little_Shelves}... :3{S}\r')
         createFoldersAndFiles()
-        # Инициализация логгера
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Waking_Up_Our_Eared_Helper}... :3{S}\r')
-        logsPath = Path('Logs')
-        logsPath.mkdir(exist_ok=True)
-        logging.basicConfig(
-            filename=logsPath / f'log {datetime.now().strftime('%d.%m.%Y - %H.%M.%S')}.log',
-            encoding='utf-8',
-            level=logging.DEBUG,
-            format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
-            datefmt='%d.%m.%Y - %H.%M.%S'
-        )
-        logger = logging.getLogger('MeowTool')
-        logger.info(f'< [MEOWTOOL] > {MT_Eared_Assistant_Is_Watching}... :3')
         # Загрузка конфиг лоадера
         cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_We_Will_Find_Out_Name_Your_Config_From_Loader}... :3{S}\r')
         loadConfigLoader()
@@ -7322,4 +7369,4 @@ if __name__ == '__main__':
     except (SystemExit, KeyboardInterrupt, EOFError):
         raise
     except:
-        logger.exception(f'< [MEOWTOOL] > {MT_Oh_Noo_My_Home_It_Is_Over}... :<')
+        logger.exception(f'{MT_Oh_Noo_My_Home_It_Is_Over}... :<')
