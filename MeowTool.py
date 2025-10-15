@@ -6,6 +6,7 @@ cmdFlusher = sys.stdout.flush
 from dotenv import load_dotenv; load_dotenv()
 import time
 import subprocess
+import aiodns
 import asyncio
 import shutil
 import itertools
@@ -603,7 +604,7 @@ def translateMT(language: str) -> None:
             MT_Do_Not_Use_This_Characters = 'Не используй такие символы'
             MT_Enter_A_New_Title = 'Введи новое название'
             MT_Console_Title = 'Название консоли'
-            MT_Show_Place_ID_Next_To_The_Name = 'Показывать ID плейса рядом с названием'
+            MT_Show_Place_ID_Next_To_The_Name = 'Показать ID плейса рядом с названием'
             MT_Disable_Warnings_For_Links = 'Отключить предупреждения для ссылок'
             MT_Disable_Warnings_For_Dangerous_Actions = 'Отключить предупреждения для опасных действий'
             MT_Show_Cookie = 'Показать куки'
@@ -630,8 +631,8 @@ def translateMT(language: str) -> None:
             MT_Could_Not_Connect_To_The_API = 'Не удалось подключиться к API'
             MT_Trying_To_Connect_Again = 'Пытаемся подключиться ещё раз'
             MT_Bind = 'Бинд'
-            MT_Show_Lable_MeowTool = 'Показывать надпись \'MeowTool\''
-            MT_Show_Lable_by_h1kken = 'Показывать надпись \'by h1kken :3\''
+            MT_Show_Lable_MeowTool = 'Показать надпись \'MeowTool\''
+            MT_Show_Lable_by_h1kken = 'Показать надпись \'by h1kken :3\''
             MT_Parameter_Must_Be_A_Number = 'Параметр должен быть числом'
             MT_Add_A_Parameter = 'Добавить параметр'
             MT_Sort = 'Сортировать'
@@ -801,6 +802,12 @@ PROXY_PATTERN_PROTOCOL_USER_PASS_IP_PORT = re.compile(
     r'(?i)^(?:(?P<protocol>https?|socks[45])://)?'
     r'(?P<username>[^:@]+):'
     r'(?P<password>[^:@]+)@'
+    r'(?P<ip>[^:]+):'
+    r'(?P<port>\d{1,5})$'
+)
+
+PROXY_PATTERN_PROTOCOL_IP_PORT = re.compile(
+    r'(?i)^(?:(?P<protocol>https?|socks[45])://)?'
     r'(?P<ip>[^:]+):'
     r'(?P<port>\d{1,5})$'
 )
@@ -1211,12 +1218,13 @@ def sendMessageDiscordWebhook(text: str = None, filename: str = None, *pathArgs:
 
 def findProxyPatternInString(string: str) -> dict[str, str | None] | None:
     patterns = [
+        PROXY_PATTERN_PROTOCOL_USER_PASS_IP_PORT,
         PROXY_PATTERN_PROTOCOL_IP_PORT_USER_PASS,
-        PROXY_PATTERN_PROTOCOL_USER_PASS_IP_PORT
+        PROXY_PATTERN_PROTOCOL_IP_PORT
     ]
 
     for pattern in patterns:
-        match = pattern.match(string)
+        match = pattern.match(string.strip())
         if match:
             return match.groupdict()
 
@@ -1225,7 +1233,7 @@ def getProxiesFromFile(proxiesPath: Path, amountOfRemoveLines: int, visualPathAr
         proxies = set()
         with open(proxiesPath, 'r', encoding='utf-8', errors='replace') as file:
             for line in file:
-                proxy = findProxyPatternInString(line.strip())
+                proxy = findProxyPatternInString(line)
                 if proxy:
                     proxies.add(f'{f'{'http' if proxy['protocol'].lower() == 'https' else proxy['protocol'].lower()}://' if proxy['protocol'] else ''}{proxy['username']}:{proxy['password']}@{proxy['ip']}:{proxy['port']}')
 
@@ -1249,7 +1257,7 @@ async def sendGetRequest(url: str, responseContent: Literal['STATUS', 'HEADERS',
                 case 'JSON'    : return await response.json()
                 case _         : return response
         else:
-            logger.warning(f'< [GET_REQUEST] > URL: {url} | {MT_Unknown_Server_Response_Code}: {response.status}')
+            logger.warning(f'< [GET_REQUEST] > [{response.status}] {url}')
 
 ### Proxy Checker
 
@@ -1286,8 +1294,8 @@ async def proxyChecker(file: str) -> None:
     cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}.txt{ANSI.DECOR.UNDERLINEOFF}\':\n')
 
     isOutputTotal           = config['Outputs']['Output_Total']
-    isSendResultsToTelegram = config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot']
-    isSendResultsToDiscord  = config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']
+    isSendResultsToTelegramBot = config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot']
+    isSendResultsToDiscordWebhook  = config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']
 
     def printTotalOutputPC() -> None:
         cmdWriter(rf'''
@@ -1385,7 +1393,7 @@ async def proxyChecker(file: str) -> None:
     if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
         playSystemSound()
 
-    if isSendResultsToTelegram or isSendResultsToDiscord:
+    if isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
         messageText = f'*💜 {MT_Proxy} {MT_Checker.lower()}\n\n🟢 Good: {counters['good']}\n🔴 Bad: {counters['bad']}\n🟡 Response time >{maxResponseTime} sec.: {counters['timeout']}\n\n*'
         makeArchive(dateOfCheck, 'Proxy', 'Checker', 'outputs')
         await sendMessageTelegramBot(messageText, 'Proxy', 'Checker', 'outputs', 'archives', f'{dateOfCheck}.zip')
@@ -1405,7 +1413,7 @@ def getProxiesFromFileRoblox(isUseProxy: bool, proxiesPath: Path, amountOfRemove
         autoProtocol = str(config['Roblox']['General']['Proxy']['Auto_Protocol_If_Not_Specified']).lower() if str(config['Roblox']['General']['Proxy']['Auto_Protocol_If_Not_Specified']).lower() in ('http', 'socks4', 'socks5') else 'http'
         with open(proxiesPath, 'r', encoding='utf-8', errors='replace') as file:
             for line in file:
-                proxy = findProxyPatternInString(line.strip())
+                proxy = findProxyPatternInString(line)
                 if proxy:
                     proxies.add(f'{f'{'http' if proxy['protocol'].lower() == 'https' else proxy['protocol'].lower()}' if proxy['protocol'] else autoProtocol}://{proxy['username']}:{proxy['password']}@{proxy['ip']}:{proxy['port']}')
 
@@ -1446,7 +1454,12 @@ def getCookiesFromFileRoblox(cookiesPath: Path, amountOfRemoveLines: int, visual
 
 def getConnectorRoblox(proxies: list[str] | None = None) -> TCPConnector | ProxyConnector:
     if not (config['Roblox']['General']['Proxy']['Use_Proxy'] and proxies):
-        return TCPConnector(limit=0)
+        return TCPConnector(
+            limit=0,
+            enable_cleanup_closed=True,
+            ttl_dns_cache=300,
+            use_dns_cache=True
+        )
     return ProxyConnector.from_url(random.choice(proxies))
 
 class AUniversalTime: # https://www.roblox.com/games/5130598377
@@ -2875,7 +2888,19 @@ async def sendGetRequestRoblox(
     while True:
         try:
             async with ClientSession(connector=getConnectorRoblox(proxies), cookies=cookies, headers=headers) as session:
-                response = await session.get(url, allow_redirects=allow_redirects, timeout=ClientTimeout(10), ssl=False)
+                response = await session.get(
+                    url,
+                    skip_auto_headers={'User-Agent', 'Accept-Encoding', 'Accept'},
+                    compress=False,
+                    allow_redirects=allow_redirects,
+                    timeout=ClientTimeout(
+                        total=None,
+                        connect=2,
+                        sock_connect=2,
+                        sock_read=2
+                    ),
+                    ssl=False
+                )
                 match response.status:
                     case 200:
                         return await response.json()
@@ -2907,7 +2932,20 @@ async def sendPostRequestRoblox(
     while True:
         try:
             async with ClientSession(connector=getConnectorRoblox(proxies), cookies=cookies, headers=headers) as session:
-                response = await session.post(url, data=data, json=json, timeout=ClientTimeout(10), ssl=False)
+                response = await session.post(
+                    url,
+                    skip_auto_headers={'User-Agent', 'Accept-Encoding', 'Accept'},
+                    compress=False,
+                    data=data,
+                    json=json,
+                    timeout=ClientTimeout(
+                        total=None,
+                        connect=2,
+                        sock_connect=2,
+                        sock_read=2
+                    ),
+                    ssl=False
+                )
                 match response.status:
                     case 200 | 403:
                         return response
@@ -3119,13 +3157,15 @@ async def getTransactionsForYearRoblox(cookies: dict, proxies: list[str] | None,
     return returner
 
 async def getDonateAllTimeRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'NameNumber') -> list:
-    if not (config['Roblox']['CookieChecker']['Main']['Donate_All_Time'] or config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']):
+    checkDonateAllTime = config['Roblox']['CookieChecker']['Main']['Donate_All_Time']
+    checkCustomGamepasses = config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']
+    if not (checkDonateAllTime or config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']):
         return ['', '', '', '', '', '', '']
     returner = []
     donateAllTime = 0
     nextCursor = ''
     donateAllTimeMaxPages = config['Roblox']['CookieChecker']['Main']['Donate_All_Time_Max_Check_Pages']
-    if config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']:
+    if checkCustomGamepasses:
         customGamepasses = copy.deepcopy(checkListCustomGamepasses)
         customGamepassesMaxPages = config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_Max_Check_Pages']
     else:
@@ -3133,16 +3173,19 @@ async def getDonateAllTimeRoblox(cookies: dict, proxies: list[str] | None, userI
     maximumPage = max(donateAllTimeMaxPages, customGamepassesMaxPages)
     currentPage = 0
     while nextCursor is not None and currentPage != maximumPage:
-        response = await sendGetRequestRoblox(f'https://economy.roblox.com/v2/users/{userId}/transactions?transactionType=2&limit=100&cursor={nextCursor}', cookies=cookies, proxies=proxies)
+        response: dict[str, dict[dict[str, str]]] = await sendGetRequestRoblox(f'https://economy.roblox.com/v2/users/{userId}/transactions?transactionType=2&limit=100&cursor={nextCursor}', cookies=cookies, proxies=proxies)
         for transaction in response['data']:
-            if config['Roblox']['CookieChecker']['Main']['Donate_All_Time'] and (donateAllTimeMaxPages == -1 or currentPage < donateAllTimeMaxPages):
+            if checkDonateAllTime and (donateAllTimeMaxPages == -1 or currentPage < donateAllTimeMaxPages):
                 donateAllTime += transaction['currency']['amount']
-            if config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses'] and 'name' in transaction['details'] and transaction['details']['name'] in checkListCustomGamepasses and (customGamepassesMaxPages == -1 or currentPage < customGamepassesMaxPages):
-                customGamepasses[transaction['details']['name']] += 1
+            if checkCustomGamepasses:
+                transactionDetails: dict = transaction.get('details', {})
+                transactionName = transactionDetails.get('name')
+                if transactionName in checkListCustomGamepasses and (customGamepassesMaxPages == -1 or currentPage < customGamepassesMaxPages):
+                    customGamepasses[transaction['details']['name']] += 1
         nextCursor = response['nextPageCursor']
         currentPage += 1
 
-    if config['Roblox']['CookieChecker']['Main']['Donate_All_Time']:
+    if checkDonateAllTime:
         donateAllTime = abs(donateAllTime)
         returner.extend([
             f'{ANSI.FG.CYAN}Donate (All Time): {ANSI.FG.GREEN if donateAllTime else ANSI.FG.RED}{donateAllTime}{ANSI.FG.WHITE} | ',
@@ -3152,7 +3195,7 @@ async def getDonateAllTimeRoblox(cookies: dict, proxies: list[str] | None, userI
     else:
         returner.extend(['', '', ''])
 
-    if config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']:
+    if checkCustomGamepasses:
         amountOfCustomGamepasses = sum(customGamepasses.values())
         color, value = [ANSI.FG.GREEN, formatCustomGamepassesOutput(customGamepasses, outputMode)] if amountOfCustomGamepasses else [ANSI.FG.RED, '0']
         returner.extend([
@@ -3394,7 +3437,7 @@ async def getSessionsRoblox(cookies: dict, proxies: list[str] | None) -> list:
     nextCursor = ''
     maximumPage = config['Roblox']['CookieChecker']['Main']['Sessions_Max_Check_Pages']
     currentPage = 0
-    while nextCursor is not None and currentPage != maximumPage:
+    while (nextCursor is not None and currentPage != maximumPage):
         response = await sendGetRequestRoblox(f'https://apis.roblox.com/token-metadata-service/v1/sessions?nextCursor={nextCursor}', cookies=cookies, proxies=proxies)
         sessions += len(response['sessions'])
         nextCursor = response['nextCursor']
@@ -3832,17 +3875,17 @@ async def robloxCookieChecker(file: str) -> None:
         'duplicates' : 0
     }  
 
-    isOutputTotal           = config['Outputs']['Output_Total']
-    isSendResultsToTelegram = config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot']
-    isSendResultsToDiscord  = config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']
+    isOutputTotal                  = config['Outputs']['Output_Total']
+    isSendResultsToTelegramBot     = config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot']
+    isSendResultsToDiscordWebhook  = config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']
 
-    if isOutputTotal or isSendResultsToTelegram or isSendResultsToDiscord:
+    if isOutputTotal or isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
         totalDataCurrent = {}
         for key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Premium', 'Card', 'Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Bundles', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds']:
             mainValue, percentValue = [0, f'{ANSI.FG.GRAY}(0 | 0.0%)'] if config['Roblox']['CookieChecker']['Main']['_'.join(key.replace('(', '').replace(')', '').split())] else [f'{ANSI.FG.GRAY}Off', '']
             totalDataCurrent[key] = mainValue
-            if key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium']:
-                totalDataCurrent[f'{key} Percent'] = percentValue
+            if key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds']:
+                totalDataCurrent[f'{key} %'] = percentValue
                 counters[key] = totalDataCurrent[key]
 
         bundlesIds = [id[0] for id in config['Roblox']['CookieChecker']['Main']['Bundles_List'] if id[2]]
@@ -3856,23 +3899,23 @@ async def robloxCookieChecker(file: str) -> None:
  {ANSI.FG.GRAY}/   | {                                        ANSI.FG.CYAN}Valid{            ANSI.FG.WHITE}: {counters['valid']} ({ANSI.FG.CYAN}Dupes{ANSI.FG.WHITE}: {counters['duplicates']})
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Invalid{          ANSI.FG.WHITE}: {counters['invalid']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Banned{           ANSI.FG.WHITE}: {counters['banned']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Robux{            ANSI.FG.WHITE}: {totalDataCurrent['Robux']:<22} {            totalDataCurrent['Robux Percent']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Billing{          ANSI.FG.WHITE}: {totalDataCurrent['Billing']:<20} {          totalDataCurrent['Billing Percent']}
- {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[0]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Pending{          ANSI.FG.WHITE}: {totalDataCurrent['Pending']:<20} {          totalDataCurrent['Pending Percent']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Donate (1 Year){  ANSI.FG.WHITE}: {totalDataCurrent['Donate (1 Year)']:<12} {  totalDataCurrent['Donate (1 Year) Percent']}
- {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[1]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Donate (All Time){ANSI.FG.WHITE}: {totalDataCurrent['Donate (All Time)']:<10} {totalDataCurrent['Donate (All Time) Percent']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Rap{              ANSI.FG.WHITE}: {totalDataCurrent['Rap']:<24} {              totalDataCurrent['Rap Percent']}
- {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[2]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Card{             ANSI.FG.WHITE}: {totalDataCurrent['Card']:<23} {             totalDataCurrent['Card Percent']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Premium{          ANSI.FG.WHITE}: {totalDataCurrent['Premium']:<20} {          totalDataCurrent['Premium Percent']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Robux{            ANSI.FG.WHITE}: {totalDataCurrent['Robux']:<22} {            totalDataCurrent['Robux %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Billing{          ANSI.FG.WHITE}: {totalDataCurrent['Billing']:<20} {          totalDataCurrent['Billing %']}
+ {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[0]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Pending{          ANSI.FG.WHITE}: {totalDataCurrent['Pending']:<20} {          totalDataCurrent['Pending %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Donate (1 Year){  ANSI.FG.WHITE}: {totalDataCurrent['Donate (1 Year)']:<12} {  totalDataCurrent['Donate (1 Year) %']}
+ {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[1]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Donate (All Time){ANSI.FG.WHITE}: {totalDataCurrent['Donate (All Time)']:<10} {totalDataCurrent['Donate (All Time) %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Rap{              ANSI.FG.WHITE}: {totalDataCurrent['Rap']:<24} {              totalDataCurrent['Rap %']}
+ {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[2]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Card{             ANSI.FG.WHITE}: {totalDataCurrent['Card']:<23} {             totalDataCurrent['Card %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Premium{          ANSI.FG.WHITE}: {totalDataCurrent['Premium']:<20} {          totalDataCurrent['Premium %']}
  {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[3]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Gamepasses{       ANSI.FG.WHITE}: {totalDataCurrent['Gamepasses']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Custom Gamepasses{ANSI.FG.WHITE}: {totalDataCurrent['Custom Gamepasses']}
  {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[4]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Badges{           ANSI.FG.WHITE}: {totalDataCurrent['Badges']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Favorite Places{  ANSI.FG.WHITE}: {totalDataCurrent['Favorite Places']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Bundles{          ANSI.FG.WHITE}: {totalDataCurrent['Bundles']} ({ANSI.FG.CYAN}KB{ANSI.FG.WHITE}: {totalDataCurrent['Korblox']}, {ANSI.FG.CYAN}HL{ANSI.FG.WHITE}: {totalDataCurrent['Headless']})
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Owned{     ANSI.FG.WHITE}: {totalDataCurrent['Groups Owned']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Members{   ANSI.FG.WHITE}: {totalDataCurrent['Groups Members']}
- {ANSI.FG.GRAY}\   | {                                        ANSI.FG.CYAN}Groups Pending{   ANSI.FG.WHITE}: {totalDataCurrent['Groups Pending']}
-  {ANSI.FG.GRAY}\  | {                                        ANSI.FG.CYAN}Groups Funds{     ANSI.FG.WHITE}: {totalDataCurrent['Groups Funds']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Owned{     ANSI.FG.WHITE}: {totalDataCurrent['Groups Owned']:<15} {     totalDataCurrent['Groups Owned %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Members{   ANSI.FG.WHITE}: {totalDataCurrent['Groups Members']:<13} {   totalDataCurrent['Groups Members %']}
+ {ANSI.FG.GRAY}\   | {                                        ANSI.FG.CYAN}Groups Pending{   ANSI.FG.WHITE}: {totalDataCurrent['Groups Pending']:<13} {   totalDataCurrent['Groups Pending %']}
+  {ANSI.FG.GRAY}\  | {                                        ANSI.FG.CYAN}Groups Funds{     ANSI.FG.WHITE}: {totalDataCurrent['Groups Funds']:<15} {     totalDataCurrent['Groups Funds %']}
    {ANSI.FG.GRAY}{'‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾'}{ANSI.FG.WHITE}
 '''.lstrip('\n'))
             cmdFlusher()
@@ -4095,7 +4138,7 @@ async def robloxCookieChecker(file: str) -> None:
 
                 async with validLock:
                     counters['valid'] += 1
-                    if isOutputTotal or isSendResultsToTelegram or isSendResultsToDiscord:
+                    if isOutputTotal or isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
                         totalDataUpdate = {
                             'Robux'             : isRobuxTimed,
                             'Billing'           : isBillingTimed,
@@ -4122,11 +4165,11 @@ async def robloxCookieChecker(file: str) -> None:
                             if type(totalDataCurrent[key]) is int:
                                 totalDataCurrent[key] += int(value)
 
-                        for key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium']:
-                            if totalDataCurrent[f'{key} Percent']:
+                        for key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds']:
+                            if totalDataCurrent[f'{key} %']:
                                 if totalDataUpdate[key]:
                                     counters[key] += 1
-                                totalDataCurrent[f'{key} Percent'] = f'{ANSI.FG.GRAY}({counters[key]} | {round(counters[key] / counters['valid'] * 100, 2)}%)'
+                                totalDataCurrent[f'{key} %'] = f'{ANSI.FG.GRAY}({counters[key]} | {round(counters[key] / counters['valid'] * 100, 2)}%)'
 
                     async with aiofiles.open(savePath / f'{filename}.txt', 'a', encoding='utf-8') as file:
                         await file.write(allDataString)
@@ -4161,7 +4204,7 @@ async def robloxCookieChecker(file: str) -> None:
     if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
         playSystemSound()
 
-    if isSendResultsToTelegram or isSendResultsToDiscord:
+    if isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
         messageText = f'*💜 {MT_Roblox} {MT_Cookie_Checker.lower()}\n\n🟢 {MT_Valid}: {counters['valid']}\n🔴 {MT_Invalid}: {counters['invalid']}\n🟠 {MT_Banned[1]}: {counters['banned']}\n🟡 {MT_Duplicates}: {counters['duplicates']}\n\n{f'💎 Robux: {totalDataCurrent['Robux'] if type(totalDataCurrent['Robux']) is int else 'Off'}\n'}{f'💵 Billing: {totalDataCurrent['Billing'] if type(totalDataCurrent['Billing']) is int else 'Off'}\n'}{f'⌛ Pending: {totalDataCurrent['Pending'] if type(totalDataCurrent['Pending']) is int else 'Off'}\n'}{f'💰 Donate \\(1 Year\\): {totalDataCurrent['Donate (1 Year)'] if type(totalDataCurrent['Donate (1 Year)']) is int else 'Off'}\n'}{f'💰 Donate \\(All Time\\): {totalDataCurrent['Donate (All Time)'] if type(totalDataCurrent['Donate (All Time)']) is int else 'Off'}\n'}{f'🚀 Rap: {totalDataCurrent['Rap'] if type(totalDataCurrent['Rap']) is int else 'Off'}\n'}{f'💳 Card: {totalDataCurrent['Card'] if type(totalDataCurrent['Card']) is int else 'Off'}\n'}{f'👑 Premium: {totalDataCurrent['Premium'] if type(totalDataCurrent['Premium']) is int else 'Off'}\n'}{f'🎫 Gamepasses: {totalDataCurrent['Gamepasses'] if type(totalDataCurrent['Gamepasses']) is int else 'Off'}\n'}{f'🎫 Custom Gamepasses: {totalDataCurrent['Custom Gamepasses'] if type(totalDataCurrent['Custom Gamepasses']) is int else 'Off'}\n'}{f'🏆 Badges: {totalDataCurrent['Badges'] if type(totalDataCurrent['Badges']) is int else 'Off'}\n'}{f'⭐ Favorite Places: {totalDataCurrent['Favorite Places'] if type(totalDataCurrent['Favorite Places']) is int else 'Off'}\n'}{f'📦 Bundles: {totalDataCurrent['Bundles'] if type(totalDataCurrent['Bundles']) is int else 'Off'}\n'}{f'🌐 Groups Owned: {totalDataCurrent['Groups Owned'] if type(totalDataCurrent['Groups Owned']) is int else 'Off'}\n'}{f'👯‍♀️ Groups Members: {totalDataCurrent['Groups Members'] if type(totalDataCurrent['Groups Members']) is int else 'Off'}\n'}{f'⌛ Groups Pending: {totalDataCurrent['Groups Pending'] if type(totalDataCurrent['Groups Pending']) is int else 'Off'}\n'}{f'💎 Groups Funds: {totalDataCurrent['Groups Funds'] if type(totalDataCurrent['Groups Funds']) is int else 'Off'}\n'}*'
         makeArchive(dateOfCheck, 'Roblox', 'Cookie Checker', 'outputs')
         await sendMessageTelegramBot(messageText, 'Roblox', 'Cookie Checker', 'outputs', 'archives', f'{dateOfCheck}.zip')
