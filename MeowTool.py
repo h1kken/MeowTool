@@ -4,7 +4,6 @@ import sys
 cmdWriter = sys.stdout.write
 cmdFlusher = sys.stdout.flush
 from dotenv import load_dotenv; load_dotenv()
-import signal
 import time
 import subprocess
 import asyncio
@@ -7577,5 +7576,5 @@ if __name__ == '__main__':
         asyncio.run(mainMenu())
     except (SystemExit, KeyboardInterrupt, EOFError):
         raise
-    except Exception as e:
+    except:
         logger.exception(f'{MT_Oh_Noo_My_Home_It_Is_Over}... :<')
