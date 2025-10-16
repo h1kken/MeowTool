@@ -4082,7 +4082,7 @@ async def robloxCookieChecker(file: str) -> None:
 
         bundlesIds = [id[0] for id in config['Roblox']['CookieChecker']['Main']['Bundles_List'] if id[2]]
         for bundle in [[192, 'Korblox'], [201, 'Headless']]:
-            totalDataCurrent[bundle[1]] = f'{ANSI.FG.GRAY}Off{ANSI.FG.WHITE}' if not (config['Roblox']['CookieChecker']['Main']['Bundles'] or bundle[0] in bundlesIds) else 0            
+            totalDataCurrent[bundle[1]] = f'{ANSI.FG.GRAY}Off{ANSI.FG.WHITE}' if not config['Roblox']['CookieChecker']['Main']['Bundles'] or bundle[0] not in bundlesIds else 0            
 
         def printTotalOutputRCC() -> None:
             cmdWriter(rf'''
@@ -4104,7 +4104,7 @@ async def robloxCookieChecker(file: str) -> None:
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Custom Gamepasses{ANSI.FG.WHITE}: {totalDataCurrent['Custom Gamepasses']}
  {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[4]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Badges{           ANSI.FG.WHITE}: {totalDataCurrent['Badges']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Favorite Places{  ANSI.FG.WHITE}: {totalDataCurrent['Favorite Places']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Bundles{          ANSI.FG.WHITE}: {totalDataCurrent['Bundles']} ({ANSI.FG.CYAN}KB{ANSI.FG.WHITE}: {totalDataCurrent['Korblox']}, {ANSI.FG.CYAN}HL{ANSI.FG.WHITE}: {totalDataCurrent['Headless']})
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Bundles{          ANSI.FG.WHITE}: {totalDataCurrent['Bundles']} {ANSI.FG.WHITE}({ANSI.FG.CYAN}KB{ANSI.FG.WHITE}: {totalDataCurrent['Korblox']}, {ANSI.FG.CYAN}HL{ANSI.FG.WHITE}: {totalDataCurrent['Headless']})
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Owned{     ANSI.FG.WHITE}: {totalDataCurrent['Groups Owned']:<15} {     totalDataCurrent['Groups Owned %']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Members{   ANSI.FG.WHITE}: {totalDataCurrent['Groups Members']:<13} {   totalDataCurrent['Groups Members %']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Pending{   ANSI.FG.WHITE}: {totalDataCurrent['Groups Pending']:<13} {   totalDataCurrent['Groups Pending %']}
@@ -4245,82 +4245,82 @@ async def robloxCookieChecker(file: str) -> None:
                 # Сортировка
                 if config['Roblox']['CookieChecker']['Sorting']['Sort']:
                     simpleSortValues = {
-                        'ID'                        : resultsRCC['ID'                  ]['sort-str'],
-                        'Name'                      : resultsRCC['Name'                ]['sort-str'],
-                        'Display_Name'              : resultsRCC['Display Name'        ]['sort-str'],
-                        'Registration_Date_DMY'     : resultsRCC['Registration Date'   ]['sort-str'],
-                        'Registration_Date_In_Days' : resultsRCC['Registration Date'   ]['sort-int'],
-                        'Country_Registration'      : resultsRCC['Country Registration']['sort-str'],
-                        'Robux'                     : resultsRCC['Robux'               ]['sort-int'],
-                        'Billing'                   : resultsRCC['Billing'             ]['sort-int'],
-                        'Pending'                   : resultsRCC['Pending'             ]['sort-int'],
-                        'Donate_1_Year'             : resultsRCC['Donate (1 Year)'     ]['sort-int'],
-                        'Donate_All_Time'           : resultsRCC['Donate (All Time)'   ]['sort-int'],
-                        'Rap'                       : resultsRCC['Rap'                 ]['sort-int'],
-                        'Card'                      : resultsRCC['Card'                ]['sort-int'],
-                        'Premium'                   : resultsRCC['Premium'             ]['sort-str'],
-                        'Korblox'                   : resultsRCC['Korblox'             ]['sort-str'],
-                        'Headless'                  : resultsRCC['Headless'            ]['sort-str'],
-                        'Inventory_Privacy'         : resultsRCC['Inventory Privacy'   ]['sort-str'],
-                        'Trade_Privacy'             : resultsRCC['Trade Privacy'       ]['sort-str'],
-                        'Can_Trade'                 : resultsRCC['Can Trade'           ]['sort-str'],
-                        'Sessions'                  : resultsRCC['Sessions'            ]['sort-int'],
-                        'Email'                     : resultsRCC['Email'               ]['sort-str'],
-                        'Phone'                     : resultsRCC['Phone'               ]['sort-str'],
-                        '2FA'                       : resultsRCC['2FA'                 ]['sort-str'],
-                        'Pin'                       : resultsRCC['Pin'                 ]['sort-str'],
-                        'Groups_Members'            : resultsRCC['Groups Members'      ]['sort-int'],
-                        'Groups_Pending'            : resultsRCC['Groups Pending'      ]['sort-int'],
-                        'Groups_Funds'              : resultsRCC['Groups Funds'        ]['sort-int'],
-                        'Age_Group'                 : resultsRCC['Age Group'           ]['sort-str'],
-                        'Verified_Age'              : resultsRCC['Verified Age'        ]['sort-str'],
-                        'Verified_Voice'            : resultsRCC['Verified Voice'      ]['sort-str'],
+                        'ID'                        : resultsRCC.get('ID',                   {}).get('sort-str'),
+                        'Name'                      : resultsRCC.get('Name',                 {}).get('sort-str'),
+                        'Display_Name'              : resultsRCC.get('Display Name',         {}).get('sort-str'),
+                        'Registration_Date_DMY'     : resultsRCC.get('Registration Date',    {}).get('sort-str'),
+                        'Registration_Date_In_Days' : resultsRCC.get('Registration Date',    {}).get('sort-int'),
+                        'Country_Registration'      : resultsRCC.get('Country Registration', {}).get('sort-str'),
+                        'Robux'                     : resultsRCC.get('Robux',                {}).get('sort-int'),
+                        'Billing'                   : resultsRCC.get('Billing',              {}).get('sort-int'),
+                        'Pending'                   : resultsRCC.get('Pending',              {}).get('sort-int'),
+                        'Donate_1_Year'             : resultsRCC.get('Donate (1 Year)' ,     {}).get('sort-int'),
+                        'Donate_All_Time'           : resultsRCC.get('Donate (All Time)' ,   {}).get('sort-int'),
+                        'Rap'                       : resultsRCC.get('Rap',                  {}).get('sort-int'),
+                        'Card'                      : resultsRCC.get('Card',                 {}).get('sort-int'),
+                        'Premium'                   : resultsRCC.get('Premium',              {}).get('sort-str'),
+                        'Korblox'                   : resultsRCC.get('Korblox',              {}).get('sort-str'),
+                        'Headless'                  : resultsRCC.get('Headless',             {}).get('sort-str'),
+                        'Inventory_Privacy'         : resultsRCC.get('Inventory Privacy',    {}).get('sort-str'),
+                        'Trade_Privacy'             : resultsRCC.get('Trade Privacy',        {}).get('sort-str'),
+                        'Can_Trade'                 : resultsRCC.get('Can Trade',            {}).get('sort-str'),
+                        'Sessions'                  : resultsRCC.get('Sessions',             {}).get('sort-int'),
+                        'Email'                     : resultsRCC.get('Email',                {}).get('sort-str'),
+                        'Phone'                     : resultsRCC.get('Phone',                {}).get('sort-str'),
+                        '2FA'                       : resultsRCC.get('2FA',                  {}).get('sort-str'),
+                        'Pin'                       : resultsRCC.get('Pin',                  {}).get('sort-str'),
+                        'Groups_Members'            : resultsRCC.get('Groups Members',       {}).get('sort-int'),
+                        'Groups_Pending'            : resultsRCC.get('Groups Pending',       {}).get('sort-int'),
+                        'Groups_Funds'              : resultsRCC.get('Groups Funds',         {}).get('sort-int'),
+                        'Age_Group'                 : resultsRCC.get('Age Group',            {}).get('sort-str'),
+                        'Verified_Age'              : resultsRCC.get('Verified Age',         {}).get('sort-str'),
+                        'Verified_Voice'            : resultsRCC.get('Verified Voice',       {}).get('sort-str'),
                     }
 
                     complexSortValues = {
-                        'Gamepasses'        : [resultsRCC['Gamepasses'       ]['sort-int'], resultsRCC['Gamepasses'       ]['sort-dict']],
-                        'Custom_Gamepasses' : [resultsRCC['Custom Gamepasses']['sort-int'], resultsRCC['Custom Gamepasses']['sort-list']],
-                        'Badges'            : [resultsRCC['Badges'           ]['sort-int'], resultsRCC['Badges'           ]['sort-dict']],
-                        'Favorite_Places'   : [resultsRCC['Favorite Places'  ]['sort-int'], resultsRCC['Favorite Places'  ]['sort-list']],
-                        'Bundles'           : [resultsRCC['Bundles'          ]['sort-int'], resultsRCC['Bundles'          ]['sort-dict']],
-                        'Groups_Owned'      : [resultsRCC['Groups Owned'     ]['sort-int'], resultsRCC['Groups Owned'     ]['sort-list']],
-                        'Roblox_Badges'     : [resultsRCC['Roblox Badges'    ]['sort-int'], resultsRCC['Roblox Badges'    ]['sort-list']]
+                        'Gamepasses'        : [resultsRCC.get('Gamepasses',        {}).get('sort-int'), resultsRCC.get('Gamepasses',        {}).get('sort-dict')],
+                        'Custom_Gamepasses' : [resultsRCC.get('Custom Gamepasses', {}).get('sort-int'), resultsRCC.get('Custom Gamepasses', {}).get('sort-list')],
+                        'Badges'            : [resultsRCC.get('Badges',            {}).get('sort-int'), resultsRCC.get('Badges',            {}).get('sort-dict')],
+                        'Favorite_Places'   : [resultsRCC.get('Favorite Places',   {}).get('sort-int'), resultsRCC.get('Favorite Places',   {}).get('sort-list')],
+                        'Bundles'           : [resultsRCC.get('Bundles',           {}).get('sort-int'), resultsRCC.get('Bundles',           {}).get('sort-dict')],
+                        'Groups_Owned'      : [resultsRCC.get('Groups Owned',      {}).get('sort-int'), resultsRCC.get('Groups Owned',      {}).get('sort-list')],
+                        'Roblox_Badges'     : [resultsRCC.get('Roblox Badges',     {}).get('sort-int'), resultsRCC.get('Roblox Badges',     {}).get('sort-list')]
                     }
 
                     await asyncio.gather(
-                        *(sortingDataRoblox(sortLock, savePath / 'Sort' / categoriesNames[category], category, sortOptions, allDataString, value)              for category, value in simpleSortValues.items()  if sortOptions[category]['sort']),
-                        *(sortingDataRoblox(sortLock, savePath / 'Sort' / categoriesNames[category], category, sortOptions, allDataString, value[0], value[1]) for category, value in complexSortValues.items() if sortOptions[category]['sort'])
+                        *(sortingDataRoblox(sortLock, savePath / 'Sort' / categoriesNames[category], category, sortOptions, allDataString, value)              for category, value in simpleSortValues.items()  if value and sortOptions[category]['sort']),
+                        *(sortingDataRoblox(sortLock, savePath / 'Sort' / categoriesNames[category], category, sortOptions, allDataString, value[0], value[1]) for category, value in complexSortValues.items() if value and sortOptions[category]['sort'])
                     )
 
                 async with validLock:
                     counters['valid'] += 1
                     if isOutputTotal or isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
                         totalDataUpdate = {
-                            'Robux'             : resultsRCC['Robux'            ]['sort-int'],
-                            'Billing'           : resultsRCC['Billing'          ]['sort-int'],
-                            'Pending'           : resultsRCC['Pending'          ]['sort-int'],
-                            'Donate (1 Year)'   : resultsRCC['Donate (1 Year)'  ]['sort-int'],
-                            'Donate (All Time)' : resultsRCC['Donate (All Time)']['sort-int'],
-                            'Rap'               : resultsRCC['Rap'              ]['sort-int'],
-                            'Card'              : resultsRCC['Card'             ]['sort-int'],
-                            'Premium'           : resultsRCC['Premium'          ]['total'],
-                            'Gamepasses'        : resultsRCC['Gamepasses'       ]['sort-int'],
-                            'Custom Gamepasses' : resultsRCC['Custom Gamepasses']['sort-int'],
-                            'Badges'            : resultsRCC['Badges'           ]['sort-int'],
-                            'Favorite Places'   : resultsRCC['Favorite Places'  ]['sort-int'],
-                            'Bundles'           : resultsRCC['Bundles'          ]['sort-int'],
-                            'Groups Owned'      : resultsRCC['Groups Owned'     ]['sort-int'],
-                            'Groups Members'    : resultsRCC['Groups Members'   ]['sort-int'],
-                            'Groups Pending'    : resultsRCC['Groups Pending'   ]['sort-int'],
-                            'Groups Funds'      : resultsRCC['Groups Funds'     ]['sort-int'],
-                            'Place Visits'      : resultsRCC['Place Visits'     ]['sort-int'],
-                            'Korblox'           : resultsRCC['Korblox'          ]['total'],
-                            'Headless'          : resultsRCC['Headless'         ]['total']
+                            'Robux'             : resultsRCC.get('Robux',             {}).get('sort-int'),
+                            'Billing'           : resultsRCC.get('Billing',           {}).get('sort-int'),
+                            'Pending'           : resultsRCC.get('Pending',           {}).get('sort-int'),
+                            'Donate (1 Year)'   : resultsRCC.get('Donate (1 Year)' ,  {}).get('sort-int'),
+                            'Donate (All Time)' : resultsRCC.get('Donate (All Time)', {}).get('sort-int'),
+                            'Rap'               : resultsRCC.get('Rap',               {}).get('sort-int'),
+                            'Card'              : resultsRCC.get('Card',              {}).get('sort-int'),
+                            'Premium'           : resultsRCC.get('Premium',           {}).get('total'),
+                            'Gamepasses'        : resultsRCC.get('Gamepasses',        {}).get('sort-int'),
+                            'Custom Gamepasses' : resultsRCC.get('Custom Gamepasses', {}).get('sort-int'),
+                            'Badges'            : resultsRCC.get('Badges',            {}).get('sort-int'),
+                            'Favorite Places'   : resultsRCC.get('Favorite Places',   {}).get('sort-int'),
+                            'Bundles'           : resultsRCC.get('Bundles',           {}).get('sort-int'),
+                            'Groups Owned'      : resultsRCC.get('Groups Owned',      {}).get('sort-int'),
+                            'Groups Members'    : resultsRCC.get('Groups Members',    {}).get('sort-int'),
+                            'Groups Pending'    : resultsRCC.get('Groups Pending',    {}).get('sort-int'),
+                            'Groups Funds'      : resultsRCC.get('Groups Funds',      {}).get('sort-int'),
+                            'Place Visits'      : resultsRCC.get('Place Visits',      {}).get('sort-int'),
+                            'Korblox'           : resultsRCC.get('Korblox',           {}).get('total'),
+                            'Headless'          : resultsRCC.get('Headless',          {}).get('total')
                         }
 
                         for key, value in totalDataUpdate.items():
-                            if type(totalDataCurrent[key]) is int:
-                                totalDataCurrent[key] += int(value)
+                            if type(value) is int:
+                                totalDataCurrent[key] += value
 
                         for key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds', 'Place Visits']:
                             if totalDataCurrent[f'{key} %']:
@@ -6834,8 +6834,9 @@ async def mainMenu() -> None:
                                                                     outputMode = config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_Output_Mode']
                                                                     labelOutputMode = sortLabels[outputMode] if outputMode in outputModes[nameOfCategory] else sortLabels[outputModes[nameOfCategory][-1]]
                                                                     if nameOfCategory in ('Custom Gamepasses', 'Favorite Places', 'Bundles'):
-                                                                        await generalCategoryRCC(True, nameOfCategory_)
-                                                                        cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory)}\n\n{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.FG.WHITE}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.FG.WHITE}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_List'] else ''} [{ANSI.FG.YELLOW}M{ANSI.FG.WHITE}] ┃ {MT_Output_Mode}: {labelOutputMode}\n [{ANSI.FG.YELLOW}A{ANSI.FG.WHITE}] ┃ {sortLabels[nameOfCategory][0]}\n [{ANSI.FG.YELLOW}C{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][nameOfCategory_])} {MT_Check}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
+                                                                        cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory)}\n\n')
+                                                                        generalCategoryRCC(True, nameOfCategory_)
+                                                                        cmdWriter(f'{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.FG.WHITE}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.FG.WHITE}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_List'] else ''} [{ANSI.FG.YELLOW}M{ANSI.FG.WHITE}] ┃ {MT_Output_Mode}: {labelOutputMode}\n [{ANSI.FG.YELLOW}A{ANSI.FG.WHITE}] ┃ {sortLabels[nameOfCategory][0]}\n [{ANSI.FG.YELLOW}C{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][nameOfCategory_])} {MT_Check}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                                                         hasList = True
                                                                     else:
                                                                         cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory)}\n\n [{ANSI.FG.YELLOW}M{ANSI.FG.WHITE}] ┃ {MT_Output_Mode}: {labelOutputMode}\n [{ANSI.FG.YELLOW}C{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][nameOfCategory_])} {MT_Check}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
@@ -6850,7 +6851,7 @@ async def mainMenu() -> None:
                                                                             choice = int(settingsRCCGeneralCategoryTab) - 1
                                                                             whileTrueStage6 = True
                                                                             while whileTrueStage6:
-                                                                                categoryData = await generalCategoryRCC(False, nameOfCategory_)
+                                                                                categoryData = generalCategoryRCC(False, nameOfCategory_)
                                                                                 cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory, categoryData[choice][-2])}\n\n [{ANSI.FG.YELLOW}C{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(categoryData[int(settingsRCCGeneralCategoryTab) - 1][-1])} {MT_Check}\n [{ANSI.FG.RED}D{ANSI.FG.WHITE}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                                                                 settingsRCCGeneralCategoryContextMenuTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                                                                 match settingsRCCGeneralCategoryContextMenuTab:
