@@ -2868,12 +2868,12 @@ listOfPlaces = [AUniversalTime, AdoptMe, AnimeAdventures, AnimeDefenders, AnimeV
 
 class cookieData: #          Normal Name                    Config Name                  Sort
     link                   = 'Link',                        'Link',                      None
-    countryRegistration    = 'Country Registration',        'Country_Registration',      str
     id                     = 'ID',                          'ID',                        str
     name                   = 'Name',                        'Name',                      str
     displayName            = 'Display Name',                'Display_Name',              str
     registrationDateDMY    = 'Registration Date (D.M.Y)',   'Registration_Date_DMY',     str
     registrationDateInDays = 'Registration Date (In Days)', 'Registration_Date_In_Days', int
+    countryRegistration    = 'Country Registration',        'Country_Registration',      str
     robux                  = 'Robux',                       'Robux',                     int
     billing                = 'Billing',                     'Billing',                   int
     pending                = 'Pending',                     'Pending',                   int
@@ -2931,7 +2931,6 @@ async def sendGetRequestRoblox(
                     compress=False,
                     allow_redirects=allow_redirects,
                     timeout=ClientTimeout(
-                        total=None,
                         connect=2,
                         sock_connect=2,
                         sock_read=2
@@ -2978,7 +2977,6 @@ async def sendPostRequestRoblox(
                     data=data,
                     json=json,
                     timeout=ClientTimeout(
-                        total=None,
                         connect=2,
                         sock_connect=2,
                         sock_read=2
@@ -3074,7 +3072,7 @@ async def getProfileInformationRoblox(
         'Clothing',
         'Store'
     ],
-    proxies: list[str] | None = None
+    proxies: list[str] | None
 ) -> dict:
     json = {
         'components': [{'component': component} for component in components],
@@ -3087,30 +3085,31 @@ async def getProfileInformationRoblox(
 async def getMixedInformationRoblox(cookies: dict[str, str], proxies: list[str] | None, userId: str, outputModes: dict[str, str]) -> dict:
     configRCCMain = config['Roblox']['CookieChecker']['Main']
     components = ()
+    if configRCCMain['Place_Visits']:
+        components += ('Statistics',)
     if configRCCMain['Friends'] or configRCCMain['Followers'] or configRCCMain['Followings']:
         components += ('UserProfileHeader',)
     if configRCCMain['Roblox_Badges']:
         components += ('RobloxBadges',)
-    if configRCCMain['Place_Visits']:
-        components += ('Statistics',)
     if not components:
         return {'Place Visits': None, 'Roblox Badges': None, 'Friends': None, 'Followers': None, 'Followings': None}
-    logger.info(components)
     response = await getProfileInformationRoblox(cookies, userId, *components, proxies=proxies)
     resultsMixed = await asyncio.gather(
         getPlaceVisitsRoblox(response),
-        getRobloxBadgesRoblox(response, outputModes['Roblox_Badges']),
         getFriendsRoblox(response),
         getFollowersRoblox(response),
-        getFollowingsRoblox(response)
+        getFollowingsRoblox(response),
+        getRobloxBadgesRoblox(response, outputModes['Roblox_Badges'])
     )
-    keys = ['Place Visits', 'Roblox Badges', 'Friends', 'Followers', 'Followings']
-    return {key: value for key, value in zip(keys, resultsMixed)}
+    returner = {}
+    for value in resultsMixed:
+        returner.update(value)
+    return returner
 
 async def getAccountInformationRoblox(cookies: dict[str, str], proxies: list[str] | None) -> dict:
     return await sendGetRequestRoblox('https://www.roblox.com/my/settings/json', cookies=cookies, proxies=proxies)
 
-async def getLinkRoblox(userId: str) -> dict:
+async def getLinkRoblox(userId: str) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Link']:
         return {'Link': None}
     return {
@@ -3120,20 +3119,7 @@ async def getLinkRoblox(userId: str) -> dict:
         }
     }
 
-async def getCountryRegistrationRoblox(cookies: dict, proxies: list[str] | None) -> dict:
-    if not config['Roblox']['CookieChecker']['Main']['Country_Registration']:
-        return {'Country Registration': None}
-    response: dict = await sendGetRequestRoblox('https://users.roblox.com/v1/users/authenticated/country-code', cookies=cookies, proxies=proxies)
-    countryRegistration = response['countryCode']
-    return {
-        'Country Registration': {
-            'color': f'{ANSI.FG.CYAN}Country Reg.:{ANSI.FG.WHITE} {countryRegistration}',
-            'no-color': f'Country Reg.: {countryRegistration}',
-            'sort-str': countryRegistration
-        }
-    }
-
-async def getNameRoblox(accountInformation: dict) -> list:
+async def getNameRoblox(accountInformation: dict) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Name']:
         return {'Name': None}
     name = accountInformation['Name']
@@ -3145,7 +3131,7 @@ async def getNameRoblox(accountInformation: dict) -> list:
         }
     }
 
-async def getDisplayNameRoblox(accountInformation: dict) -> list:
+async def getDisplayNameRoblox(accountInformation: dict) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Display_Name']:
         return {'Display Name': None}
     displayName = accountInformation['DisplayName']
@@ -3157,7 +3143,7 @@ async def getDisplayNameRoblox(accountInformation: dict) -> list:
         }
     }
 
-async def getRegistrationDateRoblox(cookies: dict, proxies: list[str] | None, userId: str, accountInformation) -> list:
+async def getRegistrationDateRoblox(cookies: dict, proxies: list[str] | None, userId: str, accountInformation: dict) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Registration_Date_DMY']:
         return {'Registration Date': None}
     response: dict = await sendGetRequestRoblox(f'https://users.roblox.com/v1/users/{userId}', cookies=cookies, proxies=proxies)
@@ -3173,7 +3159,20 @@ async def getRegistrationDateRoblox(cookies: dict, proxies: list[str] | None, us
         }
     }
 
-async def getRobuxRoblox(cookies: dict, proxies: list[str] | None, userId: str) -> list:
+async def getCountryRegistrationRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
+    if not config['Roblox']['CookieChecker']['Main']['Country_Registration']:
+        return {'Country Registration': None}
+    response: dict = await sendGetRequestRoblox('https://users.roblox.com/v1/users/authenticated/country-code', cookies=cookies, proxies=proxies)
+    countryRegistration = response['countryCode']
+    return {
+        'Country Registration': {
+            'color': f'{ANSI.FG.CYAN}Country Reg.:{ANSI.FG.WHITE} {countryRegistration}',
+            'no-color': f'Country Reg.: {countryRegistration}',
+            'sort-str': countryRegistration
+        }
+    }
+
+async def getRobuxRoblox(cookies: dict, proxies: list[str] | None, userId: str) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Robux']:
         return {'Robux': None}
     response: dict = await sendGetRequestRoblox(f'https://economy.roblox.com/v1/users/{userId}/currency', cookies=cookies, proxies=proxies)
@@ -3186,7 +3185,7 @@ async def getRobuxRoblox(cookies: dict, proxies: list[str] | None, userId: str) 
         }
     }
 
-async def getBillingRoblox(cookies: dict, proxies: list[str] | None) -> list:
+async def getBillingRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Billing']:
         return {'Billing': None}
     response: dict = await sendGetRequestRoblox('https://billing.roblox.com/v1/credit', cookies=cookies, proxies=proxies)
@@ -3199,7 +3198,7 @@ async def getBillingRoblox(cookies: dict, proxies: list[str] | None) -> list:
         }
     }
 
-async def getTransactionsForYearRoblox(cookies: dict, proxies: list[str] | None, userId: str) -> list:
+async def getTransactionsForYearRoblox(cookies: dict, proxies: list[str] | None, userId: str) -> dict[str, dict | None]:
     if not (config['Roblox']['CookieChecker']['Main']['Pending'] or config['Roblox']['CookieChecker']['Main']['Donate_1_Year']):
         return {'Pending': None, 'Donate (1 Year)': None}
     response: dict = await sendGetRequestRoblox(f'https://economy.roblox.com/v2/users/{userId}/transaction-totals?timeFrame=Year&transactionType=Summary', cookies=cookies, proxies=proxies)
@@ -3226,7 +3225,7 @@ async def getTransactionsForYearRoblox(cookies: dict, proxies: list[str] | None,
         
     return returner
 
-async def getDonateAllTimeRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'NameNumber') -> list:
+async def getDonateAllTimeRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'NameNumber') -> dict[str, dict | None]:
     checkDonateAllTime = config['Roblox']['CookieChecker']['Main']['Donate_All_Time']
     checkCustomGamepasses = config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']
     if not (checkDonateAllTime or checkCustomGamepasses):
@@ -3269,7 +3268,7 @@ async def getDonateAllTimeRoblox(cookies: dict, proxies: list[str] | None, userI
         amountOfCustomGamepasses = sum(customGamepasses.values())
         color, value = [ANSI.FG.GREEN, formatCustomGamepassesOutput(customGamepasses, outputMode)] if amountOfCustomGamepasses else [ANSI.FG.RED, '0']
         returner['Custom Gamepasses'] = {
-            'color': f'{ANSI.FG.CYAN}Custom Gamepasses: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Custom Gamepasses:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Custom Gamepasses: {value}',
             'sort-list': [removeSpecialChars(name) for name, amount in customGamepasses.items() if amount],
             'sort-int': amountOfCustomGamepasses
@@ -3279,7 +3278,7 @@ async def getDonateAllTimeRoblox(cookies: dict, proxies: list[str] | None, userI
         
     return returner
 
-async def getRapRoblox(cookies: dict, proxies: list[str] | None, userId: str) -> list:
+async def getRapRoblox(cookies: dict, proxies: list[str] | None, userId: str) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Rap']:
         return {'Rap': None}
     rap = 0
@@ -3301,7 +3300,7 @@ async def getRapRoblox(cookies: dict, proxies: list[str] | None, userId: str) ->
         }
     }
 
-async def getCardRoblox(cookies: dict, proxies: list[str] | None) -> list:
+async def getCardRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Card']:
         return {'Card': None}
     response = await sendGetRequestRoblox(f'https://apis.roblox.com/payments-gateway/v1/payment-profiles', cookies=cookies, proxies=proxies)
@@ -3314,20 +3313,20 @@ async def getCardRoblox(cookies: dict, proxies: list[str] | None) -> list:
         }
     }
 
-async def getPremiumRoblox(accountInformation) -> list:
+async def getPremiumRoblox(accountInformation: dict) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Premium']:
         return {'Premium': None}
     color, value, intValue = [ANSI.FG.GREEN, 'Yes', 1] if accountInformation['IsPremium'] else [ANSI.FG.RED, 'No', 0]
     return {
         'Premium': {
-            'color': f'{ANSI.FG.CYAN}Premium: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Premium:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Premium: {value}',
             'sort-str': value,
             'total': intValue
         }
     }
 
-async def getGamepassesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'PlaceNames') -> list:
+async def getGamepassesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'PlaceNames') -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Gamepasses']:
         return {'Gamepasses': None}
     gamepasses = {gamepass['PlaceName']: [] for gamepass in checkListGamepasses.values()}
@@ -3352,14 +3351,14 @@ async def getGamepassesRoblox(cookies: dict, proxies: list[str] | None, userId: 
     color, value = [ANSI.FG.GREEN, formatNNPPOutput(gamepasses, outputMode)] if amountOfFoundGamepasses else [ANSI.FG.RED, '0']
     return {
         'Gamepasses': {
-            'color': f'{ANSI.FG.CYAN}Gamepasses: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Gamepasses:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Gamepasses: {value}',
             'sort-dict': gamepasses,
             'sort-int': amountOfFoundGamepasses
         }
     }
 
-async def getBadgesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'PlaceNames') -> list:
+async def getBadgesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'PlaceNames') -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Badges']:
         return {'Badges': None}
     badges = {badge['PlaceName']: [] for badge in checkListBadges.values()}
@@ -3381,14 +3380,14 @@ async def getBadgesRoblox(cookies: dict, proxies: list[str] | None, userId: str,
     color, value = [ANSI.FG.GREEN, formatNNPPOutput(badges, outputMode)] if amountOfFoundBadges else [ANSI.FG.RED, '0']
     return {
         'Badges': {
-            'color': f'{ANSI.FG.CYAN}Badges: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Badges:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Badges: {value}',
             'sort-dict': badges,
             'sort-int': amountOfFoundBadges
         }
     }
 
-async def getFavoritePlacesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'Names') -> list:
+async def getFavoritePlacesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'Names') -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Favorite_Places']:
         return {'Favorite Places': None}
     favoritePlaces = []
@@ -3410,14 +3409,14 @@ async def getFavoritePlacesRoblox(cookies: dict, proxies: list[str] | None, user
     color, value = [ANSI.FG.GREEN, formatNNOutput(favoritePlaces, outputMode)] if amountOfFoundFavoritePlaces else [ANSI.FG.RED, '0']
     return {
         'Favorite Places': {
-            'color': f'{ANSI.FG.CYAN}Fav. Places: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Fav. Places:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Fav. Places: {value}',
             'sort-list': favoritePlaces,
             'sort-int': amountOfFoundFavoritePlaces
         }
     }
 
-async def getBundlesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'Names') -> list:
+async def getBundlesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'Names') -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Bundles']:
         return {'Bundles': None, 'Korblox': None, 'Headless': None}
     returner = {}
@@ -3441,7 +3440,7 @@ async def getBundlesRoblox(cookies: dict, proxies: list[str] | None, userId: str
     color, value = [ANSI.FG.GREEN, formatNNOutput(bundlesNames, outputMode)] if amountOfFoundBundles else [ANSI.FG.RED, '0']
     returner.update({
         'Bundles': {
-            'color': f'{ANSI.FG.CYAN}Bundles: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Bundles:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Bundles: {value}',
             'sort-dict': bundlesNames,
             'sort-int': amountOfFoundBundles
@@ -3452,7 +3451,7 @@ async def getBundlesRoblox(cookies: dict, proxies: list[str] | None, userId: str
         color, value, boolean = [ANSI.FG.GREEN, 'Yes', True] if '192' in bundles else [ANSI.FG.RED, 'No', False]
         returner.update({
             'Korblox': {
-                'color': f'{ANSI.FG.CYAN}Korblox: {color}{value}{ANSI.FG.WHITE}',
+                'color': f'{ANSI.FG.CYAN}Korblox:{color} {value}{ANSI.FG.WHITE}',
                 'no-color': f'Korblox: {value}',
                 'sort-str': value,
                 'total': boolean
@@ -3465,7 +3464,7 @@ async def getBundlesRoblox(cookies: dict, proxies: list[str] | None, userId: str
         color, value, boolean = [ANSI.FG.GREEN, 'Yes', True] if '201' in bundles else [ANSI.FG.RED, 'No', False]
         returner.update({
             'Headless': {
-                'color': f'{ANSI.FG.CYAN}Headless: {color}{value}{ANSI.FG.WHITE}',
+                'color': f'{ANSI.FG.CYAN}Headless:{color} {value}{ANSI.FG.WHITE}',
                 'no-color': f'Headless: {value}',
                 'sort-str': value,
                 'total': boolean
@@ -3476,7 +3475,7 @@ async def getBundlesRoblox(cookies: dict, proxies: list[str] | None, userId: str
         
     return returner
 
-async def getInventoryPrivacyRoblox(cookies: dict, proxies: list[str] | None) -> list:
+async def getInventoryPrivacyRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Inventory_Privacy']:
         return {'Inventory Privacy': None}
     response = await sendGetRequestRoblox(f'https://apis.roblox.com/user-settings-api/v1/user-settings/settings-and-options', cookies=cookies, proxies=proxies)
@@ -3488,13 +3487,13 @@ async def getInventoryPrivacyRoblox(cookies: dict, proxies: list[str] | None) ->
                else [ANSI.FG.RED,    'No One'])
     return {
         'Inventory Privacy': {
-            'color': f'{ANSI.FG.CYAN}Inv. Privacy: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Inv. Privacy:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Inv. Privacy: {value}',
             'sort-str': value
         }
     }
 
-async def getTradePrivacyRoblox(cookies: dict, proxies: list[str] | None) -> list:
+async def getTradePrivacyRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Trade_Privacy']:
         return {'Trade Privacy': None}
     response = await sendGetRequestRoblox('https://accountsettings.roblox.com/v1/trade-privacy', cookies=cookies, proxies=proxies)
@@ -3506,25 +3505,25 @@ async def getTradePrivacyRoblox(cookies: dict, proxies: list[str] | None) -> lis
                else [ANSI.FG.RED,    'No One'])
     return {
         'Trade Privacy': {
-            'color': f'{ANSI.FG.CYAN}Trade Privacy: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Trade Privacy:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Trade Privacy: {value}',
             'sort-str': value
         }
     }
 
-async def getCanTradeRoblox(accountInformation) -> list:
+async def getCanTradeRoblox(accountInformation: dict) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Can_Trade']:
         return {'Can Trade': None}
     color, value = [ANSI.FG.GREEN, 'Yes'] if accountInformation['CanTrade'] else [ANSI.FG.RED, 'No']
     return {
         'Can Trade': {
-            'color': f'{ANSI.FG.CYAN}Can Trade: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Can Trade:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Can Trade: {value}',
             'sort-str': value
         }
     }
 
-async def getSessionsRoblox(cookies: dict, proxies: list[str] | None) -> list:
+async def getSessionsRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Sessions']:
         return {'Sessions': None}
     sessions = 0
@@ -3542,13 +3541,13 @@ async def getSessionsRoblox(cookies: dict, proxies: list[str] | None) -> list:
         else ANSI.FG.GREEN)
     return {
         'Sessions': {
-            'color': f'{ANSI.FG.CYAN}Sessions: {color}{sessions}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Sessions:{color} {sessions}{ANSI.FG.WHITE}',
             'no-color': f'Sessions: {sessions}',
             'sort-int': sessions
         }
     }
 
-async def getEmailRoblox(accountInformation) -> list:
+async def getEmailRoblox(accountInformation: dict) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Email']:
         return {'Email': None}
     securityModel   = accountInformation['MyAccountSecurityModel']
@@ -3559,50 +3558,50 @@ async def getEmailRoblox(accountInformation) -> list:
                else [ANSI.FG.YELLOW, 'Setted'])
     return {
         'Email': {
-            'color': f'{ANSI.FG.CYAN}Email: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Email:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Email: {value}',
             'sort-str': value
         }
     }
 
-async def getPhoneRoblox(cookies: dict, proxies: list[str] | None) -> list:
+async def getPhoneRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Phone']:
         return {'Phone': None}
     response = await sendGetRequestRoblox('https://accountinformation.roblox.com/v1/phone', cookies=cookies, proxies=proxies)
     color, value = [ANSI.FG.RED, 'Yes'] if response['phone'] else [ANSI.FG.GREEN, 'No']
     return {
         'Phone': {
-            'color': f'{ANSI.FG.CYAN}Phone: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Phone:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Phone: {value}',
             'sort-str': value
         }
     }
 
-async def get2FARoblox(accountInformation) -> list:
+async def get2FARoblox(accountInformation: dict) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['2FA']:
         return {'2FA': None}
     color, value = [ANSI.FG.RED, 'Yes'] if accountInformation['MyAccountSecurityModel']['IsTwoStepEnabled'] else [ANSI.FG.GREEN, 'No']
     return {
         '2FA': {
-            'color': f'{ANSI.FG.CYAN}2FA: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}2FA:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'2FA: {value}',
             'sort-str': value
         }
     }
 
-async def getPinRoblox(accountInformation) -> list:
+async def getPinRoblox(accountInformation: dict) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Pin']:
         return {'Pin': None}
     color, value = [ANSI.FG.RED, 'Yes'] if accountInformation['IsAccountPinEnabled'] else [ANSI.FG.GREEN, 'No']
     return {
         'Pin': {
-            'color': f'{ANSI.FG.CYAN}Pin: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Pin:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Pin: {value}',
             'sort-str': value
         }
     }
 
-async def getGroupsInformationRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'Names') -> list:
+async def getGroupsInformationRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'Names') -> dict[str, dict | None]:
     configRCCMain = config['Roblox']['CookieChecker']['Main']
     if not (configRCCMain['Groups_Owned'] or configRCCMain['Groups_Members'] or configRCCMain['Groups_Pending'] or configRCCMain['Groups_Funds']):
         return {'Groups Owned': None, 'Groups Members': None, 'Groups Pending': None, 'Groups Funds': None}
@@ -3618,16 +3617,16 @@ async def getGroupsInformationRoblox(cookies: dict, proxies: list[str] | None, u
     color, value = [ANSI.FG.GREEN, formatNNOutput(groupsOwned, outputMode)] if groupsOwned else [ANSI.FG.RED, '0']
     returner.update({
         'Groups Owned': {
-            'color': f'{ANSI.FG.CYAN}G. Owned: {color}{value}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}G. Owned:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'G. Owned: {value}',
             'sort-list': list(groupsOwned),
-            'total': len(groupsOwned)
+            'sort-int': len(groupsOwned)
         } if configRCCMain['Groups_Owned'] else {'Groups Owned': None}
     })
     
     returner.update({
         'Groups Members': {
-            'color': f'{ANSI.FG.CYAN}G. Members: {color}{groupsMembers}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}G. Members:{color} {groupsMembers}{ANSI.FG.WHITE}',
             'no-color': f'G. Members: {groupsMembers}',
             'sort-int': groupsMembers
         } if configRCCMain['Groups_Members'] else {'Groups Members': None}
@@ -3643,7 +3642,7 @@ async def getGroupsInformationRoblox(cookies: dict, proxies: list[str] | None, u
     
     return returner
 
-async def getGroupsPendingRoblox(cookies: dict, proxies: list[str] | None, groupsIds: list[int | str]) -> dict:
+async def getGroupsPendingRoblox(cookies: dict, proxies: list[str] | None, groupsIds: list[int | str]) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Groups_Pending']:
         return {'Groups Pending': None}
     groupsPending = 0
@@ -3655,13 +3654,13 @@ async def getGroupsPendingRoblox(cookies: dict, proxies: list[str] | None, group
     color = ANSI.FG.GREEN if groupsPending else ANSI.FG.RED
     return {
         'Groups Pending': {
-            'color': f'{ANSI.FG.CYAN}G. Pending: {color}{groupsPending}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}G. Pending:{color} {groupsPending}{ANSI.FG.WHITE}',
             'no-color': f'G. Pending: {groupsPending}',
             'sort-int': groupsPending
         }
     }
 
-async def getGroupsFundsRoblox(cookies: dict, proxies: list[str] | None, groupsIds: list[int | str]) -> dict:
+async def getGroupsFundsRoblox(cookies: dict, proxies: list[str] | None, groupsIds: list[int | str]) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Groups_Funds']:
         return {'Groups Funds': None}
     groupsFunds = 0
@@ -3673,20 +3672,20 @@ async def getGroupsFundsRoblox(cookies: dict, proxies: list[str] | None, groupsI
     color = ANSI.FG.GREEN if groupsFunds else ANSI.FG.RED
     return {
         'Groups Funds': {
-            'color': f'{ANSI.FG.CYAN}G. Funds: {color}{groupsFunds}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}G. Funds:{color} {groupsFunds}{ANSI.FG.WHITE}',
             'no-color': f'G. Funds: {groupsFunds}',
             'sort-int': groupsFunds
         }
     }
 
-async def getPlaceVisitsRoblox(data: dict) -> dict:
+async def getPlaceVisitsRoblox(data: dict) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Place_Visits']:
         return {'Place Visits': None}
     placeVisits = data['components']['Statistics']['numberOfVisits']
     color = ANSI.FG.GREEN if placeVisits else ANSI.FG.RED
     return {
         'Place Visits': {
-            'color': f'{ANSI.FG.CYAN}Place Visits: {color}{placeVisits}{ANSI.FG.WHITE}',
+            'color': f'{ANSI.FG.CYAN}Place Visits:{color} {placeVisits}{ANSI.FG.WHITE}',
             'no-color': f'Place Visits: {placeVisits}',
             'sort-int': placeVisits
         }
@@ -3698,9 +3697,9 @@ def convertAgeGroupRoblox(text: str) -> str:
         return 'UNK'
     
     direction, age, checked = match.groups()
-    return f'{'+' if direction.lower() == 'over' else '-'}{age}{' (Checked)' if checked else ''}'
+    return f'{age}{'+' if direction.lower() == 'over' else '-'}{' (Checked)' if checked else ''}'
 
-async def getAgeGroupRoblox(cookies: dict, proxies: list[str] | None = None) -> dict:
+async def getAgeGroupRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Age_Group']:
         return {'Age Group': None}
     response: dict = await sendGetRequestRoblox('https://apis.roblox.com/user-settings-api/v1/account-insights/age-group', cookies=cookies, proxies=proxies)
@@ -3713,7 +3712,7 @@ async def getAgeGroupRoblox(cookies: dict, proxies: list[str] | None = None) -> 
         }
     }
 
-async def getVerifiedAgeRoblox(cookies: dict, proxies: list[str] | None) -> dict:
+async def getVerifiedAgeRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Verified_Age']:
         return {'Verified Age': None}
     response = await sendGetRequestRoblox('https://apis.roblox.com/age-verification-service/v1/age-verification/verified-age', cookies=cookies, proxies=proxies)
@@ -3726,7 +3725,7 @@ async def getVerifiedAgeRoblox(cookies: dict, proxies: list[str] | None) -> dict
         }
     }
 
-async def getVerifiedVoiceRoblox(cookies: dict, proxies: list[str] | None) -> dict:
+async def getVerifiedVoiceRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Verified_Voice']:
         return {'Verified Voice': None}
     response = await sendGetRequestRoblox('https://voice.roblox.com/v1/settings', cookies=cookies, proxies=proxies)
@@ -3739,7 +3738,7 @@ async def getVerifiedVoiceRoblox(cookies: dict, proxies: list[str] | None) -> di
         }
     }
 
-async def getFriendsRoblox(data: dict) -> dict:
+async def getFriendsRoblox(data: dict) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Friends']:
         return {'Friends': None}
     friends = data['components']['UserProfileHeader']['counts']['friendsCount']
@@ -3751,7 +3750,7 @@ async def getFriendsRoblox(data: dict) -> dict:
         }
     }
 
-async def getFollowersRoblox(data: dict) -> dict:
+async def getFollowersRoblox(data: dict) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Followers']:
         return {'Followers': None}
     followers = data['components']['UserProfileHeader']['counts']['followersCount']
@@ -3763,7 +3762,7 @@ async def getFollowersRoblox(data: dict) -> dict:
         }
     }
 
-async def getFollowingsRoblox(data: dict) -> dict:
+async def getFollowingsRoblox(data: dict) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Followings']:
         return {'Followings': None}
     followings = data['components']['UserProfileHeader']['counts']['followingsCount']
@@ -3775,7 +3774,7 @@ async def getFollowingsRoblox(data: dict) -> dict:
         }
     }
 
-async def getRobloxBadgesRoblox(data: dict, outputMode: str = 'Names') -> dict:
+async def getRobloxBadgesRoblox(data: dict, outputMode: str = 'Names') -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Roblox_Badges']:
         return {'Roblox Badges': None}
     robloxBadges = [robloxBadge['type']['value'] for robloxBadge in data['components']['RobloxBadges']['robloxBadgeList']]
@@ -3789,7 +3788,7 @@ async def getRobloxBadgesRoblox(data: dict, outputMode: str = 'Names') -> dict:
         }
     }
 
-async def getXCSRFTokenRoblox(cookies: dict, proxies: list[str] | None) -> dict:
+async def getXCSRFTokenRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['X_CSRF_Token']:
         return {'X-CSRF-Token': None}
     response = await sendPostRequestRoblox('https://auth.roblox.com/v2/logout', cookies=cookies, proxies=proxies)
@@ -3944,7 +3943,7 @@ async def sortingDataRoblox(locker: asyncio.Lock, path: Path, category: str, sor
             sortListNamesDataRoblox(sortOptions[category]['names'], locker, path, allDataString, complexData)
         )
 
-async def robloxCookieValidChecker(category: str, cookies: set[str], proxies: list[str] | None = None) -> list[str]:
+async def robloxCookieValidChecker(category: str, cookies: set[str], proxies: list[str] | None) -> list[str]:
     if not config['Roblox'][category]['General']['First_Check_All_Cookies_For_Valid']:
         return list(cookies)
 
@@ -3982,20 +3981,20 @@ async def robloxCookieValidChecker(category: str, cookies: set[str], proxies: li
     removeLines(1)
     return list(cookies)
 
-async def dataFromCookieRoblox(order: list[str], checkedAccounts: set, cookies: dict, proxies: list | None, outputModes: dict[str, str]) -> tuple[str, list[list]]:
+async def dataFromCookieRoblox(order: list[str], checkedAccounts: set, cookies: dict, proxies: list | None, outputModes: dict[str, str]) -> dict[str, dict]:
     accountInformation = await getAccountInformationRoblox(cookies, proxies)
     userId = str(accountInformation['UserId'])
     if userId in checkedAccounts:
-        return userId, None
+        return userId
     checkedAccounts.add(userId)
 
     responseAllDataList: list[dict] = await asyncio.gather(
-        getMixedInformationRoblox(   cookies, proxies,  userId, outputModes),
+        getMixedInformationRoblox(   cookies, proxies,  userId,                       outputModes),
         getLinkRoblox(                                  userId),
-        getCountryRegistrationRoblox(cookies, proxies),
         getNameRoblox(                                           accountInformation),
         getDisplayNameRoblox(                                    accountInformation),
         getRegistrationDateRoblox(   cookies, proxies,  userId,  accountInformation),
+        getCountryRegistrationRoblox(cookies, proxies),
         getRobuxRoblox(              cookies, proxies,  userId),
         getBillingRoblox(            cookies, proxies),
         getTransactionsForYearRoblox(cookies, proxies,  userId),
@@ -4022,10 +4021,14 @@ async def dataFromCookieRoblox(order: list[str], checkedAccounts: set, cookies: 
         getXCSRFTokenRoblox(         cookies, proxies)
     )
     
-    responseAllDataTimedDict = {'ID': userId} if config['Roblox']['CookieChecker']['Main']['ID'] else {}
-    logger.error(responseAllDataList)
+    responseAllDataTimedDict = {
+        'ID': {
+            'color': f'{ANSI.FG.CYAN}ID:{ANSI.FG.WHITE} {userId}',
+            'no-color': f'ID: {userId}',
+            'sort-str': userId
+        }
+    } if config['Roblox']['CookieChecker']['Main']['ID'] else {}
     for value in responseAllDataList:
-        logger.info(value)
         responseAllDataTimedDict.update(value)
 
     responseAllDataDict = {}
@@ -4033,7 +4036,6 @@ async def dataFromCookieRoblox(order: list[str], checkedAccounts: set, cookies: 
         if responseAllDataTimedDict[key]:
             responseAllDataDict[key] = responseAllDataTimedDict[key]
         
-    logger.warning(responseAllDataDict)
     return responseAllDataDict
 
 async def robloxCookieChecker(file: str) -> None:
@@ -4071,10 +4073,10 @@ async def robloxCookieChecker(file: str) -> None:
 
     if isOutputTotal or isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
         totalDataCurrent = {}
-        for key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Premium', 'Card', 'Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Bundles', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds']:
+        for key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Premium', 'Card', 'Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Bundles', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds', 'Place Visits']:
             mainValue, percentValue = [0, f'{ANSI.FG.GRAY}(0 | 0.0%)'] if config['Roblox']['CookieChecker']['Main']['_'.join(key.replace('(', '').replace(')', '').split())] else [f'{ANSI.FG.GRAY}Off', '']
             totalDataCurrent[key] = mainValue
-            if key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds']:
+            if key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds', 'Place Visits']:
                 totalDataCurrent[f'{key} %'] = percentValue
                 counters[key] = totalDataCurrent[key]
 
@@ -4086,9 +4088,10 @@ async def robloxCookieChecker(file: str) -> None:
             cmdWriter(rf'''
    {ANSI.FG.GRAY}{'_______________________________________________'}
   {ANSI.FG.GRAY}/  | {                                        ANSI.FG.CYAN}Cookie{           ANSI.FG.WHITE}: {counters['cookie']} {MT_Of} {amountOfCookiesFromFile}
- {ANSI.FG.GRAY}/   | {                                        ANSI.FG.CYAN}Valid{            ANSI.FG.WHITE}: {counters['valid']} ({ANSI.FG.CYAN}Dupes{ANSI.FG.WHITE}: {counters['duplicates']})
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Invalid{          ANSI.FG.WHITE}: {counters['invalid']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Banned{           ANSI.FG.WHITE}: {counters['banned']}
+ {ANSI.FG.GRAY}/   | {                                        ANSI.FG.GREEN}Valid{           ANSI.FG.WHITE}: {counters['valid']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.YELLOW}Duplicate{      ANSI.FG.WHITE}: {counters['duplicates']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.RED}Invalid{           ANSI.FG.WHITE}: {counters['invalid']}
+ {ANSI.FG.GRAY}|   | {                            ANSI.CLEAR}{ANSI.FG.YELLOW}Ban{            ANSI.CLEAR}{ANSI.DECOR.BOLD}: {counters['banned']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Robux{            ANSI.FG.WHITE}: {totalDataCurrent['Robux']:<22} {            totalDataCurrent['Robux %']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Billing{          ANSI.FG.WHITE}: {totalDataCurrent['Billing']:<20} {          totalDataCurrent['Billing %']}
  {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[0]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Pending{          ANSI.FG.WHITE}: {totalDataCurrent['Pending']:<20} {          totalDataCurrent['Pending %']}
@@ -4104,8 +4107,9 @@ async def robloxCookieChecker(file: str) -> None:
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Bundles{          ANSI.FG.WHITE}: {totalDataCurrent['Bundles']} ({ANSI.FG.CYAN}KB{ANSI.FG.WHITE}: {totalDataCurrent['Korblox']}, {ANSI.FG.CYAN}HL{ANSI.FG.WHITE}: {totalDataCurrent['Headless']})
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Owned{     ANSI.FG.WHITE}: {totalDataCurrent['Groups Owned']:<15} {     totalDataCurrent['Groups Owned %']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Members{   ANSI.FG.WHITE}: {totalDataCurrent['Groups Members']:<13} {   totalDataCurrent['Groups Members %']}
- {ANSI.FG.GRAY}\   | {                                        ANSI.FG.CYAN}Groups Pending{   ANSI.FG.WHITE}: {totalDataCurrent['Groups Pending']:<13} {   totalDataCurrent['Groups Pending %']}
-  {ANSI.FG.GRAY}\  | {                                        ANSI.FG.CYAN}Groups Funds{     ANSI.FG.WHITE}: {totalDataCurrent['Groups Funds']:<15} {     totalDataCurrent['Groups Funds %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Pending{   ANSI.FG.WHITE}: {totalDataCurrent['Groups Pending']:<13} {   totalDataCurrent['Groups Pending %']}
+ {ANSI.FG.GRAY}\   | {                                        ANSI.FG.CYAN}Groups Funds{     ANSI.FG.WHITE}: {totalDataCurrent['Groups Funds']:<15} {     totalDataCurrent['Groups Funds %']}
+  {ANSI.FG.GRAY}\  | {                                        ANSI.FG.CYAN}Place Visits{     ANSI.FG.WHITE}: {totalDataCurrent['Place Visits']:<15} {     totalDataCurrent['Place Visits %']}
    {ANSI.FG.GRAY}{'‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾'}{ANSI.FG.WHITE}
 '''.lstrip('\n'))
 
@@ -4122,7 +4126,7 @@ async def robloxCookieChecker(file: str) -> None:
     if config['Roblox']['CookieChecker']['Sorting']['Sort']:
         sortLock = asyncio.Lock()
         sortOptions = {}
-        for category in ['Country_Registration', 'ID', 'Name', 'Display_Name', 'Registration_Date_DMY', 'Registration_Date_In_Days', 'Robux', 'Billing', 'Pending', 'Donate_1_Year', 'Donate_All_Time', 'Rap', 'Card', 'Premium', 'Gamepasses', 'Custom_Gamepasses', 'Badges', 'Favorite_Places', 'Bundles', 'Inventory_Privacy', 'Trade_Privacy', 'Can_Trade', 'Sessions', 'Email', 'Phone', '2FA', 'Pin', 'Groups_Owned', 'Groups_Members', 'Groups_Pending', 'Groups_Funds', 'Above_13', 'Verified_Age', 'Voice', 'Friends', 'Followers', 'Followings', 'Roblox_Badges']:
+        for category in ['ID', 'Name', 'Display_Name', 'Registration_Date_DMY', 'Registration_Date_In_Days', 'Country_Registration', 'Robux', 'Billing', 'Pending', 'Donate_1_Year', 'Donate_All_Time', 'Rap', 'Card', 'Premium', 'Gamepasses', 'Custom_Gamepasses', 'Badges', 'Favorite_Places', 'Bundles', 'Inventory_Privacy', 'Trade_Privacy', 'Can_Trade', 'Sessions', 'Email', 'Phone', '2FA', 'Pin', 'Groups_Owned', 'Groups_Members', 'Groups_Pending', 'Groups_Funds', 'Place_Visits', 'Age_Group', 'Verified_Age', 'Verified_Voice', 'Friends', 'Followers', 'Followings', 'Roblox_Badges']:
             if not config['Roblox']['CookieChecker']['Main'][category]:
                 sortOptions[category] = {'sort': False}
                 continue
@@ -4156,12 +4160,12 @@ async def robloxCookieChecker(file: str) -> None:
                 sortOptions[name] = {'sort': True if (sortOptions['Bundles']['sort'] and id in checkListBundles) else False}
 
     categoriesNames = {
-        'Country_Registration'      : 'Country Registration',
         'ID'                        : 'ID',
         'Name'                      : 'Name',
         'Display_Name'              : 'Display Name',
         'Registration_Date_DMY'     : 'Registration Date (D.M.Y)',
         'Registration_Date_In_Days' : 'Registration Date (In Days)',
+        'Country_Registration'      : 'Country Registration',
         'Robux'                     : 'Robux',
         'Billing'                   : 'Billing',
         'Pending'                   : 'Pending',
@@ -4189,6 +4193,7 @@ async def robloxCookieChecker(file: str) -> None:
         'Groups_Members'            : 'Groups Members',
         'Groups_Pending'            : 'Groups Pending',
         'Groups_Funds'              : 'Groups Funds',
+        'Place_Visits'              : 'Place Visits',
         'Age_Group'                 : 'Age Group',
         'Verified_Age'              : 'Verified Age',
         'Verified_Voice'            : 'Verified Voice',
@@ -4208,117 +4213,78 @@ async def robloxCookieChecker(file: str) -> None:
 
     checkedAccounts = set()
     amountOfCookiesFromFile = len(checkReadyCookies)  
-    validLock      = asyncio.Lock()
-    invalidLock    = asyncio.Lock()
-    bannedLock     = asyncio.Lock()
-    duplicatesLock = asyncio.Lock()
-    moveCookieNextLine = '\n' if config['Roblox']['CookieChecker']['General']['Move_Cookie_To_The_Next_Line'] else ' '
+    validLock     = asyncio.Lock()
+    exceptionLock = asyncio.Lock()
+    moveCookieNextLine = '\n' if config['Roblox']['CookieChecker']['General']['Move_Cookie_To_The_Next_Line'] else ' | '
     dateOfCheck = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Roblox', 'Cookie Checker', 'outputs', dateOfCheck)
     semaphore = asyncio.Semaphore(int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']) if str(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']).isdigit() and (0 < int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']) <= 200) else 20)
 
     def consoleOutputHandlerRCC(message: str) -> None:
         if isOutputTotal and counters['cookie']:
-            removeLines(23)
+            removeLines(25)
         counters['cookie'] += 1
         cmdWriter(message)
         if isOutputTotal:
             printTotalOutputRCC()
             
-    order = ['Link', 'ID', 'Country Registration', 'Name', 'Display Name', 'Registration Date', 'Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Bundles', 'Korblox', 'Headless', 'Inventory Privacy', 'Trade Privacy', 'Can Trade', 'Sessions', 'Email', 'Phone', '2FA', 'Pin', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds', 'Age Group', 'Verified Age', 'Verified Voice', 'Friends', 'Followers', 'Followings', 'Roblox Badges']
+    order = ['Link', 'ID', 'Name', 'Display Name', 'Registration Date', 'Country Registration', 'Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Bundles', 'Korblox', 'Headless', 'Inventory Privacy', 'Trade Privacy', 'Can Trade', 'Sessions', 'Email', 'Phone', '2FA', 'Pin', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds', 'Place Visits', 'Age Group', 'Verified Age', 'Verified Voice', 'Friends', 'Followers', 'Followings', 'Roblox Badges']
+    
     # Проверка куки
     async def checkCookieRoblox(cookie: str):
         async with semaphore:
             try:
                 cookies = {'.ROBLOSECURITY': cookie}
                 resultsRCC = await dataFromCookieRoblox(order, checkedAccounts, cookies, proxiesFromFile, outputModes)
-                if resultsRCC is None:
+                if type(resultsRCC) is str:
                     raise AccountDuplicate
 
                 # Обработка данных
-                isAccountLink,         isAccountLinkN                                                                        = resultsRCC[0]
-                isCountryRegistration, isCountryRegistrationN, isCountryRegistrationSorting                                  = resultsRCC[1]
-                isName,                isNameN,                isNameSorting                                                 = resultsRCC[2]
-                isDisplayName,         isDisplayNameN,         isDisplayNameSorting                                          = resultsRCC[3]
-                isRegistrationDateDMY, isRegistrationDateDMYN, isRegistrationDateDMYSorting, isRegistrationDateInDaysSorting = resultsRCC[4]
-                isRobux,               isRobuxN,                                             isRobuxTimed                    = resultsRCC[5]
-                isBilling,             isBillingN,                                           isBillingTimed                  = resultsRCC[6]
-                isPending,             isPendingN,                                           isPendingTimed                  = resultsRCC[7][0], resultsRCC[7][1], resultsRCC[7][2]
-                isDonate1Year,         isDonate1YearN,                                       isDonate1YearTimed              = resultsRCC[7][3], resultsRCC[7][4], resultsRCC[7][5]
-                isDonateAllTime,       isDonateAllTimeN,                                     isDonateAllTimeTimed            = resultsRCC[8][0], resultsRCC[8][1], resultsRCC[8][2]
-                isCustomGamepasses,    isCustomGamepassesN,    isCustomGamepassesSorting,    isCustomGamepassesTimed         = resultsRCC[8][3], resultsRCC[8][4], resultsRCC[8][5], resultsRCC[8][6]
-                isRap,                 isRapN,                                               isRapTimed                      = resultsRCC[9]
-                isCard,                isCardN,                                              isCardTimed                     = resultsRCC[10]
-                isPremium,             isPremiumN,             isPremiumSorting,             isPremiumTimed                  = resultsRCC[11]
-                isGamepasses,          isGamepassesN,          isGamepassesSorting,          isGamepassesTimed               = resultsRCC[12]
-                isBadges,              isBadgesN,              isBadgesSorting,              isBadgesTimed                   = resultsRCC[13]
-                isFavoritePlaces,      isFavoritePlacesN,      isFavoritePlacesSorting,      isFavoritePlacesTimed           = resultsRCC[14]
-                isBundles,             isBundlesN,             isBundlesSorting,             isBundlesTimed                  = resultsRCC[15][0], resultsRCC[15][1], resultsRCC[15][2],  resultsRCC[15][3]
-                isKorbloxBundle,       isKorbloxBundleN,       isKorbloxBundleSorting,       isKorbloxBundleTimed            = resultsRCC[15][4], resultsRCC[15][5], resultsRCC[15][6],  resultsRCC[15][7]
-                isHeadlessBundle,      isHeadlessBundleN,      isHeadlessBundleSorting,      isHeadlessBundleTimed           = resultsRCC[15][8], resultsRCC[15][9], resultsRCC[15][10], resultsRCC[15][11]
-                isInventoryPrivacy,    isInventoryPrivacyN,    isInventoryPrivacySorting                                     = resultsRCC[16]
-                isTradePrivacy,        isTradePrivacyN,        isTradePrivacySorting                                         = resultsRCC[17]
-                isCanTrade,            isCanTradeN,            isCanTradeSorting                                             = resultsRCC[18]
-                isSessions,            isSessionsN,            isSessionsSorting                                             = resultsRCC[19]
-                isEmail,               isEmailN,               isEmailSorting                                                = resultsRCC[20]
-                isPhone,               isPhoneN,               isPhoneSorting                                                = resultsRCC[21]
-                is2FA,                 is2FAN,                 is2FASorting                                                  = resultsRCC[22]
-                isPin,                 isPinN,                 isPinSorting                                                  = resultsRCC[23]
-                isGroupsOwned,         isGroupsOwnedN,         isGroupsOwnedSorting,         isGroupsOwnedTimed              = resultsRCC[24][0],  resultsRCC[24][1],  resultsRCC[24][2],  resultsRCC[24][3]
-                isGroupsMembers,       isGroupsMembersN,                                     isGroupsMembersTimed            = resultsRCC[24][4],  resultsRCC[24][5],  resultsRCC[24][6]
-                isGroupsPending,       isGroupsPendingN,                                     isGroupsPendingTimed            = resultsRCC[24][7],  resultsRCC[24][8],  resultsRCC[24][9]
-                isGroupsFunds,         isGroupsFundsN,                                       isGroupsFundsTimed              = resultsRCC[24][10], resultsRCC[24][11], resultsRCC[24][12]
-                isAgeGroup,            isAgeGroupN,            isAgeGroupSorting                                             = resultsRCC[25]
-                isVerifiedAge,         isVerifiedAgeN,         isVerifiedAgeSorting                                          = resultsRCC[26]
-                isVerifiedVoice,       isVerifiedVoiceN,       isVerifiedVoiceSorting                                        = resultsRCC[27]
-                isRobloxBadges,        isRobloxBadgesN,        isRobloxBadgesSorting,        isRobloxBadgesTimed             = resultsRCC[28]
-                isXCSRFToken,          isXCSRFTokenN                                                                         = resultsRCC[29]
-
-                allDataString = f'{isAccountLinkN}{isCountryRegistrationN}{f'ID: {userId} | ' if config['Roblox']['CookieChecker']['Main']['ID'] else ''}{isNameN}{isDisplayNameN}{isRegistrationDateDMYN}{isRobuxN}{isBillingN}{isPendingN}{isDonate1YearN}{isDonateAllTimeN}{isRapN}{isCardN}{isPremiumN}{isGamepassesN}{isCustomGamepassesN}{isBadgesN}{isFavoritePlacesN}{isBundlesN}{isKorbloxBundleN}{isHeadlessBundleN}{isInventoryPrivacyN}{isTradePrivacyN}{isCanTradeN}{isSessionsN}{isEmailN}{isPhoneN}{is2FAN}{isPinN}{isGroupsOwnedN}{isGroupsMembersN}{isGroupsPendingN}{isGroupsFundsN}{isAgeGroupN}{isVerifiedAgeN}{isVerifiedVoiceN}{isRobloxBadgesN}{isXCSRFTokenN}{moveCookieNextLine}Cookie: {cookie}\n'
+                allDataString = f'{' | '.join(value['no-color'] for value in resultsRCC.values())}{moveCookieNextLine}Cookie: {cookie}\n'
 
                 # Сортировка
                 if config['Roblox']['CookieChecker']['Sorting']['Sort']:
                     simpleSortValues = {
-                        'Country_Registration'      : isCountryRegistrationSorting,
-                        'ID'                        : userId,
-                        'Name'                      : isNameSorting,
-                        'Display_Name'              : isDisplayNameSorting,
-                        'Registration_Date_DMY'     : isRegistrationDateDMYSorting,
-                        'Registration_Date_In_Days' : isRegistrationDateInDaysSorting,
-                        'Robux'                     : isRobuxTimed,
-                        'Billing'                   : isBillingTimed,
-                        'Pending'                   : isPendingTimed,
-                        'Donate_1_Year'             : isDonate1YearTimed,
-                        'Donate_All_Time'           : isDonateAllTimeTimed,
-                        'Rap'                       : isRapTimed,
-                        'Card'                      : isCardTimed,
-                        'Premium'                   : isPremiumSorting,
-                        'Korblox'                   : isKorbloxBundleSorting,
-                        'Headless'                  : isHeadlessBundleSorting,
-                        'Inventory_Privacy'         : isInventoryPrivacySorting,
-                        'Trade_Privacy'             : isTradePrivacySorting,
-                        'Can_Trade'                 : isCanTradeSorting,
-                        'Sessions'                  : isSessionsSorting,
-                        'Email'                     : isEmailSorting,
-                        'Phone'                     : isPhoneSorting,
-                        '2FA'                       : is2FASorting,
-                        'Pin'                       : isPinSorting,
-                        'Groups_Members'            : isGroupsMembersTimed,
-                        'Groups_Pending'            : isGroupsPendingTimed,
-                        'Groups_Funds'              : isGroupsFundsTimed,
-                        'Age_Group'                 : isAgeGroupSorting,
-                        'Verified_Age'              : isVerifiedAgeSorting,
-                        'Verified_Voice'            : isVerifiedVoiceSorting
+                        'ID'                        : resultsRCC['ID'                  ]['sort-str'],
+                        'Name'                      : resultsRCC['Name'                ]['sort-str'],
+                        'Display_Name'              : resultsRCC['Display Name'        ]['sort-str'],
+                        'Registration_Date_DMY'     : resultsRCC['Registration Date'   ]['sort-str'],
+                        'Registration_Date_In_Days' : resultsRCC['Registration Date'   ]['sort-int'],
+                        'Country_Registration'      : resultsRCC['Country Registration']['sort-str'],
+                        'Robux'                     : resultsRCC['Robux'               ]['sort-int'],
+                        'Billing'                   : resultsRCC['Billing'             ]['sort-int'],
+                        'Pending'                   : resultsRCC['Pending'             ]['sort-int'],
+                        'Donate_1_Year'             : resultsRCC['Donate (1 Year)'     ]['sort-int'],
+                        'Donate_All_Time'           : resultsRCC['Donate (All Time)'   ]['sort-int'],
+                        'Rap'                       : resultsRCC['Rap'                 ]['sort-int'],
+                        'Card'                      : resultsRCC['Card'                ]['sort-int'],
+                        'Premium'                   : resultsRCC['Premium'             ]['sort-str'],
+                        'Korblox'                   : resultsRCC['Korblox'             ]['sort-str'],
+                        'Headless'                  : resultsRCC['Headless'            ]['sort-str'],
+                        'Inventory_Privacy'         : resultsRCC['Inventory Privacy'   ]['sort-str'],
+                        'Trade_Privacy'             : resultsRCC['Trade Privacy'       ]['sort-str'],
+                        'Can_Trade'                 : resultsRCC['Can Trade'           ]['sort-str'],
+                        'Sessions'                  : resultsRCC['Sessions'            ]['sort-int'],
+                        'Email'                     : resultsRCC['Email'               ]['sort-str'],
+                        'Phone'                     : resultsRCC['Phone'               ]['sort-str'],
+                        '2FA'                       : resultsRCC['2FA'                 ]['sort-str'],
+                        'Pin'                       : resultsRCC['Pin'                 ]['sort-str'],
+                        'Groups_Members'            : resultsRCC['Groups Members'      ]['sort-int'],
+                        'Groups_Pending'            : resultsRCC['Groups Pending'      ]['sort-int'],
+                        'Groups_Funds'              : resultsRCC['Groups Funds'        ]['sort-int'],
+                        'Age_Group'                 : resultsRCC['Age Group'           ]['sort-str'],
+                        'Verified_Age'              : resultsRCC['Verified Age'        ]['sort-str'],
+                        'Verified_Voice'            : resultsRCC['Verified Voice'      ]['sort-str'],
                     }
 
                     complexSortValues = {
-                        'Gamepasses'        : [isGamepassesTimed,       isGamepassesSorting      ],
-                        'Custom_Gamepasses' : [isCustomGamepassesTimed, isCustomGamepassesSorting],
-                        'Badges'            : [isBadgesTimed,           isBadgesSorting          ],
-                        'Favorite_Places'   : [isFavoritePlacesTimed,   isFavoritePlacesSorting  ],
-                        'Bundles'           : [isBundlesTimed,          isBundlesSorting         ],
-                        'Groups_Owned'      : [isGroupsOwnedTimed,      isGroupsOwnedSorting     ],
-                        'Roblox_Badges'     : [isRobloxBadgesTimed,     isRobloxBadgesSorting    ]
+                        'Gamepasses'        : [resultsRCC['Gamepasses'       ]['sort-int'], resultsRCC['Gamepasses'       ]['sort-dict']],
+                        'Custom_Gamepasses' : [resultsRCC['Custom Gamepasses']['sort-int'], resultsRCC['Custom Gamepasses']['sort-list']],
+                        'Badges'            : [resultsRCC['Badges'           ]['sort-int'], resultsRCC['Badges'           ]['sort-dict']],
+                        'Favorite_Places'   : [resultsRCC['Favorite Places'  ]['sort-int'], resultsRCC['Favorite Places'  ]['sort-list']],
+                        'Bundles'           : [resultsRCC['Bundles'          ]['sort-int'], resultsRCC['Bundles'          ]['sort-dict']],
+                        'Groups_Owned'      : [resultsRCC['Groups Owned'     ]['sort-int'], resultsRCC['Groups Owned'     ]['sort-list']],
+                        'Roblox_Badges'     : [resultsRCC['Roblox Badges'    ]['sort-int'], resultsRCC['Roblox Badges'    ]['sort-list']]
                     }
 
                     await asyncio.gather(
@@ -4330,32 +4296,33 @@ async def robloxCookieChecker(file: str) -> None:
                     counters['valid'] += 1
                     if isOutputTotal or isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
                         totalDataUpdate = {
-                            'Robux'             : isRobuxTimed,
-                            'Billing'           : isBillingTimed,
-                            'Pending'           : isPendingTimed,
-                            'Donate (1 Year)'   : isDonate1YearTimed,
-                            'Donate (All Time)' : isDonateAllTimeTimed,
-                            'Rap'               : isRapTimed,
-                            'Card'              : isCardTimed,
-                            'Premium'           : isPremiumTimed,
-                            'Gamepasses'        : isGamepassesTimed,
-                            'Custom Gamepasses' : isCustomGamepassesTimed,
-                            'Badges'            : isBadgesTimed,
-                            'Favorite Places'   : isFavoritePlacesTimed,
-                            'Bundles'           : isBundlesTimed,
-                            'Groups Owned'      : isGroupsOwnedTimed,
-                            'Groups Members'    : isGroupsMembersTimed,
-                            'Groups Pending'    : isGroupsPendingTimed,
-                            'Groups Funds'      : isGroupsFundsTimed,
-                            'Korblox'           : isKorbloxBundleTimed,
-                            'Headless'          : isHeadlessBundleTimed
+                            'Robux'             : resultsRCC['Robux'            ]['sort-int'],
+                            'Billing'           : resultsRCC['Billing'          ]['sort-int'],
+                            'Pending'           : resultsRCC['Pending'          ]['sort-int'],
+                            'Donate (1 Year)'   : resultsRCC['Donate (1 Year)'  ]['sort-int'],
+                            'Donate (All Time)' : resultsRCC['Donate (All Time)']['sort-int'],
+                            'Rap'               : resultsRCC['Rap'              ]['sort-int'],
+                            'Card'              : resultsRCC['Card'             ]['sort-int'],
+                            'Premium'           : resultsRCC['Premium'          ]['total'],
+                            'Gamepasses'        : resultsRCC['Gamepasses'       ]['sort-int'],
+                            'Custom Gamepasses' : resultsRCC['Custom Gamepasses']['sort-int'],
+                            'Badges'            : resultsRCC['Badges'           ]['sort-int'],
+                            'Favorite Places'   : resultsRCC['Favorite Places'  ]['sort-int'],
+                            'Bundles'           : resultsRCC['Bundles'          ]['sort-int'],
+                            'Groups Owned'      : resultsRCC['Groups Owned'     ]['sort-int'],
+                            'Groups Members'    : resultsRCC['Groups Members'   ]['sort-int'],
+                            'Groups Pending'    : resultsRCC['Groups Pending'   ]['sort-int'],
+                            'Groups Funds'      : resultsRCC['Groups Funds'     ]['sort-int'],
+                            'Place Visits'      : resultsRCC['Place Visits'     ]['sort-int'],
+                            'Korblox'           : resultsRCC['Korblox'          ]['total'],
+                            'Headless'          : resultsRCC['Headless'         ]['total']
                         }
 
                         for key, value in totalDataUpdate.items():
                             if type(totalDataCurrent[key]) is int:
                                 totalDataCurrent[key] += int(value)
 
-                        for key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds']:
+                        for key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds', 'Place Visits']:
                             if totalDataCurrent[f'{key} %']:
                                 if totalDataUpdate[key]:
                                     counters[key] += 1
@@ -4363,24 +4330,24 @@ async def robloxCookieChecker(file: str) -> None:
 
                     async with aiofiles.open(savePath / f'{filename}.txt', 'a', encoding='utf-8') as file:
                         await file.write(allDataString)
-                    consoleOutputHandlerRCC(f'\r [{ANSI.FG.GREEN}>{ANSI.FG.WHITE}] {isAccountLink}{isCountryRegistration}{f'{ANSI.FG.CYAN}ID:{ANSI.FG.WHITE} {userId} | ' if config['Roblox']['CookieChecker']['Main']['ID'] else ''}{isName}{isDisplayName}{isRegistrationDateDMY}{isRobux}{isBilling}{isPending}{isDonate1Year}{isDonateAllTime}{isRap}{isCard}{isPremium}{isGamepasses}{isCustomGamepasses}{isBadges}{isFavoritePlaces}{isBundles}{isKorbloxBundle}{isHeadlessBundle}{isInventoryPrivacy}{isTradePrivacy}{isCanTrade}{isSessions}{isEmail}{isPhone}{is2FA}{isPin}{isGroupsOwned}{isGroupsMembers}{isGroupsPending}{isGroupsFunds}{isAgeGroup}{isVerifiedAge}{isVerifiedVoice}{isRobloxBadges}{isXCSRFToken}{f'{ANSI.FG.CYAN}Cookie: {ANSI.FG.YELLOW}{cookie}' if config['Roblox']['CookieChecker']['Main']['Cookie_In_Console'] else ''}{ANSI.FG.WHITE}\n')
+                    consoleOutputHandlerRCC(f'\r [{ANSI.FG.GREEN}>{ANSI.FG.WHITE}] {' | '.join(value['color'] for value in resultsRCC.values())}{f' | {ANSI.FG.CYAN}Cookie: {ANSI.FG.YELLOW}{cookie}' if config['Roblox']['CookieChecker']['Main']['Cookie_In_Console'] else ''}{ANSI.FG.WHITE}\n')
             except InvalidCookie:
-                async with invalidLock:
+                async with exceptionLock:
                     counters['invalid'] += 1
                     async with aiofiles.open(savePath / 'invalid.txt', 'a', encoding='utf-8') as file:
                         await file.write(f'{cookie}\n')
                     consoleOutputHandlerRCC(f'\r [{ANSI.FG.RED}>{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Invalid_Cookie}{ANSI.FG.WHITE}\n')
             except AccountBanned:
-                async with bannedLock:
+                async with exceptionLock:
                     counters['banned'] += 1
                     async with aiofiles.open(savePath / 'banned.txt', 'a', encoding='utf-8') as file:
                         await file.write(f'{cookie}\n')
                     consoleOutputHandlerRCC(f'\r [{ANSI.CLEAR}{ANSI.FG.YELLOW}>{ANSI.FG.WHITE}{ANSI.DECOR.BOLD}]{ANSI.CLEAR} {ANSI.FG.YELLOW}{MT_Account_Banned}{ANSI.CLEAR}{ANSI.DECOR.BOLD}\n')
             except AccountDuplicate:
-                async with duplicatesLock:
+                async with exceptionLock:
                     counters['duplicates'] += 1
                     async with aiofiles.open(savePath / 'duplicates.txt', 'a', encoding='utf-8') as file:
-                        await file.write(f'ID: {userId} | Cookie: {cookie}\n')
+                        await file.write(f'ID: {resultsRCC} | Cookie: {cookie}\n')
                     consoleOutputHandlerRCC(f'\r [{ANSI.FG.YELLOW}>{ANSI.FG.WHITE}] {ANSI.FG.YELLOW}{MT_Account_Duplicate}{ANSI.FG.WHITE}\n')
             except Exception:
                 logger.exception(f'< [ROBLOX_COOKIE_CHECKER] > {MT_Critical_Error}... :<')
@@ -5159,7 +5126,7 @@ def placeContextMenuRTA(placeIndex: int):
 
         autoSaveConfigAndRemoveLinesInSettings(settingsRTAPlacesPlaceTab, ('C', 'С'), ('0', 'C', 'С'), 9)
 
-async def isTransactionsFromCookieFunc(checkedAccount: set, checkListPlaces: dict[str, tuple[str, int, int, tuple[str, int, str]]], cookies: dict, proxies: list[str] | None = None) -> tuple[str, str, dict]:
+async def isTransactionsFromCookieFunc(checkedAccount: set, checkListPlaces: dict[str, tuple[str, int, int, tuple[str, int, str]]], cookies: dict, proxies: list[str] | None) -> tuple[str, str, dict]:
     accountInformation = await getAccountInformationRoblox(cookies, proxies)
     userId = str(accountInformation['UserId'])
     if userId in checkedAccount:
