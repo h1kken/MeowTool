@@ -4,6 +4,7 @@ import sys
 cmdWriter = sys.stdout.write
 cmdFlusher = sys.stdout.flush
 from dotenv import load_dotenv; load_dotenv()
+import signal
 import time
 import subprocess
 import asyncio
@@ -6129,8 +6130,6 @@ class Logger:
 ### Меню
 
 async def mainMenu() -> None:
-    # cookies = {'.ROBLOSECURITY': os.getenv('ROBLOSECURITY')}
-    # await getFriendsRoblox(cookies, None, '1273976600')
     cls()
     lableASCII()
     while True:
@@ -7578,5 +7577,5 @@ if __name__ == '__main__':
         asyncio.run(mainMenu())
     except (SystemExit, KeyboardInterrupt, EOFError):
         raise
-    except:
+    except Exception as e:
         logger.exception(f'{MT_Oh_Noo_My_Home_It_Is_Over}... :<')
