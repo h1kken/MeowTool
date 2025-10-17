@@ -1114,7 +1114,6 @@ async def checkUpdates() -> None:
                         removeLines(6)
 
 def makeArchive(dateString: str, *pathArgs: str) -> None:
-    logger.warning(dateString)
     path = Path(*pathArgs, dateString)
     if path.exists():
         archivesPath = Path(*pathArgs, 'archives')
@@ -1126,22 +1125,6 @@ def makeArchive(dateString: str, *pathArgs: str) -> None:
                         zipf.write(filePath, filePath.relative_to(path))
         except Exception as e:
             logger.exception(f'< [MAKE_ARCHIVE] > {MT_Critical_Error}: {e}... :<')
-
-# def makeArchive(dateString: str, *pathArgs: str) -> None:
-#     path = Path(*pathArgs, dateString)
-#     if path.exists():
-#         archivesPath = Path(*pathArgs, 'archives')
-#         archivesPath.mkdir(parents=True, exist_ok=True)
-#         try:
-#             with zipfile.ZipFile((archivesPath / dateString).with_suffix('.zip'), 'w', zipfile.ZIP_DEFLATED) as zipf:
-#                 pathLength = len(str(path)) + 1
-#                 for root, _, files in path.walk():
-#                     for file in files:
-#                         filePath = Path(root, file)
-#                         arcname = str(filePath)[pathLength:]
-#                         zipf.write(filePath, arcname)
-#         except Exception as e:
-#             logger.exception(f'< [MAKE_ARCHIVE] > {MT_Critical_Error}: {e}... :<')
 
 async def sendMessageTelegramBot(text: str = None, *pathArgs: str) -> None:
     if not config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot']:
@@ -1221,6 +1204,8 @@ def sendMessageDiscordWebhook(test: bool = False, text: str = None, filename: st
             cmdWriter(f'\r [{ANSI.FG.GREEN}{MT_Discord[1]}{ANSI.FG.WHITE}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.FG.WHITE} | {MT_Message_Was_Sent} :3\n')
             return
 
+        cmdWriter(f'\r [{ANSI.FG.CYAN}{MT_Discord[1]}{ANSI.FG.WHITE}] {MT_Send[1]} {MT_Results_To_Discord[0].lower()}{MT_Results_To_Discord[1:]}\r')
+
         webhookFile = DiscordWebhook(
             url=webhookUrl,
             rate_limit_retry=True
@@ -1231,11 +1216,9 @@ def sendMessageDiscordWebhook(test: bool = False, text: str = None, filename: st
         if not filePath.exists():
             raise FileNotFoundError
 
-        cmdWriter(f'\r [{ANSI.FG.CYAN}{MT_Discord[1]}{ANSI.FG.WHITE}] {MT_Send[1]} {MT_Results_To_Discord[0].lower()}{MT_Results_To_Discord[1:]}\r')
-
         with open(filePath, 'rb') as file:
             webhookFile.add_file(file=file.read(), filename=filename)
-
+        
         response = webhookFile.execute()
 
         RESPONSES = {
@@ -5381,6 +5364,11 @@ async def robloxTransactionAnalysis(file: str) -> None:
         cmdWriter('\n')
 
     waitingInput()
+
+### Roblox Time Booster
+
+def robloxTimeBooster(file: str):
+    ...
 
 ### Другие функции
 
