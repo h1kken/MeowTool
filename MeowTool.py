@@ -3,7 +3,6 @@ osSep = os.sep
 import sys
 cmdWriter = sys.stdout.write
 cmdFlusher = sys.stdout.flush
-from dotenv import load_dotenv; load_dotenv()
 import time
 import subprocess
 import asyncio
@@ -1119,13 +1118,16 @@ def makeArchive(dateString: str, *pathArgs: str) -> None:
     if path.exists():
         archivesPath = Path(*pathArgs, 'archives')
         archivesPath.mkdir(parents=True, exist_ok=True)
-        with zipfile.ZipFile(f'{archivesPath / dateString}.zip', 'w', zipfile.ZIP_DEFLATED) as zipf:
-            pathLength = len(path) + 1
-            for root, _, files in path.walk:
-                for file in files:
-                    filePath = Path(root, file)
-                    arcname = filePath[pathLength:]
-                    zipf.write(filePath, arcname)
+        try:
+            with zipfile.ZipFile(f'{archivesPath / dateString}.zip', 'w', zipfile.ZIP_DEFLATED) as zipf:
+                pathLength = len(path) + 1
+                for root, _, files in path.walk:
+                    for file in files:
+                        filePath = Path(root, file)
+                        arcname = filePath[pathLength:]
+                        zipf.write(filePath, arcname)
+        except Exception as e:
+            logger.exception(f'< [MAKE_ARCHIVE] > {MT_Critical_Error}: {e}... :<')
 
 async def sendMessageTelegramBot(text: str = '', *pathArgs: str) -> None:
     if not config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot']:
@@ -1144,11 +1146,14 @@ async def sendMessageTelegramBot(text: str = '', *pathArgs: str) -> None:
                 raise FileNotFoundError
 
             cmdWriter(f'\r [{ANSI.FG.CYAN}{MT_Telegram[1]}{ANSI.FG.WHITE}] {MT_Send[1]} {MT_Results_To_Telegram[0].lower()}{MT_Results_To_Telegram[1:]}\r')
+            await bot.send_message(
+                chat_id=chatId,
+                text=text,
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
             await bot.send_document(
                 chat_id=chatId,
-                document=FSInputFile(filePath),
-                caption=text,
-                parse_mode=ParseMode.MARKDOWN_V2
+                document=FSInputFile(filePath)
             )
             cmdWriter(f'\r [{ANSI.FG.GREEN}{MT_Telegram[1]}{ANSI.FG.WHITE}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.FG.WHITE} | {MT_Send[2]} {MT_Results_To_Telegram[0].lower()}{MT_Results_To_Telegram[1:]} :3\n')
         elif text:
@@ -1160,7 +1165,6 @@ async def sendMessageTelegramBot(text: str = '', *pathArgs: str) -> None:
     except FileNotFoundError:
         cmdWriter(f'\r [{ANSI.FG.RED}{MT_Telegram[1]}{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.FG.WHITE} | {MT_File_Was_Not_Created}... :<\n')
     except Exception as e:
-        logger.exception(f'< [SND_MSG_TG_BOT] > {MT_Error}: {e}... :<')
         ERRORS = {
             TelegramBadRequest   : MT_Possibly_A_Typo_In_The_Chat_ID,
             TelegramNetworkError : MT_Possibly_The_Internet_Is_Unstable,
@@ -1169,6 +1173,8 @@ async def sendMessageTelegramBot(text: str = '', *pathArgs: str) -> None:
                 MT_Possibly_A_Typo_In_The_Bot_Token
             )
         }
+        if type(e) not in ERRORS:
+            logger.exception(f'< [SEND_MESSAGE_TELEGRAM_BOT] > {MT_Unknown_Error}: {e}... :<')
         cmdWriter(f'\r [{ANSI.FG.RED}{MT_Telegram[1]}{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.FG.WHITE} | {ERRORS.get(type(e), f'{MT_Unknown_Error}: {e}')}... :<\n')
     finally:
         cmdFlusher()
@@ -1180,9 +1186,8 @@ def sendMessageDiscordWebhook(text: str = None, filename: str = None, *pathArgs:
         return
 
     webhookUrl = config['Outputs']['DiscordWebhook']['Discord_Webhook_URL']
-
     try:
-        webhook = DiscordWebhook(
+        webhookText = DiscordWebhook(
             url=webhookUrl,
             rate_limit_retry=True
         )
@@ -1191,13 +1196,20 @@ def sendMessageDiscordWebhook(text: str = None, filename: str = None, *pathArgs:
             description=text,
             color='c883b3'
         )
+        embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/1393994423481663528/1394053567899369533/Neko_for_MeowTool_Discord_output.png?ex=68f1fece&is=68f0ad4e&hm=3c5267d3c1f66e643a80f27b54f02d512fc2cc9ca10d6de5c983d55be9834c58&')
+        webhookText.add_embed(embed)
+
+        webhookText.execute()
 
         if not pathArgs:
-            webhook.add_embed(embed)
-            response = webhook.execute()
             cmdWriter(f'\r [{ANSI.FG.GREEN}{MT_Discord[1]}{ANSI.FG.WHITE}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.FG.WHITE} | {MT_Message_Was_Sent} :3\n')
             return
 
+        webhookFile = DiscordWebhook(
+            url=webhookUrl,
+            rate_limit_retry=True
+        )
+        
         filePath = Path(*pathArgs, filename)
 
         if not filePath.exists():
@@ -1205,13 +1217,10 @@ def sendMessageDiscordWebhook(text: str = None, filename: str = None, *pathArgs:
 
         cmdWriter(f'\r [{ANSI.FG.CYAN}{MT_Discord[1]}{ANSI.FG.WHITE}] {MT_Send[1]} {MT_Results_To_Discord[0].lower()}{MT_Results_To_Discord[1:]}\r')
 
-        embed.set_thumbnail(url='https://media.discordapp.net/attachments/1393994423481663528/1394053567899369533/Neko_for_MeowTool_Discord_output.png?ex=6875690e&is=6874178e&hm=b1570da0041dc8148f866cfa2c92cbf61d5d33177a534f63bb9965bcc6cc8d6c&=')
-        webhook.add_embed(embed)
-
         with open(filePath, 'rb') as file:
-            webhook.add_file(file=file.read(), filename=filename)
+            webhookFile.add_file(file=file.read(), filename=filename)
 
-        response = webhook.execute()
+        response = webhookFile.execute()
 
         RESPONSES = {
             **dict.fromkeys(
@@ -1237,7 +1246,7 @@ def sendMessageDiscordWebhook(text: str = None, filename: str = None, *pathArgs:
             )
         }
         if type(e) not in ERRORS:
-            logger.exception(f'< [SND_MSG_DS_WH] > {MT_Error}: {e}... :<')
+            logger.exception(f'< [SEND_MESSAGE_DISCORD_WEBHOOK] > {MT_Unknown_Error}: {e}... :<')
         cmdWriter(f'\r [{ANSI.FG.RED}{MT_Discord[1]}{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.FG.WHITE} | {ERRORS.get(type(e), f'{MT_Unknown_Error}: {e}')}... :<\n')
     finally:
         cmdFlusher()
@@ -1456,6 +1465,8 @@ def getProxiesFromFileRoblox(isUseProxy: bool, proxiesPath: Path, amountOfRemove
         if not proxies:
             raise FileNotFoundError
 
+        if configLoader['Debugger']['Debug']:
+            logger.debug(f'< [GET_COOKIES_FROM_FILE_ROBLOX] > Found cookies: {len(proxies)}')
         return list(proxies)
     except FileNotFoundError:
         return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Proxy_Was_Found, generateVisualPath(*visualPathArgs))
@@ -1482,6 +1493,8 @@ def getCookiesFromFileRoblox(cookiesPath: Path, amountOfRemoveLines: int, visual
         if not cookiesSet:
             raise FileNotFoundError
 
+        if configLoader['Debugger']['Debug']:
+            logger.debug(f'< [GET_COOKIES_FROM_FILE_ROBLOX] > Found cookies: {len(cookiesSet)}')
         return cookiesSet
     except FileNotFoundError:
         return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Cookie_Was_Found, visualPath)
@@ -2947,12 +2960,14 @@ async def sendGetRequestRoblox(
                     case 403:
                         raise AccountBanned
                     case _:
-                        logger.debug(f'< [GET_REQUEST_ROBLOX] > [{response.status}] {response.url}')
+                        if configLoader['Debugger']['Debug']:
+                            logger.debug(f'< [GET_REQUEST_ROBLOX] > [{response.status}] {response.url}')
                         await asyncio.sleep(10)
         except (InvalidCookie, AccountBanned):
             raise
         except (asyncio.TimeoutError, asyncio.exceptions.CancelledError, ClientOSError, ConnectionResetError, ServerDisconnectedError, TransferEncodingError, ClientPayloadError, ProxyError) as e:
-            # logger.exception(f'< [GET_REQUEST_ROBLOX] > {MT_Error}: {e}')
+            if configLoader['Debugger']['Exception']:
+                logger.exception(f'< [GET_REQUEST_ROBLOX] > {MT_Error}: {e}')
             await asyncio.sleep(10)
         except Exception as e:
             logger.exception(f'< [GET_REQUEST_ROBLOX] > {MT_Critical_Error}: {e}... :<')
@@ -2989,12 +3004,14 @@ async def sendPostRequestRoblox(
                     case 401:
                         raise InvalidCookie
                     case _:
-                        logger.debug(f'< [POST_REQUEST_ROBLOX] > [{response.status}] {response.url}')
+                        if configLoader['Debugger']['Debug']:
+                            logger.debug(f'< [POST_REQUEST_ROBLOX] > [{response.status}] {response.url}')
                         await asyncio.sleep(10)
         except InvalidCookie:
             raise
         except (asyncio.TimeoutError, asyncio.exceptions.CancelledError, ClientOSError, ConnectionResetError, ServerDisconnectedError, TransferEncodingError, ClientPayloadError, ProxyError) as e:
-            # logger.exception(f'< [POST_REQUEST_ROBLOX] > {MT_Error}: {e}')
+            if configLoader['Debugger']['Exception']:
+                logger.exception(f'< [POST_REQUEST_ROBLOX] > {MT_Error}: {e}')
             await asyncio.sleep(10)
         except Exception as e:
             logger.exception(f'< [POST_REQUEST_ROBLOX] > {MT_Critical_Error}: {e}... :<')
@@ -4027,7 +4044,7 @@ async def dataFromCookieRoblox(order: list[str], checkedAccounts: set, cookies: 
             'no-color': f'ID: {userId}',
             'sort-str': userId
         }
-    } if config['Roblox']['CookieChecker']['Main']['ID'] else {}
+    } if config['Roblox']['CookieChecker']['Main']['ID'] else {'ID': None}
     for value in responseAllDataList:
         responseAllDataTimedDict.update(value)
 
@@ -4213,8 +4230,8 @@ async def robloxCookieChecker(file: str) -> None:
 
     checkedAccounts = set()
     amountOfCookiesFromFile = len(checkReadyCookies)  
-    validLock     = asyncio.Lock()
-    exceptionLock = asyncio.Lock()
+    validLock  = asyncio.Lock()
+    exceptLock = asyncio.Lock()
     moveCookieNextLine = '\n' if config['Roblox']['CookieChecker']['General']['Move_Cookie_To_The_Next_Line'] else ' | '
     dateOfCheck = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Roblox', 'Cookie Checker', 'outputs', dateOfCheck)
@@ -4272,6 +4289,7 @@ async def robloxCookieChecker(file: str) -> None:
                         'Groups_Members'            : resultsRCC.get('Groups Members',       {}).get('sort-int'),
                         'Groups_Pending'            : resultsRCC.get('Groups Pending',       {}).get('sort-int'),
                         'Groups_Funds'              : resultsRCC.get('Groups Funds',         {}).get('sort-int'),
+                        'Place_Visits'              : resultsRCC.get('Place Visits',         {}).get('sort-int'),
                         'Age_Group'                 : resultsRCC.get('Age Group',            {}).get('sort-str'),
                         'Verified_Age'              : resultsRCC.get('Verified Age',         {}).get('sort-str'),
                         'Verified_Voice'            : resultsRCC.get('Verified Voice',       {}).get('sort-str'),
@@ -4332,19 +4350,19 @@ async def robloxCookieChecker(file: str) -> None:
                         await file.write(allDataString)
                     consoleOutputHandlerRCC(f'\r [{ANSI.FG.GREEN}>{ANSI.FG.WHITE}] {' | '.join(value['color'] for value in resultsRCC.values())}{f' | {ANSI.FG.CYAN}Cookie: {ANSI.FG.YELLOW}{cookie}' if config['Roblox']['CookieChecker']['Main']['Cookie_In_Console'] else ''}{ANSI.FG.WHITE}\n')
             except InvalidCookie:
-                async with exceptionLock:
+                async with exceptLock:
                     counters['invalid'] += 1
                     async with aiofiles.open(savePath / 'invalid.txt', 'a', encoding='utf-8') as file:
                         await file.write(f'{cookie}\n')
                     consoleOutputHandlerRCC(f'\r [{ANSI.FG.RED}>{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Invalid_Cookie}{ANSI.FG.WHITE}\n')
             except AccountBanned:
-                async with exceptionLock:
+                async with exceptLock:
                     counters['banned'] += 1
                     async with aiofiles.open(savePath / 'banned.txt', 'a', encoding='utf-8') as file:
                         await file.write(f'{cookie}\n')
                     consoleOutputHandlerRCC(f'\r [{ANSI.CLEAR}{ANSI.FG.YELLOW}>{ANSI.FG.WHITE}{ANSI.DECOR.BOLD}]{ANSI.CLEAR} {ANSI.FG.YELLOW}{MT_Account_Banned}{ANSI.CLEAR}{ANSI.DECOR.BOLD}\n')
             except AccountDuplicate:
-                async with exceptionLock:
+                async with exceptLock:
                     counters['duplicates'] += 1
                     async with aiofiles.open(savePath / 'duplicates.txt', 'a', encoding='utf-8') as file:
                         await file.write(f'ID: {resultsRCC} | Cookie: {cookie}\n')
@@ -5202,10 +5220,8 @@ async def robloxTransactionAnalysis(file: str) -> None:
         'transactions' : 0,
         'robux'        : 0
     }
-    validLock      = asyncio.Lock()
-    invalidLock    = asyncio.Lock()
-    bannedLock     = asyncio.Lock()
-    duplicatesLock = asyncio.Lock()
+    validLock  = asyncio.Lock()
+    exceptLock = asyncio.Lock()
     isOutputTotal = config['Outputs']['Output_Total']
     dateOfCheck = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Roblox', 'Transaction Analysis', 'outputs', dateOfCheck)
@@ -5269,17 +5285,17 @@ async def robloxTransactionAnalysis(file: str) -> None:
                             await file.write(f'{MT_Link}: https://www.roblox.com/users/{userId} | {MT_Id}: {userId} | {MT_Nickname}: {nickname} | {MT_Transactions}: {accountCounters['transactions']} {MT_On.lower()} {accountCounters['robux']}| {MT_Cookie}: {cookie}\n')
                     consoleOutputHandlerRTA('valid', f'\r [{ANSI.FG.GREEN}>{ANSI.FG.WHITE}] {ANSI.FG.CYAN}{MT_Nickname}{ANSI.FG.WHITE}: {nickname} | {ANSI.FG.CYAN}{MT_Transactions}{ANSI.FG.WHITE}: {color}{accountCounters['transactions']} {MT_On.lower()} {accountCounters['robux']} R${ANSI.FG.WHITE}\n')
             except InvalidCookie:
-                async with invalidLock:
+                async with exceptLock:
                     async with aiofiles.open(savePath / 'invalid.txt', 'a', encoding='utf-8') as file:
                         await file.write(f'{cookie}\n')
                     consoleOutputHandlerRTA('invalid', f'\r [{ANSI.FG.RED}>{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Invalid_Cookie}{ANSI.FG.WHITE}\n')
             except AccountBanned:
-                async with bannedLock:
+                async with exceptLock:
                     async with aiofiles.open(savePath / 'banned.txt', 'a', encoding='utf-8') as file:
                         await file.write(f'{cookie}\n')
                     consoleOutputHandlerRTA('banned', f'\r [{ANSI.CLEAR}{ANSI.FG.YELLOW}>{ANSI.FG.WHITE}{ANSI.DECOR.BOLD}] {ANSI.CLEAR}{ANSI.FG.YELLOW}{MT_Account_Banned}{ANSI.CLEAR}{ANSI.DECOR.BOLD}\n')
             except AccountDuplicate:
-                async with duplicatesLock:
+                async with exceptLock:
                     async with aiofiles.open(savePath / 'duplicates.txt', 'a', encoding='utf-8') as file:
                         await file.write(f'{MT_Id}: {userId} | {MT_Cookie}: {cookie}\n')
                     consoleOutputHandlerRTA('duplicates', f'\r [{ANSI.FG.YELLOW}>{ANSI.FG.WHITE}] {ANSI.FG.YELLOW}{MT_Account_Duplicate}{ANSI.FG.WHITE}\n')
@@ -5694,6 +5710,14 @@ def defaultConfigLoaderSettings() -> TOMLDocument:
     configLoader.add('Updater', table())
     configLoader['Updater']['Check_For_Updates'] = True
     configLoader['Updater']['Save_Old_Versions'] = False
+
+    # Debugger
+    configLoader.add('Debugger', table())
+    configLoader['Debugger']['Debug'] = False
+    # configLoader['Debugger']['Info'] = False
+    # configLoader['Debugger']['Warning'] = False
+    # configLoader['Debugger']['Error'] = False
+    configLoader['Debugger']['Exception'] = False
 
     # Advanced
     configLoader.add('Advanced', table())
