@@ -893,7 +893,7 @@ def removeEmojies(string: str, *, replace: str = ' ') -> str: # Пробел, п
     return emoji.replace_emoji(string, replace=replace)
 
 def removeTwoSpaces(string: str) -> str:
-    return ' '.join(string.split())
+    return ' '.join(string.split(' '))
 
 def amountOfLines(*pathArgs: str) -> str:
     path = Path(*pathArgs)
@@ -970,7 +970,7 @@ def convertDate(inputDate: str, outputFormat: str) -> str:
     logger.warning(f'< [CONVERT_DATE] > {MT_Conversion_Error}: (in): {inputDate}, (out): {outputFormat}')
     return 'error'
 
-def formatDuration(ms: int, *, color: str = ANSI.FG.BLUE, sep: str = '. ', end: str = '.') -> str:
+def formatDuration(ms: int, *, color: str = ANSI.FG.BLUE, sep: str = '. ', end: str = '.', outUnits: Literal['d', 'h', 'm', 's', 'ms', 'all'] = 'all') -> str:
     s, ms = divmod(ms, 1000)
     m, s  = divmod(s,  60)
     h, m  = divmod(m,  60)
@@ -979,7 +979,7 @@ def formatDuration(ms: int, *, color: str = ANSI.FG.BLUE, sep: str = '. ', end: 
     
     parts = []
     for key, value in units.items():
-        if value or parts:
+        if (value or parts) and (key in outUnits or 'all' in outUnits):
             parts.append(f'{value}{MT_Timestamps[key]}')
 
     return f'{color}{sep.join(parts)}{end}{ANSI.FG.WHITE}'
@@ -2928,6 +2928,7 @@ class cookieData: #          Normal Name                    Config Name         
     customGamepasses       = 'Custom Gamepasses',           'Custom_Gamepasses',         int
     badges                 = 'Badges',                      'Badges',                    int
     favoritePlaces         = 'Favorite Places',             'Favorite_Places',           int
+    placesWeeklyPlaytime   = 'Places Weekly Playtime',      'Places_Weekly_Playtime',    int
     bundles                = 'Bundles',                     'Bundles',                   int
     inventoryPrivacy       = 'Inventory Privacy',           'Inventory_Privacy',         str
     tradePrivacy           = 'Trade Privacy',               'Trade_Privacy',             str
@@ -2952,26 +2953,28 @@ class cookieData: #          Normal Name                    Config Name         
     xcsrfToken             = 'X-CSRF-Token',                'X_CSRF_Token',              None
     cookieInConsole        = 'Cookie (In Console)',         'Cookie_In_Console',         None
     # List Of Cookie Data
-    listOfCookieData = [link, countryRegistration, id, name, displayName, registrationDateDMY, registrationDateInDays, robux, billing, pending, donate1Year, donateAllTime, rap, card, premium, gamepasses, customGamepasses, badges, favoritePlaces, bundles, inventoryPrivacy, tradePrivacy, canTrade, sessions, email, phone, twoFA, pin, groupsOwned, groupsMembers, groupsPending, groupsFunds, placeVisits, ageGroup, verifiedAge, verifiedVoice, friends, followers, followings, robloxBadges, xcsrfToken, cookieInConsole]
+    listOfCookieData = [link, countryRegistration, id, name, displayName, registrationDateDMY, registrationDateInDays, robux, billing, pending, donate1Year, donateAllTime, rap, card, premium, gamepasses, customGamepasses, badges, favoritePlaces, placesWeeklyPlaytime, bundles, inventoryPrivacy, tradePrivacy, canTrade, sessions, email, phone, twoFA, pin, groupsOwned, groupsMembers, groupsPending, groupsFunds, placeVisits, ageGroup, verifiedAge, verifiedVoice, friends, followers, followings, robloxBadges, xcsrfToken, cookieInConsole]
 
 # Отправка и обработка запросов к роблокс
 
 async def sendGetRequestRoblox(
     url: str,
     *,
-    cookies: dict | None = None,
+    params: dict | None = None,
     headers: dict | None = None,
+    cookies: dict | None = None,
     proxies: list[str] | None = None,
-    allow_redirects: bool = False
+    allow_redirects: bool = False,
+    timeout: int = 10
 ) -> dict | None:
-    internalServerError = 0
+    internalServerErrorTry = 0
     while True:
         try:
-            async with ClientSession(connector=getConnectorRoblox(proxies), cookies=cookies, headers=headers) as session:
+            async with ClientSession(connector=getConnectorRoblox(proxies), cookies=cookies, headers=headers, timeout=ClientTimeout(timeout)) as session:
                 response: ClientResponse = await session.get(
                     url,
+                    params=params,
                     allow_redirects=allow_redirects,
-                    timeout=ClientTimeout(10),
                     ssl=False
                 )
                 match response.status:
@@ -2984,15 +2987,15 @@ async def sendGetRequestRoblox(
                     case 403:
                         raise AccountBanned
                     case 500:
-                        internalServerError += 1
+                        internalServerErrorTry += 1
                         if configLoader['Debugger']['Debug']:
-                            logger.debug(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [500 | {MT_Try}: {internalServerError}] {response.url}')
-                        if internalServerError >= 3:
+                            logger.debug(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [500 | {MT_Try}: {internalServerErrorTry}] {url}')
+                        if internalServerErrorTry >= 3:
                             return
                     case _:
                         if configLoader['Debugger']['Debug']:
-                            logger.debug(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [{response.status}] {response.url}')
-                            
+                            logger.debug(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [{response.status}] {url}')
+
                 await asyncio.sleep(10)
         except (InvalidCookie, AccountBanned):
             raise
@@ -3017,20 +3020,22 @@ async def sendGetRequestRoblox(
 async def sendPostRequestRoblox(
     url: str,
     *,
+    params: dict | None = None,
     data: dict | None = None,
     json: dict | None = None,
-    cookies: dict | None = None,
     headers: dict | None = None,
+    cookies: dict | None = None,
     proxies: list[str] | None = None,
+    timeout: int = 10
 ) -> ClientResponse:
     while True:
         try:
-            async with ClientSession(connector=getConnectorRoblox(proxies), cookies=cookies, headers=headers) as session:
+            async with ClientSession(connector=getConnectorRoblox(proxies), cookies=cookies, headers=headers, timeout=ClientTimeout(timeout)) as session:
                 response: ClientResponse = await session.post(
                     url,
+                    params=params,
                     data=data,
                     json=json,
-                    timeout=ClientTimeout(10),
                     ssl=False
                 )
                 match response.status:
@@ -3040,7 +3045,7 @@ async def sendPostRequestRoblox(
                         raise InvalidCookie
                     case _:
                         if configLoader['Debugger']['Debug']:
-                            logger.debug(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [{response.status}] {response.url}')
+                            logger.debug(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [{response.status}] {url}')
                         await asyncio.sleep(10)
         except InvalidCookie:
             raise
@@ -3067,7 +3072,8 @@ async def sendPostRequestRoblox(
 def createGlobalCheckListGamepassesRCC() -> None: # -> dict[str, list[str]]
     if not config['Roblox']['CookieChecker']['Main']['Gamepasses']:
         return
-    global checkListGamepasses; checkListGamepasses = {}
+    global checkListGamepasses
+    checkListGamepasses = {}
     for place in listOfPlaces:
         if config['Roblox']['CookieChecker']['Places'][place.placeNames[1]] and hasattr(place, 'Gamepasses') and [gamepass[1] for gamepass in place.Gamepasses.listOfGamepasses if config['Roblox']['CookieChecker'][place.__name__][gamepass[2]]]:
             for gamepass in place.Gamepasses.listOfGamepasses:
@@ -3079,11 +3085,14 @@ def createGlobalCheckListGamepassesRCC() -> None: # -> dict[str, list[str]]
             for gamepass in config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlace}_Gamepasses']:
                 if gamepass[2]:
                     checkListGamepasses[str(gamepass[0])] = {'PlaceName': removeSpecialChars(customPlaceData[1][0]), 'GamepassName': removeSpecialChars(gamepass[1])}
+    if configLoader['Debugger']['Debug']:
+        logger.debug(f'< [checkListGamepasses] > Generated: {checkListGamepasses}')
 
 def createGlobalCheckListBadgesRCC() -> None: # -> dict[str, list[str]]
     if not config['Roblox']['CookieChecker']['Main']['Badges']:
         return
-    global checkListBadges; checkListBadges = {}
+    global checkListBadges
+    checkListBadges = {}
     for place in listOfPlaces:
         if config['Roblox']['CookieChecker']['Places'][place.placeNames[1]] and hasattr(place, 'Badges') and [badge[1] for badge in place.Badges.listOfBadges if config['Roblox']['CookieChecker'][place.__name__][badge[2]]]:
             for badge in place.Badges.listOfBadges:
@@ -3095,21 +3104,40 @@ def createGlobalCheckListBadgesRCC() -> None: # -> dict[str, list[str]]
             for badge in config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlace}_Badges']:
                 if badge[2]:
                     checkListBadges[str(badge[0])] = {'PlaceName': removeSpecialChars(customPlaceData[1][0]), 'BadgeName': removeSpecialChars(badge[1])}
+    if configLoader['Debugger']['Debug']:
+        logger.debug(f'< [checkListBadges] > Generated: {checkListBadges}')
 
 def createGlobalCheckListCustomGamepassesRCC() -> None: # -> dict[str, int]
     if not config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']:
         return
-    global checkListCustomGamepasses; checkListCustomGamepasses = {customGamepass[0]: 0 for customGamepass in config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_List'] if customGamepass[1]}
-    
+    global checkListCustomGamepasses
+    checkListCustomGamepasses = {customGamepass[0]: 0 for customGamepass in config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_List'] if customGamepass[1]}
+    if configLoader['Debugger']['Debug']:
+        logger.debug(f'< [checkListCustomGamepasses] > Generated: {checkListCustomGamepasses}')
+
 def createGlobalCheckListFavoritePlacesRCC() -> None: # -> dict[str, str]
     if not config['Roblox']['CookieChecker']['Main']['Favorite_Places']:
         return
-    global checkListFavoritePlaces; checkListFavoritePlaces = {str(favoritePlace[0]): removeSpecialChars(favoritePlace[1]) for favoritePlace in config['Roblox']['CookieChecker']['Main']['Favorite_Places_List'] if favoritePlace[2]}
-    
-def createGlobalCheckListBundlesRCC() -> None: # -> set[str]
+    global checkListFavoritePlaces
+    checkListFavoritePlaces = {str(favoritePlace[0]): removeSpecialChars(favoritePlace[1]) for favoritePlace in config['Roblox']['CookieChecker']['Main']['Favorite_Places_List'] if favoritePlace[2]}
+    if configLoader['Debugger']['Debug']:
+        logger.debug(f'< [checkListFavoritePlaces] > Generated: {checkListFavoritePlaces}')
+
+def createGlobalCheckListPlacesWeeklyPlaytime() -> None: # -> dict[str, str]
+    if not config['Roblox']['CookieChecker']['Main']['Places_Weekly_Playtime']:
+        return
+    global checkListPlacesWeeklyPlaytime
+    checkListPlacesWeeklyPlaytime = {str(place[1]): place[2] for place in config['Roblox']['CookieChecker']['Main']['Places_Weekly_Playtime_List'] if place[-1]}
+    if configLoader['Debugger']['Debug']:
+        logger.debug(f'< [checkListPlacesWeeklyPlaytime] > Generated: {checkListPlacesWeeklyPlaytime}')
+
+def createGlobalCheckListBundlesRCC() -> None: # -> dict[str, str]
     if not config['Roblox']['CookieChecker']['Main']['Bundles']:
         return
-    global checkListBundles; checkListBundles = {str(bundle[0]): removeSpecialChars(bundle[1]) for bundle in config['Roblox']['CookieChecker']['Main']['Bundles_List'] if bundle[2]}
+    global checkListBundles
+    checkListBundles = {str(bundle[0]): removeSpecialChars(bundle[1]) for bundle in config['Roblox']['CookieChecker']['Main']['Bundles_List'] if bundle[2]}
+    if configLoader['Debugger']['Debug']:
+        logger.debug(f'< [checkListBundles] > Generated: {checkListBundles}')
 
 ### Поиск данных
 
@@ -3332,12 +3360,12 @@ async def getDonateAllTimeRoblox(cookies: dict, proxies: list[str] | None, userI
 
     if checkCustomGamepasses:
         amountOfCustomGamepasses = sum(customGamepasses.values())
-        color, value = [ANSI.FG.GREEN, formatCustomGamepassesOutput(customGamepasses, outputMode)] if amountOfCustomGamepasses else [ANSI.FG.RED, '0']
+        color, value = [ANSI.FG.GREEN, formatCustomGamepassesOutput(customGamepasses, mode=outputMode)] if amountOfCustomGamepasses else [ANSI.FG.RED, '0']
         returner['Custom Gamepasses'] = {
             'color': f'{ANSI.FG.CYAN}Custom Gamepasses:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Custom Gamepasses: {value}',
-            'sort-list': [removeSpecialChars(name) for name, amount in customGamepasses.items() if amount],
-            'sort-int': amountOfCustomGamepasses
+            'sort-int': amountOfCustomGamepasses,
+            'sort-list': [removeSpecialChars(name) for name, amount in customGamepasses.items() if amount]
         }
     else:
         returner['Custom Gamepasses'] = None
@@ -3414,13 +3442,13 @@ async def getGamepassesRoblox(cookies: dict, proxies: list[str] | None, userId: 
         nextCursor = None if len(_gamepasses) < 100 else gamepassId
         currentPage += 1
 
-    color, value = [ANSI.FG.GREEN, formatNNPPOutput(gamepasses, outputMode)] if amountOfFoundGamepasses else [ANSI.FG.RED, '0']
+    color, value = [ANSI.FG.GREEN, formatNNPPOutput(gamepasses, mode=outputMode)] if amountOfFoundGamepasses else [ANSI.FG.RED, '0']
     return {
         'Gamepasses': {
             'color': f'{ANSI.FG.CYAN}Gamepasses:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Gamepasses: {value}',
-            'sort-dict': gamepasses,
-            'sort-int': amountOfFoundGamepasses
+            'sort-int': amountOfFoundGamepasses,
+            'sort-dict': gamepasses
         }
     }
 
@@ -3443,13 +3471,13 @@ async def getBadgesRoblox(cookies: dict, proxies: list[str] | None, userId: str,
         nextCursor = response['nextPageCursor']
         currentPage += 1
 
-    color, value = [ANSI.FG.GREEN, formatNNPPOutput(badges, outputMode)] if amountOfFoundBadges else [ANSI.FG.RED, '0']
+    color, value = [ANSI.FG.GREEN, formatNNPPOutput(badges, mode=outputMode)] if amountOfFoundBadges else [ANSI.FG.RED, '0']
     return {
         'Badges': {
             'color': f'{ANSI.FG.CYAN}Badges:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Badges: {value}',
-            'sort-dict': badges,
-            'sort-int': amountOfFoundBadges
+            'sort-int': amountOfFoundBadges,
+            'sort-dict': badges
         }
     }
 
@@ -3472,13 +3500,34 @@ async def getFavoritePlacesRoblox(cookies: dict, proxies: list[str] | None, user
         nextCursor = response['nextPageCursor']
         currentPage += 1
 
-    color, value = [ANSI.FG.GREEN, formatNNOutput(favoritePlaces, outputMode)] if amountOfFoundFavoritePlaces else [ANSI.FG.RED, '0']
+    color, value = [ANSI.FG.GREEN, formatNNOutput(favoritePlaces, mode=outputMode)] if amountOfFoundFavoritePlaces else [ANSI.FG.RED, '0']
     return {
         'Favorite Places': {
             'color': f'{ANSI.FG.CYAN}Fav. Places:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Fav. Places: {value}',
-            'sort-list': favoritePlaces,
-            'sort-int': amountOfFoundFavoritePlaces
+            'sort-int': amountOfFoundFavoritePlaces,
+            'sort-list': favoritePlaces
+        }
+    }
+
+async def getPlacesWeeklyPlaytimeRoblox(cookies: dict, proxies: list[str] | None, outputMode: str = 'Names') -> dict:
+    if not config['Roblox']['CookieChecker']['Main']['Places_Weekly_Playtime']:
+        return {'Places Weekly Playtime': None}
+    response: dict = await sendGetRequestRoblox('https://apis.roblox.com/parental-controls-api/v1/parental-controls/get-top-weekly-screentime-by-universe', cookies=cookies, proxies=proxies)
+    placesWeeklyPlaytime = {}
+    for place in response['universeWeeklyScreentimes']:
+        universeId = str(place['universeId'])
+        if universeId in checkListPlacesWeeklyPlaytime:
+            placeName = checkListPlacesWeeklyPlaytime[universeId]
+            placesWeeklyPlaytime[placeName] = f'{placeName} ({formatDuration(int(place['weeklyMinutes']) * 60 * 1000, outUnits=['d', 'h', 'm'])}{ANSI.FG.GREEN})'
+    
+    color, value = [ANSI.FG.GREEN, formatNNOutput(list(placesWeeklyPlaytime.values()), mode=outputMode)] if placesWeeklyPlaytime else [ANSI.FG.RED, 'No']
+    return {
+        'Places Weekly Playtime': {
+            'color': f'{ANSI.FG.CYAN}Places Weekly Playtime:{color} {value}{ANSI.FG.WHITE}',
+            'no-color': f'Places Weekly Playtime: {value}',
+            'sort-int': len(placesWeeklyPlaytime),
+            'sort-list': list(value)
         }
     }
 
@@ -3503,13 +3552,13 @@ async def getBundlesRoblox(cookies: dict, proxies: list[str] | None, userId: str
         currentPage += 1
 
     bundlesNames = list(bundles.values())
-    color, value = [ANSI.FG.GREEN, formatNNOutput(bundlesNames, outputMode)] if amountOfFoundBundles else [ANSI.FG.RED, '0']
+    color, value = [ANSI.FG.GREEN, formatNNOutput(bundlesNames, mode=outputMode)] if amountOfFoundBundles else [ANSI.FG.RED, '0']
     returner.update({
         'Bundles': {
             'color': f'{ANSI.FG.CYAN}Bundles:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Bundles: {value}',
-            'sort-dict': bundlesNames,
-            'sort-int': amountOfFoundBundles
+            'sort-int': amountOfFoundBundles,
+            'sort-dict': bundlesNames
         }
     })
     
@@ -3544,7 +3593,7 @@ async def getBundlesRoblox(cookies: dict, proxies: list[str] | None, userId: str
 async def getInventoryPrivacyRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
     if not config['Roblox']['CookieChecker']['Main']['Inventory_Privacy']:
         return {'Inventory Privacy': None}
-    response: dict = await sendGetRequestRoblox(f'https://apis.roblox.com/user-settings-api/v1/user-settings/settings-and-options', cookies=cookies, proxies=proxies)
+    response: dict = await sendGetRequestRoblox('https://apis.roblox.com/user-settings-api/v1/user-settings/settings-and-options', cookies=cookies, proxies=proxies)
     privacy = response['whoCanSeeMyInventory']['currentValue']
     color, value = ([ANSI.FG.GREEN,  'Everyone']                         if privacy == 'AllUsers'
                else [ANSI.FG.YELLOW, 'Friends & Followers & Followings'] if privacy == 'FriendsFollowingAndFollowers'
@@ -3680,13 +3729,13 @@ async def getGroupsInformationRoblox(cookies: dict, proxies: list[str] | None, u
             groupsOwned[removeSpecialChars(group['group']['name'])] = group['group']['id']
             groupsMembers += group['group']['memberCount']
 
-    color, value = [ANSI.FG.GREEN, formatNNOutput(groupsOwned, outputMode)] if groupsOwned else [ANSI.FG.RED, '0']
+    color, value = [ANSI.FG.GREEN, formatNNOutput(groupsOwned, mode=outputMode)] if groupsOwned else [ANSI.FG.RED, '0']
     returner.update({
         'Groups Owned': {
             'color': f'{ANSI.FG.CYAN}G. Owned:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'G. Owned: {value}',
-            'sort-list': list(groupsOwned),
-            'sort-int': len(groupsOwned)
+            'sort-int': len(groupsOwned),
+            'sort-list': list(groupsOwned)
         } if configRCCMain['Groups_Owned'] else {'Groups Owned': None}
     })
     
@@ -3760,6 +3809,7 @@ async def getPlaceVisitsRoblox(data: dict) -> dict[str, dict | None]:
 def convertAgeGroupRoblox(text: str) -> str:
     match = AGE_GROUP_PATTERN.search(text)
     if not match:
+        logger.warning(f'< [convertAgeGroupRoblox] > Can\'t convert age: {text}')
         return 'UNK'
     
     direction, age, checked = match.groups()
@@ -3844,13 +3894,13 @@ async def getRobloxBadgesRoblox(data: dict, outputMode: str = 'Names') -> dict[s
     if not config['Roblox']['CookieChecker']['Main']['Roblox_Badges']:
         return {'Roblox Badges': None}
     robloxBadges = [robloxBadge['type']['value'] for robloxBadge in data['components']['RobloxBadges']['robloxBadgeList']]
-    value = formatNNOutput(robloxBadges, outputMode) if robloxBadges else '0'
+    value = formatNNOutput(robloxBadges, mode=outputMode) if robloxBadges else '0'
     return {
         'Roblox Badges': {
             'color': f'{ANSI.FG.CYAN}Roblox Badges:{ANSI.FG.WHITE} {value}',
             'no-color': f'Roblox Badges: {value}',
-            'sort-list': robloxBadges,
-            'sort-int': len(robloxBadges)
+            'sort-int': len(robloxBadges),
+            'sort-list': robloxBadges
         }
     }
 
@@ -3868,7 +3918,7 @@ async def getXCSRFTokenRoblox(cookies: dict, proxies: list[str] | None) -> dict[
 
 ### Функции обработки некоторых данных
 
-def formatNNPPOutput(data: dict[str, list[str]], mode: str = 'PlaceNames') -> int | str:
+def formatNNPPOutput(data: dict[str, list[str]], *, mode: str = 'PlaceNames') -> int | str:
     '''Modes (NNPP): Number, Names, PlaceNumber, PlaceNames'''
     match mode:
         case 'Number':
@@ -3880,7 +3930,7 @@ def formatNNPPOutput(data: dict[str, list[str]], mode: str = 'PlaceNames') -> in
         case _: # PlaceNames
             return ', '.join(f'{placeName} ({', '.join(names)})' for placeName, names in data.items() if names)
 
-def formatNNOutput(data: list[str], mode: str = 'Names') -> int | str:
+def formatNNOutput(data: list[str], *, mode: str = 'Names') -> int | str:
     '''Modes (NN): Number, Names'''
     match mode:
         case 'Number':
@@ -3888,7 +3938,7 @@ def formatNNOutput(data: list[str], mode: str = 'Names') -> int | str:
         case _: # Names
             return ', '.join(data)
 
-def formatCustomGamepassesOutput(data: dict[str, int], mode: str = 'NameNumber') -> int | str:
+def formatCustomGamepassesOutput(data: dict[str, int], *, mode: str = 'NameNumber') -> int | str:
     '''Modes: Number, NameNumber'''
     match mode:
         case 'Number':
@@ -4055,36 +4105,37 @@ async def dataFromCookieRoblox(order: list[str], checkedAccounts: set, cookies: 
     checkedAccounts.add(userId)
 
     responseAllDataList: list[dict] = await asyncio.gather(
-        getMixedInformationRoblox(   cookies, proxies,  userId,                       outputModes),
-        getLinkRoblox(                                  userId),
-        getNameRoblox(                                           accountInformation),
-        getDisplayNameRoblox(                                    accountInformation),
-        getRegistrationDateRoblox(   cookies, proxies,  userId,  accountInformation),
-        getCountryRegistrationRoblox(cookies, proxies),
-        getRobuxRoblox(              cookies, proxies,  userId),
-        getBillingRoblox(            cookies, proxies),
-        getTransactionsForYearRoblox(cookies, proxies,  userId),
-        getDonateAllTimeRoblox(      cookies, proxies,  userId,                       outputModes['Custom_Gamepasses']),
-        getRapRoblox(                cookies, proxies,  userId),
-        getCardRoblox(               cookies, proxies),
-        getPremiumRoblox(                                        accountInformation),
-        getGamepassesRoblox(         cookies, proxies,  userId,                       outputModes['Gamepasses']),
-        getBadgesRoblox(             cookies, proxies,  userId,                       outputModes['Badges']),
-        getFavoritePlacesRoblox(     cookies, proxies,  userId,                       outputModes['Favorite_Places']),
-        getBundlesRoblox(            cookies, proxies,  userId,                       outputModes['Bundles']),
-        getInventoryPrivacyRoblox(   cookies, proxies),
-        getTradePrivacyRoblox(       cookies, proxies),
-        getCanTradeRoblox(                                       accountInformation),
-        getSessionsRoblox(           cookies, proxies),
-        getEmailRoblox(                                          accountInformation),
-        getPhoneRoblox(              cookies, proxies),
-        get2FARoblox(                                            accountInformation),
-        getPinRoblox(                                            accountInformation),
-        getGroupsInformationRoblox(  cookies, proxies,  userId,                       outputModes['Groups_Owned']),
-        getAgeGroupRoblox(           cookies, proxies),
-        getVerifiedAgeRoblox(        cookies, proxies),
-        getVerifiedVoiceRoblox(      cookies, proxies),
-        getXCSRFTokenRoblox(         cookies, proxies)
+        getMixedInformationRoblox(    cookies, proxies,  userId,                       outputModes),
+        getLinkRoblox(                                   userId),
+        getNameRoblox(                                            accountInformation),
+        getDisplayNameRoblox(                                     accountInformation),
+        getRegistrationDateRoblox(    cookies, proxies,  userId,  accountInformation),
+        getCountryRegistrationRoblox( cookies, proxies),
+        getRobuxRoblox(               cookies, proxies,  userId),
+        getBillingRoblox(             cookies, proxies),
+        getTransactionsForYearRoblox( cookies, proxies,  userId),
+        getDonateAllTimeRoblox(       cookies, proxies,  userId,                       outputModes['Custom_Gamepasses']),
+        getRapRoblox(                 cookies, proxies,  userId),
+        getCardRoblox(                cookies, proxies),
+        getPremiumRoblox(                                         accountInformation),
+        getGamepassesRoblox(          cookies, proxies,  userId,                       outputModes['Gamepasses']),
+        getBadgesRoblox(              cookies, proxies,  userId,                       outputModes['Badges']),
+        getFavoritePlacesRoblox(      cookies, proxies,  userId,                       outputModes['Favorite_Places']),
+        getPlacesWeeklyPlaytimeRoblox(cookies, proxies,                                outputModes['Places_Weekly_Playtime']),
+        getBundlesRoblox(             cookies, proxies,  userId,                       outputModes['Bundles']),
+        getInventoryPrivacyRoblox(    cookies, proxies),
+        getTradePrivacyRoblox(        cookies, proxies),
+        getCanTradeRoblox(                                        accountInformation),
+        getSessionsRoblox(            cookies, proxies),
+        getEmailRoblox(                                           accountInformation),
+        getPhoneRoblox(               cookies, proxies),
+        get2FARoblox(                                             accountInformation),
+        getPinRoblox(                                             accountInformation),
+        getGroupsInformationRoblox(   cookies, proxies,  userId,                       outputModes['Groups_Owned']),
+        getAgeGroupRoblox(            cookies, proxies),
+        getVerifiedAgeRoblox(         cookies, proxies),
+        getVerifiedVoiceRoblox(       cookies, proxies),
+        getXCSRFTokenRoblox(          cookies, proxies)
     )
     
     responseAllDataTimedDict = {
@@ -4145,7 +4196,7 @@ async def robloxCookieChecker(file: str) -> None:
     if isOutputTotal or isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
         totalDataCurrent = {}
         for key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Bundles', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds', 'Place Visits']:
-            mainValue, percentValue = [0, f'{ANSI.FG.GRAY}| 0 | 0.0% |'] if config['Roblox']['CookieChecker']['Main']['_'.join(key.replace('(', '').replace(')', '').split())] else [f'{ANSI.FG.GRAY}Off', '']
+            mainValue, percentValue = [0, f'{ANSI.FG.GRAY}| 0 | 0.0% |'] if config['Roblox']['CookieChecker']['Main']['_'.join(re.sub(r'[()]', '', key).split(' '))] else [f'{ANSI.FG.GRAY}Off', '']
             totalDataCurrent[key] = mainValue
             if key in percentCategoriesList:
                 totalDataCurrent[f'{key} %'] = percentValue
@@ -4190,16 +4241,17 @@ async def robloxCookieChecker(file: str) -> None:
     createGlobalCheckListBadgesRCC()
     createGlobalCheckListCustomGamepassesRCC()
     createGlobalCheckListFavoritePlacesRCC()
+    createGlobalCheckListPlacesWeeklyPlaytime()
     createGlobalCheckListBundlesRCC()
 
     outputModes = {}
-    for category in ['Gamepasses', 'Custom_Gamepasses', 'Badges', 'Favorite_Places', 'Bundles', 'Groups_Owned', 'Roblox_Badges']:
+    for category in ['Gamepasses', 'Custom_Gamepasses', 'Badges', 'Favorite_Places', 'Places_Weekly_Playtime', 'Bundles', 'Groups_Owned', 'Roblox_Badges']:
         outputModes[category] = str(config['Roblox']['CookieChecker']['Main'][f'{category}_Output_Mode'])
 
     if config['Roblox']['CookieChecker']['Sorting']['Sort']:
         sortLock = asyncio.Lock()
         sortOptions = {}
-        for category in ['ID', 'Name', 'Display_Name', 'Registration_Date_DMY', 'Registration_Date_In_Days', 'Country_Registration', 'Robux', 'Billing', 'Pending', 'Donate_1_Year', 'Donate_All_Time', 'Rap', 'Card', 'Premium', 'Gamepasses', 'Custom_Gamepasses', 'Badges', 'Favorite_Places', 'Bundles', 'Inventory_Privacy', 'Trade_Privacy', 'Can_Trade', 'Sessions', 'Email', 'Phone', '2FA', 'Pin', 'Groups_Owned', 'Groups_Members', 'Groups_Pending', 'Groups_Funds', 'Place_Visits', 'Age_Group', 'Verified_Age', 'Verified_Voice', 'Friends', 'Followers', 'Followings', 'Roblox_Badges']:
+        for category in ['ID', 'Name', 'Display_Name', 'Registration_Date_DMY', 'Registration_Date_In_Days', 'Country_Registration', 'Robux', 'Billing', 'Pending', 'Donate_1_Year', 'Donate_All_Time', 'Rap', 'Card', 'Premium', 'Gamepasses', 'Custom_Gamepasses', 'Badges', 'Favorite_Places', 'Places_Weekly_Playtime', 'Bundles', 'Inventory_Privacy', 'Trade_Privacy', 'Can_Trade', 'Sessions', 'Email', 'Phone', '2FA', 'Pin', 'Groups_Owned', 'Groups_Members', 'Groups_Pending', 'Groups_Funds', 'Place_Visits', 'Age_Group', 'Verified_Age', 'Verified_Voice', 'Friends', 'Followers', 'Followings', 'Roblox_Badges']:
             if not config['Roblox']['CookieChecker']['Main'][category]:
                 sortOptions[category] = {'sort': False}
                 continue
@@ -4251,6 +4303,7 @@ async def robloxCookieChecker(file: str) -> None:
         'Custom_Gamepasses'         : 'Custom Gamepasses',
         'Badges'                    : 'Badges',
         'Favorite_Places'           : 'Favorite Places',
+        'Places_Weekly_Playtime'    : 'Places Weekly Playtime',
         'Bundles'                   : 'Bundles',
         'Korblox'                   : 'Korblox',
         'Headless'                  : 'Headless',
@@ -4300,7 +4353,7 @@ async def robloxCookieChecker(file: str) -> None:
         if isOutputTotal:
             printTotalOutputRCC()
             
-    order = ['Link', 'ID', 'Name', 'Display Name', 'Registration Date', 'Country Registration', 'Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Bundles', 'Korblox', 'Headless', 'Inventory Privacy', 'Trade Privacy', 'Can Trade', 'Sessions', 'Email', 'Phone', '2FA', 'Pin', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds', 'Place Visits', 'Age Group', 'Verified Age', 'Verified Voice', 'Friends', 'Followers', 'Followings', 'Roblox Badges']
+    order = ['Link', 'ID', 'Name', 'Display Name', 'Registration Date', 'Country Registration', 'Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Places Weekly Playtime', 'Bundles', 'Korblox', 'Headless', 'Inventory Privacy', 'Trade Privacy', 'Can Trade', 'Sessions', 'Email', 'Phone', '2FA', 'Pin', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds', 'Place Visits', 'Age Group', 'Verified Age', 'Verified Voice', 'Friends', 'Followers', 'Followings', 'Roblox Badges']
     
     # Проверка куки
     async def checkCookieRoblox(cookie: str):
@@ -4351,13 +4404,14 @@ async def robloxCookieChecker(file: str) -> None:
                     }
 
                     complexSortValues = {
-                        'Gamepasses'        : [resultsRCC.get('Gamepasses',        {}).get('sort-int'), resultsRCC.get('Gamepasses',        {}).get('sort-dict')],
-                        'Custom_Gamepasses' : [resultsRCC.get('Custom Gamepasses', {}).get('sort-int'), resultsRCC.get('Custom Gamepasses', {}).get('sort-list')],
-                        'Badges'            : [resultsRCC.get('Badges',            {}).get('sort-int'), resultsRCC.get('Badges',            {}).get('sort-dict')],
-                        'Favorite_Places'   : [resultsRCC.get('Favorite Places',   {}).get('sort-int'), resultsRCC.get('Favorite Places',   {}).get('sort-list')],
-                        'Bundles'           : [resultsRCC.get('Bundles',           {}).get('sort-int'), resultsRCC.get('Bundles',           {}).get('sort-dict')],
-                        'Groups_Owned'      : [resultsRCC.get('Groups Owned',      {}).get('sort-int'), resultsRCC.get('Groups Owned',      {}).get('sort-list')],
-                        'Roblox_Badges'     : [resultsRCC.get('Roblox Badges',     {}).get('sort-int'), resultsRCC.get('Roblox Badges',     {}).get('sort-list')]
+                        'Gamepasses'             : [resultsRCC.get('Gamepasses',             {}).get('sort-int'), resultsRCC.get('Gamepasses',             {}).get('sort-dict')],
+                        'Custom_Gamepasses'      : [resultsRCC.get('Custom Gamepasses',      {}).get('sort-int'), resultsRCC.get('Custom Gamepasses',      {}).get('sort-list')],
+                        'Badges'                 : [resultsRCC.get('Badges',                 {}).get('sort-int'), resultsRCC.get('Badges',                 {}).get('sort-dict')],
+                        'Favorite_Places'        : [resultsRCC.get('Favorite Places',        {}).get('sort-int'), resultsRCC.get('Favorite Places',        {}).get('sort-list')],
+                        'Places_Weekly_Playtime' : [resultsRCC.get('Places Weekly Playtime', {}).get('sort-int'), resultsRCC.get('Places Weekly Playtime', {}).get('sort-list')],
+                        'Bundles'                : [resultsRCC.get('Bundles',                {}).get('sort-int'), resultsRCC.get('Bundles',                {}).get('sort-dict')],
+                        'Groups_Owned'           : [resultsRCC.get('Groups Owned',           {}).get('sort-int'), resultsRCC.get('Groups Owned',           {}).get('sort-list')],
+                        'Roblox_Badges'          : [resultsRCC.get('Roblox Badges',          {}).get('sort-int'), resultsRCC.get('Roblox Badges',          {}).get('sort-list')]
                     }
 
                     await asyncio.gather(
@@ -5527,7 +5581,7 @@ def changeSymbols(symbols: str) -> None:
     removeLines(5)
 
 # Настройки > Роблокс > [Куки чекер, Куки сортер] > Общее
-def changeOutputFilenameRoblox(category: str, newName: str):
+def changeOutputFilenameRoblox(category: str, newName: str) -> None:
     if newName == '0':
         return removeLines(5)
     visualCategory = MT_Cookie_Checker if category == 'CookieChecker' else MT_Cookie_Sorter
@@ -5557,7 +5611,7 @@ def changeNumberOfThreads(category: str, option: str, threads: str, limitOfThrea
     removeLines(5)
 
 # Настройки > Роблокс > Куки чекер > Основное
-def addCustomGamepassRoblox(customGamepassName: str, nameOfCategory: str):
+def addCustomGamepassRoblox(customGamepassName: str, nameOfCategory: str) -> None:
     if customGamepassName == '0':
         return
     if not customGamepassName.strip():
@@ -5570,29 +5624,36 @@ def addCustomGamepassRoblox(customGamepassName: str, nameOfCategory: str):
     config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_List'].append([customGamepassName, False])
     autoSaveConfig()
 
-async def addFavoritePlaceRoblox(favoritePlaceId: str, nameOfCategory: str):
-    if favoritePlaceId == '0':
+async def addPlaceRoblox(placeId: str, nameOfCategory: Literal['Favorite Places', 'Places Weekly Playtime']) -> None:
+    if placeId == '0':
         return
-    if checkExist(favoritePlaceId, 'Favorite_Places'):
+    _nameOfCategory = '_'.join(nameOfCategory.split(' '))
+    if checkExist(placeId, _nameOfCategory):
         return errorOrCorrectHandler(True, 5, MT_Place_With_This_ID_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
     try:
-        universeId = (await sendGetRequest(f'https://apis.roblox.com/universes/v1/places/{favoritePlaceId}/universe', 'JSON'))['universeId']
+        universeId = (await sendGetRequest(f'https://apis.roblox.com/universes/v1/places/{placeId}/universe', 'JSON'))['universeId']
         if not universeId:
             return errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
-        favoritePlaceName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
+        placeName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
 
-        config['Roblox']['CookieChecker']['Main']['Favorite_Places_List'].append([int(favoritePlaceId), favoritePlaceName, False])
+        match nameOfCategory:
+            case 'Favorite Places':
+                placeData = [int(placeId), placeName, False]
+            case 'Places Weekly Playtime':
+                placeData = [int(placeId), int(universeId), placeName, False]
+        
+        config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_List'].append(placeData)
         autoSaveConfig()
     except Exception as e:
-        logger.exception(f'< [ROBLOX_ADD_FAVORITE_PLACE] > {MT_Unknown_Error}: {e}... :<')
+        logger.exception(f'< [ROBLOX_ADD_{_nameOfCategory.upper()}] > {MT_Unknown_Error}: {e}... :<')
         return errorOrCorrectHandler(True, 5, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
-async def addBundleRoblox(bundleId: str, nameOfCategory: str):
+async def addBundleRoblox(bundleId: str, nameOfCategory: Literal['Bundles']) -> None:
     if bundleId == '0':
         return
-    if checkExist(bundleId, 'Bundles'):
+    if checkExist(bundleId, nameOfCategory):
         return errorOrCorrectHandler(True, 5, MT_Bundle_With_This_ID_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
     try:
@@ -5600,7 +5661,7 @@ async def addBundleRoblox(bundleId: str, nameOfCategory: str):
         match response.status:
             case 200:
                 bundleName = str((await response.json())['name']).strip()
-                config['Roblox']['CookieChecker']['Main']['Bundles_List'].append([int(bundleId), bundleName, False])
+                config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory}_List'].append([int(bundleId), bundleName, False])
                 autoSaveConfig()
             case 400:
                 return errorOrCorrectHandler(True, 5, MT_Incorrent_Bundle_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
@@ -5627,9 +5688,9 @@ def addSortParameterFrom(sortValue: int | str, configRCCSorting: dict[str, dict[
 def addSortParameterFromTo(sortValue: str, configRCCSorting: dict[str, dict[str, dict[str, list[list]]]], categoryConfigName: str, categoryMenuName: str) -> None:
     if sortValue == '0':
         return
-    if len(sortValue.split()) != 2:
+    if len(sortValue.split(' ')) != 2:
         return errorOrCorrectHandler(True, 5, MT_Specify_Two_Numbers_Separated_By_A_Space, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
-    valueFrom, valueTo = sortValue.split()
+    valueFrom, valueTo = sortValue.split(' ')
     if len(valueFrom) > 25 or len(valueTo) > 25:
         return errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Parameter.format('25'), generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
     if not (valueFrom.isdigit() and valueTo.isdigit()):
@@ -5665,7 +5726,7 @@ async def addCustomPlaceRoblox(customPlaceId: str):
 
         normalPlaceName = removeEmojies(removeBracketsAndIn(customPlaceName, round=True, square=True)).replace('"', '').strip()
         if normalPlaceName:
-            abbreviatedPlaceName = ''.join(word[0] for word in normalPlaceName.split())
+            abbreviatedPlaceName = ''.join(word[0] for word in normalPlaceName.split(' '))
         else:
             normalPlaceName      = f'Unknown_{customPlaceId}'
             abbreviatedPlaceName = f'UNK_{customPlaceId[:5]}'
@@ -5923,7 +5984,7 @@ def defaultConfigSettings() -> TOMLDocument:
             case 'Gamepasses' | 'Badges':
                 config['Roblox']['CookieChecker']['Sorting'][f'{category[1]}_Names'] = False
                 config['Roblox']['CookieChecker']['Sorting'][f'{category[1]}_Places'] = False
-            case 'Custom_Gamepasses' | 'Favorite_Places' | 'Bundles' | 'Groups_Owned' | 'Roblox_Badges':
+            case 'Custom_Gamepasses' | 'Favorite_Places' | 'Places_Weekly_Playtime' | 'Bundles' | 'Groups_Owned' | 'Roblox_Badges':
                 config['Roblox']['CookieChecker']['Sorting'][f'{category[1]}_Names'] = False
 
     # Roblox > Cookie Checker > Main
@@ -5946,7 +6007,7 @@ def defaultConfigSettings() -> TOMLDocument:
                     ['Fly A Pet Potion',  False],
                     ['Ride-A-Pet Potion', False]
                 ]
-            case 'Favorite_Places' | 'Bundles' | 'Groups_Owned' | 'Roblox_Badges':
+            case 'Favorite_Places' | 'Places_Weekly_Playtime' | 'Bundles' | 'Groups_Owned' | 'Roblox_Badges':
                 config['Roblox']['CookieChecker']['Main'][f'{data[1]}_Output_Mode'] = 'Names'
                 config['Roblox']['CookieChecker']['Main'][f'{data[1]}_Output_Mode'].comment('Options: [ Number | Names ]')
                 match data[1]:
@@ -5955,6 +6016,12 @@ def defaultConfigSettings() -> TOMLDocument:
                             [920587237,  'Adopt Me',         False],
                             [142823291,  'Murder Mystery 2', False],
                             [8737899170, 'Pet Simulator 99', False]
+                        ]
+                    case 'Places_Weekly_Playtime':
+                        config['Roblox']['CookieChecker']['Main']['Places_Weekly_Playtime_List'] = [
+                            [920587237,  383310974,  'Adopt Me',         False],
+                            [142823291,  66654135,   'Murder Mystery 2', False],
+                            [8737899170, 3317771874, 'Pet Simulator 99', False]
                         ]
                     case 'Bundles':
                         config['Roblox']['CookieChecker']['Main']['Bundles_List'] = [
@@ -6905,19 +6972,22 @@ async def mainMenu() -> None:
                                                         match settingsRCCMainTab:
                                                             case '0':
                                                                 whileTrueStage4 = False
-                                                            # Gamepasses | Custom Gamepasses | Badges | Favorite Places | Bundles | Groups Owned | Roblox Badges
-                                                            case settingsRCCMainTab if (settingsRCCMainTab.isdigit() and int(settingsRCCMainTab) <= len(cookieData.listOfCookieData) and cookieData.listOfCookieData[int(settingsRCCMainTab) - 1][0] in ('Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Bundles', 'Groups Owned', 'Roblox Badges')):
+                                                            # Gamepasses | Custom Gamepasses | Badges | Favorite Places | Places Weekly Playtime | Bundles | Groups Owned | Roblox Badges
+                                                            case settingsRCCMainTab if (settingsRCCMainTab.isdigit() and int(settingsRCCMainTab) <= len(cookieData.listOfCookieData) and cookieData.listOfCookieData[int(settingsRCCMainTab) - 1][0] in ('Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Places Weekly Playtime', 'Bundles', 'Groups Owned', 'Roblox Badges')):
                                                                 nameOfCategory  = str(cookieData.listOfCookieData[int(settingsRCCMainTab) - 1][0])
-                                                                nameOfCategory_ = '_'.join(nameOfCategory.split())
+                                                                _nameOfCategory = '_'.join(nameOfCategory.split(' '))
                                                                 sortLabels = {
-                                                                    'Custom Gamepasses' : [MT_Add_A_Gamepass_Name, MT_Enter_The_Gamepass_Name],
-                                                                    'Favorite Places'   : [MT_Add_A_Place_By_ID,   MT_Enter_The_Place_ID],
-                                                                    'Bundles'           : [MT_Add_A_Bundle_By_ID,  MT_Enter_The_Bundle_ID],
-                                                                    'Number'            : MT_Number,
-                                                                    'Names'             : MT_Names,
-                                                                    'PlaceNumber'       : MT_Place_Number,
-                                                                    'PlaceNames'        : MT_Place_Names,
-                                                                    'NameNumber'        : MT_Name_Number
+                                                                    'Custom Gamepasses'      : [MT_Add_A_Gamepass_Name, MT_Enter_The_Gamepass_Name],
+                                                                    **dict.fromkeys(
+                                                                        ['Favorite Places', 'Places Weekly Playtime'],
+                                                                        [MT_Add_A_Place_By_ID,   MT_Enter_The_Place_ID]
+                                                                    ),
+                                                                    'Bundles'                : [MT_Add_A_Bundle_By_ID,  MT_Enter_The_Bundle_ID],
+                                                                    'Number'                 : MT_Number,
+                                                                    'Names'                  : MT_Names,
+                                                                    'PlaceNumber'            : MT_Place_Number,
+                                                                    'PlaceNames'             : MT_Place_Names,
+                                                                    'NameNumber'             : MT_Name_Number
                                                                 }
                                                                 outputModes = {
                                                                     **dict.fromkeys(
@@ -6925,7 +6995,7 @@ async def mainMenu() -> None:
                                                                         ['Number', 'Names', 'PlaceNumber', 'PlaceNames']
                                                                     ),
                                                                     **dict.fromkeys(
-                                                                        ['Favorite Places', 'Bundles', 'Groups Owned', 'Roblox Badges'],
+                                                                        ['Favorite Places', 'Places Weekly Playtime', 'Bundles', 'Groups Owned', 'Roblox Badges'],
                                                                         ['Number', 'Names']
                                                                     ),
                                                                     'Custom Gamepasses': ['Number', 'NameNumber']
@@ -6934,44 +7004,44 @@ async def mainMenu() -> None:
                                                                 lableASCII()
                                                                 whileTrueStage5 = True
                                                                 while whileTrueStage5:
-                                                                    outputMode = config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_Output_Mode']
+                                                                    outputMode = config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_Output_Mode']
                                                                     labelOutputMode = sortLabels[outputMode] if outputMode in outputModes[nameOfCategory] else sortLabels[outputModes[nameOfCategory][-1]]
-                                                                    if nameOfCategory in ('Custom Gamepasses', 'Favorite Places', 'Bundles'):
+                                                                    if nameOfCategory in ('Custom Gamepasses', 'Favorite Places', 'Places Weekly Playtime', 'Bundles'):
                                                                         cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory)}\n\n')
-                                                                        generalCategoryRCC(True, nameOfCategory_)
-                                                                        cmdWriter(f'{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.FG.WHITE}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.FG.WHITE}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_List'] else ''} [{ANSI.FG.YELLOW}M{ANSI.FG.WHITE}] ┃ {MT_Output_Mode}: {labelOutputMode}\n [{ANSI.FG.YELLOW}A{ANSI.FG.WHITE}] ┃ {sortLabels[nameOfCategory][0]}\n [{ANSI.FG.YELLOW}C{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][nameOfCategory_])} {MT_Check}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
+                                                                        generalCategoryRCC(True, _nameOfCategory)
+                                                                        cmdWriter(f'{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.FG.WHITE}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.FG.WHITE}] ┃ {MT_Disable_All}\n  ┃\n' if config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_List'] else ''} [{ANSI.FG.YELLOW}M{ANSI.FG.WHITE}] ┃ {MT_Output_Mode}: {labelOutputMode}\n [{ANSI.FG.YELLOW}A{ANSI.FG.WHITE}] ┃ {sortLabels[nameOfCategory][0]}\n [{ANSI.FG.YELLOW}C{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][_nameOfCategory])} {MT_Check}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                                                         hasList = True
                                                                     else:
-                                                                        cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory)}\n\n [{ANSI.FG.YELLOW}M{ANSI.FG.WHITE}] ┃ {MT_Output_Mode}: {labelOutputMode}\n [{ANSI.FG.YELLOW}C{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][nameOfCategory_])} {MT_Check}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
+                                                                        cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory)}\n\n [{ANSI.FG.YELLOW}M{ANSI.FG.WHITE}] ┃ {MT_Output_Mode}: {labelOutputMode}\n [{ANSI.FG.YELLOW}C{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][_nameOfCategory])} {MT_Check}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                                                         hasList = False
                                                                     settingsRCCGeneralCategoryTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                                                     match settingsRCCGeneralCategoryTab:
                                                                         case '0':
                                                                             whileTrueStage5 = False
-                                                                        case settingsRCCGeneralCategoryTab if (hasList and settingsRCCGeneralCategoryTab.isdigit() and int(settingsRCCGeneralCategoryTab) <= len(config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_List'])):
+                                                                        case settingsRCCGeneralCategoryTab if (hasList and settingsRCCGeneralCategoryTab.isdigit() and int(settingsRCCGeneralCategoryTab) <= len(config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_List'])):
                                                                             cls()
                                                                             lableASCII()
                                                                             choice = int(settingsRCCGeneralCategoryTab) - 1
                                                                             whileTrueStage6 = True
                                                                             while whileTrueStage6:
-                                                                                categoryData = generalCategoryRCC(False, nameOfCategory_)
-                                                                                cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory, categoryData[choice][-2])}\n\n [{ANSI.FG.YELLOW}C{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(categoryData[int(settingsRCCGeneralCategoryTab) - 1][-1])} {MT_Check}\n [{ANSI.FG.RED}D{ANSI.FG.WHITE}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
+                                                                                categoryData = generalCategoryRCC(False, _nameOfCategory)
+                                                                                cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory, str(categoryData[choice][0]))}\n\n [{ANSI.FG.YELLOW}C{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(categoryData[int(settingsRCCGeneralCategoryTab) - 1][-1])} {MT_Check}\n [{ANSI.FG.RED}D{ANSI.FG.WHITE}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                                                                 settingsRCCGeneralCategoryContextMenuTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                                                                 match settingsRCCGeneralCategoryContextMenuTab:
                                                                                     case '0':
                                                                                         whileTrueStage6 = False
                                                                                     case 'C' | 'С':
-                                                                                        config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_List'][choice][-1] ^= True
+                                                                                        config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_List'][choice][-1] ^= True
                                                                                     case 'D' | 'В':
                                                                                         if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
                                                                                             removeLines(7)
                                                                                             whileTrueStage7 = True
                                                                                             while whileTrueStage7:
-                                                                                                cmdWriter(f' [{generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory, categoryData[choice][1])}\n\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃ {MT_Do_You_Sure}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.FG.WHITE}] ┃ {MT_I_Am_Sure}\n [{ANSI.FG.RED}N{ANSI.FG.WHITE}] ┃ {MT_Not_Yet}\n\n')
+                                                                                                cmdWriter(f' [{generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory, str(categoryData[choice][0]))}\n\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃ {MT_Do_You_Sure}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.FG.WHITE}] ┃ {MT_I_Am_Sure}\n [{ANSI.FG.RED}N{ANSI.FG.WHITE}] ┃ {MT_Not_Yet}\n\n')
                                                                                                 confirmTheAction = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                                                                                 match confirmTheAction:
                                                                                                     case 'Y' | 'Н':
-                                                                                                        removeItemFromCategory(config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_List'], categoryData[choice][-2])
+                                                                                                        removeItemFromCategory(config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_List'], categoryData[choice][-2])
                                                                                                         autoSaveConfig()
                                                                                                         whileTrueStage6 = False
                                                                                                         whileTrueStage7 = False
@@ -6981,7 +7051,7 @@ async def mainMenu() -> None:
                                                                                                 removeLines(8)
                                                                                         else:
                                                                                             whileTrueStage6 = False
-                                                                                            removeItemFromCategory(config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_List'], categoryData[choice][-2])
+                                                                                            removeItemFromCategory(config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_List'], categoryData[choice][-2])
                                                                                             autoSaveConfig()
                                                                                             removeLines(7)
                                                                                     case 'F' | 'А':
@@ -7001,35 +7071,37 @@ async def mainMenu() -> None:
                                                                                 listWithModes = outputModes[nameOfCategory]
                                                                                 cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory, MT_Output_Mode)}\n\n')
                                                                                 for index, mode in enumerate(listWithModes):
-                                                                                    cmdWriter(f' [{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_Output_Mode'] == mode)} {sortLabels[mode]}\n')
+                                                                                    cmdWriter(f' [{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_Output_Mode'] == mode)} {sortLabels[mode]}\n')
                                                                                 cmdWriter(f'  ┃\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Cancel}\n\n')
                                                                                 settingsRCCGeneralCategoryOutputMode = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ')
                                                                                 match settingsRCCGeneralCategoryOutputMode:
                                                                                     case '0':
                                                                                         whileTrueStage6 = False
                                                                                     case settingsRCCGeneralCategoryOutputMode if (settingsRCCGeneralCategoryOutputMode.isdigit() and int(settingsRCCGeneralCategoryOutputMode) <= len(listWithModes)):
-                                                                                        choice = int(settingsRCCGeneralCategoryOutputMode) - 1
-                                                                                        config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_Output_Mode'] =  listWithModes[choice]
+                                                                                        config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_Output_Mode'] = listWithModes[int(settingsRCCGeneralCategoryOutputMode) - 1]
                                                                                         autoSaveConfig()
 
                                                                                 removeLines(len(listWithModes) + 6)
                                                                         case ('A' | 'Ф') if hasList:
                                                                             cls()
                                                                             lableASCII()
-                                                                            cmdWriter(f' {MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory}\n\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Cancel}\n\n')
+                                                                            cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory)}\n\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Cancel}\n\n')
                                                                             settingsRCCGeneralCategoryItemAdd = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {sortLabels[nameOfCategory][1]}: ')
                                                                             match nameOfCategory:
-                                                                                case 'Custom Gamepasses': addCustomGamepassRoblox(     settingsRCCGeneralCategoryItemAdd, nameOfCategory)
-                                                                                case 'Favorite Places':   await addFavoritePlaceRoblox(settingsRCCGeneralCategoryItemAdd, nameOfCategory)
-                                                                                case 'Bundles':           await addBundleRoblox(       settingsRCCGeneralCategoryItemAdd, nameOfCategory)
+                                                                                case 'Custom Gamepasses':
+                                                                                    addCustomGamepassRoblox(settingsRCCGeneralCategoryItemAdd, nameOfCategory)
+                                                                                case 'Favorite Places' | 'Places Weekly Playtime':
+                                                                                    await addPlaceRoblox(settingsRCCGeneralCategoryItemAdd, nameOfCategory)
+                                                                                case 'Bundles':
+                                                                                    await addBundleRoblox(settingsRCCGeneralCategoryItemAdd, nameOfCategory)
                                                                         case ('+' | '=') if hasList:
-                                                                            for item in config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_List']:
+                                                                            for item in config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_List']:
                                                                                 item[-1] = True
                                                                         case ('-' | '_') if hasList:
-                                                                            for item in config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}_List']:
+                                                                            for item in config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_List']:
                                                                                 item[-1] = False
                                                                         case 'C' | 'С':
-                                                                            config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory_}'] ^= True
+                                                                            config['Roblox']['CookieChecker']['Main'][_nameOfCategory] ^= True
                                                                         case 'R' | 'К':
                                                                             loadConfig(configLoader['Loader']['Current_Config'])
                                                                     cls()
@@ -7058,7 +7130,10 @@ async def mainMenu() -> None:
                                                         'Gamepasses'        : MT_Sort_By_Gamepass_Name,
                                                         'Custom Gamepasses' : MT_Sort_By_Gamepass_Name,
                                                         'Badges'            : MT_Sort_By_Badge_Name,
-                                                        'Favorite Places'   : MT_Sort_By_Place_Name,
+                                                        **dict.fromkeys(
+                                                            ['Favorite Places', 'Places Weekly Playtime'],
+                                                            MT_Sort_By_Place_Name
+                                                        ),
                                                         'Bundles'           : MT_Sort_By_Bundle_Name,
                                                         'Groups Owned'      : MT_Sort_By_Group_Name,
                                                         'Roblox Badges'     : MT_Sort_By_Badge_Name
