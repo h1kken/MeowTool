@@ -71,6 +71,7 @@ ____________
                                                         [^] 2FA:                         ['MyAccountSecurityModel']['IsTwoStepEnabled']
                                                         [^] Pin:                         ['IsAccountPinEnabled']
                                                         [^] Above 13:                    ['UserAbove13']
+       [P] [C+]             Profile Information:       https://apis.roblox.com/profile-platform-api/v1/profiles/get
        [G] [C+]             Country Registration:      https://users.roblox.com/v1/users/authenticated/country-code                         > [JSON]['countryCode']
        [G] [C-]             Registration Date (D.M.Y): https://users.roblox.com/v1/users/{UserId}                                           > [JSON]['created']
        [G] [C+]             Robux:                     https://economy.roblox.com/v1/users/{UserId}/currency                                > [JSON]['robux']
@@ -85,6 +86,7 @@ ____________
        [G] [C=] [LIM] [CSR] Badges:                    https://badges.roblox.com/v1/users/{UserId}/badges                                   > ['name'],         ['id']              for item in [JSON]['data']
        [G] [C=]             Badges (Faster):           https://badges.roblox.com/v1/users/{UserId}/badges/awarded-dates?badgeIds=           >                   ['id']              for item in [JSON]['data']
        [G] [C-] [LIM] [CSR] Favorite Places:           https://games.roblox.com/v2/users/{UserId}/favorite/games                            > ['name'],         ['rootPlace']['id'] for item in [JSON]['data']
+       [G] [C+]             Places Weekly Playtime:    https://apis.roblox.com/parental-controls-api/v1/parental-controls/get-top-weekly-screentime-by-universe
        [G] [C=] [LIM] [CSR] Bundles:                   https://catalog.roblox.com/v1/users/{UserId}/bundles/1                               > ['name'],         ['id']              for item in [JSON]['data']
        [G] [C-]             Groups:                    https://groups.roblox.com/v1/users/{UserId}/groups/roles?includeLocked=true          > ['role']['rank'], ['group']['id']     for item in [JSON]['data']
        [G] [C+]             Inventory Privacy:         https://apis.roblox.com/user-settings-api/v1/user-settings/settings-and-options      > [JSON]['whoCanSeeMyInventory']['currentValue']
