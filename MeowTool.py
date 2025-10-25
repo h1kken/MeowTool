@@ -962,11 +962,7 @@ def convertDate(inputDate: str, outputFormat: str) -> str:
     logger.warning(f'< [CONVERT_DATE] > {MT_Conversion_Error}: (in): {inputDate}, (out): {outputFormat}')
     return 'error'
 
-<<<<<<< Updated upstream
-def formatDuration(ms: int, *, color: str = ANSI.FG.BLUE, sep: str = '. ', end: str = '.') -> str:
-=======
 def formatDuration(ms: int, *, inColor: str = ANSI.FG.BLUE, outColor: str = ANSI.FG.WHITE, sep: str = '. ', end: str = '.', outUnits: Literal['d', 'h', 'm', 's', 'ms', 'all'] = 'all') -> str:
->>>>>>> Stashed changes
     s, ms = divmod(ms, 1000)
     m, s  = divmod(s,  60)
     h, m  = divmod(m,  60)
@@ -3501,10 +3497,6 @@ async def getFavoritePlacesRoblox(cookies: dict, proxies: list[str] | None, user
         'Favorite Places': {
             'color': f'{ANSI.FG.CYAN}Fav. Places:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Fav. Places: {value}',
-<<<<<<< Updated upstream
-            'sort-list': favoritePlaces,
-            'sort-int': amountOfFoundFavoritePlaces
-=======
             'sort-int': amountOfFoundFavoritePlaces,
             'sort-list': favoritePlaces
         }
@@ -3538,7 +3530,6 @@ async def getPlacesWeeklyPlaytimeRoblox(cookies: dict, proxies: list[str] | None
             'no-color': f'Places Weekly Playtime: {valueNoColor}',
             'sort-int': len(placesWeeklyPlaytimeColor),
             'sort-list': list(placesWeeklyPlaytimeColor)
->>>>>>> Stashed changes
         }
     }
 
