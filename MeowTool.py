@@ -44,7 +44,6 @@ while True:
         import colorama; colorama.init()
         cls()
         cmdWriter('\n  \033[1m[\033[95m<3\033[37m] Заботимся о зависимостях... :3\r')
-        import psutil
         from tomlkit import TOMLDocument, table, document, nl, comment, loads, dumps
         from tomlkit.items import Table, Item, Array
         from aiohttp import TCPConnector, ClientSession, ClientResponse, ClientTimeout, ClientOSError, ServerDisconnectedError
@@ -885,7 +884,7 @@ def removeEmojies(string: str, *, replace: str = ' ') -> str: # Пробел, п
     return emoji.replace_emoji(string, replace=replace)
 
 def removeTwoSpaces(string: str) -> str:
-    return ' '.join(string.split(' '))
+    return ' '.join(string.split())
 
 def amountOfLines(*pathArgs: str) -> str:
     path = Path(*pathArgs)
@@ -897,7 +896,7 @@ def amountOfLines(*pathArgs: str) -> str:
             amount = sum(1 for _ in file)
         return f'{amount} line{'s' if amount != 1 else ''}'
     except Exception as e:
-        logger.exception(f'< [amountOfLines] > {MT_Error}: {e} :<')
+        logger.exception(f'< [amountOfLines] > {MT_Error}: {e} :<', force=True)
         return 'error'
 
 def waitingInput() -> None:
@@ -959,7 +958,7 @@ def convertDate(inputDate: str, outputFormat: str) -> str:
         except ValueError:
             continue
 
-    logger.warning(f'< [CONVERT_DATE] > {MT_Conversion_Error}: (in): {inputDate}, (out): {outputFormat}')
+    logger.warning(f'< [CONVERT_DATE] > {MT_Conversion_Error}: (in): {inputDate}, (out): {outputFormat}', force=True)
     return 'error'
 
 def formatDuration(ms: int, *, inColor: str = ANSI.FG.BLUE, outColor: str = ANSI.FG.WHITE, sep: str = '. ', end: str = '.', outUnits: Literal['d', 'h', 'm', 's', 'ms', 'all'] = 'all') -> str:
@@ -1010,7 +1009,7 @@ def openFile(path: Path, *, highlightFile: bool = False, filename: str = '') -> 
         subprocess.run([command, path.parent])
 
 async def closeProgram() -> None:
-    logger.info(f'{MT_We_Out_Now}...')
+    logger.info(f'{MT_We_Out_Now}...', force=True)
     cls()
     lableASCII()
     cmdWriter(f'{'' if (config['General']['Show_Lable_MeowTool'] or config['General']['Show_Lable_by_h1kken']) else ' '} [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Bye}... *{MT_Eep.lower()}* :<')
@@ -1055,7 +1054,7 @@ async def downloadPythonVersion() -> None:
     except (SystemExit, KeyboardInterrupt, EOFError):
         raise
     except Exception as e:
-        logger.exception(f' < [DOWNLOAD_PYTHON_VERSION] > {MT_Unknown_Error}: {e}... :<')
+        logger.exception(f' < [DOWNLOAD_PYTHON_VERSION] > {MT_Unknown_Error}: {e}... :<', force=True)
         while True:
             cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Aww_Couldnt_Check_Maybe_The_Internets_Napping}... {MT_What_Now} :3\n\n  [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] {MT_Lets_Check_It_Again}\n  [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] {MT_Continue_Launching}\n\n')
             couldNotDownloadUpdate = input(f'  [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ')
@@ -1102,7 +1101,7 @@ async def checkUpdates() -> None:
                         case _:
                             removeLines(10)
         except Exception as e:
-            logger.exception(f'< [CHECK_UPDATES] > {MT_Unknown_Error}: {e} :<')
+            logger.exception(f'< [CHECK_UPDATES] > {MT_Unknown_Error}: {e} :<', force=True)
             while True:
                 cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Aww_Couldnt_Check_Maybe_The_Internets_Napping}. {MT_What_Now} :3{spaces}\n\n  [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] {MT_Lets_Check_It_Again}\n  [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] {MT_Continue_Launching}\n\n')
                 couldNotCheckUpdate = input(f'  [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ')
@@ -1127,7 +1126,7 @@ def makeArchive(dateString: str, *pathArgs: str) -> None:
                     if filePath.is_file():
                         zipf.write(filePath, filePath.relative_to(path))
         except Exception as e:
-            logger.exception(f'< [MAKE_ARCHIVE] > {MT_Critical_Error}: {e}... :<')
+            logger.exception(f'< [MAKE_ARCHIVE] > {MT_Critical_Error}: {e}... :<', force=True)
 
 async def sendMessageTelegramBot(text: str = None, *pathArgs: str) -> None:
     if not config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot']:
@@ -1174,7 +1173,7 @@ async def sendMessageTelegramBot(text: str = None, *pathArgs: str) -> None:
             )
         }
         if type(e) not in ERRORS:
-            logger.exception(f'< [SEND_MESSAGE_TELEGRAM_BOT] > {MT_Unknown_Error}: {e}... :<')
+            logger.exception(f'< [SEND_MESSAGE_TELEGRAM_BOT] > {MT_Unknown_Error}: {e}... :<', force=True)
         cmdWriter(f'\r [{ANSI.FG.RED}{MT_Telegram[1]}{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.FG.WHITE} | {ERRORS.get(type(e), f'{MT_Unknown_Error}: {e}')}... :<\n')
     finally:
         cmdFlusher()
@@ -1248,7 +1247,7 @@ def sendMessageDiscordWebhook(test: bool = False, text: str = None, filename: st
             )
         }
         if type(e) not in ERRORS:
-            logger.exception(f'< [SEND_MESSAGE_DISCORD_WEBHOOK] > {MT_Unknown_Error}: {e}... :<')
+            logger.exception(f'< [SEND_MESSAGE_DISCORD_WEBHOOK] > {MT_Unknown_Error}: {e}... :<', force=True)
         cmdWriter(f'\r [{ANSI.FG.RED}{MT_Discord[1]}{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.FG.WHITE} | {ERRORS.get(type(e), f'{MT_Unknown_Error}: {e}')}... :<\n')
     finally:
         cmdFlusher()
@@ -1280,14 +1279,13 @@ def getProxiesFromFile(proxiesPath: Path, amountOfRemoveLines: int, visualPath: 
         if not proxies:
             raise FileNotFoundError
 
-        if configLoader['Debugger']['Debug']:
-            logger.debug(f'< [GET_PROXIES_FROM_FILE] > Proxies found: {len(proxies)}')
+        logger.debug(f'< [GET_PROXIES_FROM_FILE] > Proxies found: {len(proxies)}')
 
         return list(proxies)
     except FileNotFoundError:
         return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Proxy_Was_Found, visualPath)
     except Exception as e:
-        logger.exception(f'< [GET_PROXIES_FROM_FILE] > {MT_Critical_Error}: {e}... :<')
+        logger.exception(f'< [GET_PROXIES_FROM_FILE] > {MT_Critical_Error}: {e}... :<', force=True)
 
 # Запросы
 
@@ -1302,20 +1300,7 @@ async def sendGetRequest(url: str, responseContent: Literal['STATUS', 'HEADERS',
                 case 'JSON'    : return await response.json()
                 case _         : return response
         else:
-            logger.warning(f'< [GET_REQUEST] > [{response.status}] {url}')
-
-# Процессы
-
-# async def taskkill(pid: int):
-#     if pid in subprocess.:
-#         subprocess.run(
-#             ['taskkill', '/f', '/pid', processes[user_id]],
-#             stdout=subprocess.DEVNULL,
-#             stderr=subprocess.DEVNULL
-#         )
-#         logger.info(f'[{processes[user_id]}] Убили процесс с ключом {user_id}')
-#     else:
-#         logger.warning(f'[?] Не удалось убить процесс с ключом {user_id} так как его не существует')
+            logger.warning(f'< [GET_REQUEST] > [{response.status}] {url}', force=True)
 
 ### Proxy Checker
 
@@ -1328,7 +1313,7 @@ async def checkProxy(workProtocols: dict[str, None], proxy: str, protocol: str, 
                         workProtocols[protocol] = 'good'
                         return
                     else:
-                        logger.debug(f'< [CHECK_PROXY] > {MT_Try}: {retry} | [{response.status}] {proxy}')
+                        logger.debug(f'< [CHECK_PROXY] > {MT_Try}: {retry} | [{response.status}] {proxy}', force=True)
                         if retry == 3:
                             raise ProxyError
         except (ProxyError, ClientOSError, asyncio.exceptions.CancelledError):
@@ -1338,7 +1323,7 @@ async def checkProxy(workProtocols: dict[str, None], proxy: str, protocol: str, 
             workProtocols[protocol] = 'timeout'
             return
         except Exception as e:
-            logger.exception(f'< [CHECK_PROXY] > {MT_Critical_Error}: {e}... :<')
+            logger.exception(f'< [CHECK_PROXY] > {MT_Critical_Error}: {e}... :<', force=True)
 
 async def proxyChecker(file: str) -> None:
     cls()
@@ -1485,14 +1470,13 @@ def getProxiesFromFileRoblox(isUseProxy: bool, proxiesPath: Path, amountOfRemove
         if not proxies:
             raise FileNotFoundError
 
-        if configLoader['Debugger']['Debug']:
-            logger.debug(f'< [GET_PROXIES_FROM_FILE_ROBLOX] > Proxies found: {len(proxies)}')
+        logger.debug(f'< [GET_PROXIES_FROM_FILE_ROBLOX] > Proxies found: {len(proxies)}')
             
         return list(proxies)
     except FileNotFoundError:
         return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Proxy_Was_Found, generateVisualPath(*visualPathArgs))
     except Exception as e:
-        logger.exception(f'< [GET_PROXIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}... :<')
+        logger.exception(f'< [GET_PROXIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}... :<', force=True)
 
 def getCookiesFromFileRoblox(cookiesPath: Path, amountOfRemoveLines: int, visualPath: str) -> set[str] | None:
     symbolsBetweenWarningAndCookie = str(config['Roblox']['General']['Symbols_Between_Warning_And_Cookie']).strip() if config['Roblox']['General']['Add_Symbols_Between_Warning_And_Cookie'] else ''
@@ -1514,13 +1498,13 @@ def getCookiesFromFileRoblox(cookiesPath: Path, amountOfRemoveLines: int, visual
         if not cookiesSet:
             raise FileNotFoundError
 
-        if configLoader['Debugger']['Debug']:
-            logger.debug(f'< [GET_COOKIES_FROM_FILE_ROBLOX] > Cookies found: {len(cookiesSet)}')
+        logger.debug(f'< [GET_COOKIES_FROM_FILE_ROBLOX] > Cookies found: {len(cookiesSet)}')
+
         return cookiesSet
     except FileNotFoundError:
         return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Cookie_Was_Found, visualPath)
     except Exception as e:
-        logger.exception(f'< [GET_COOKIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}... :<')
+        logger.exception(f'< [GET_COOKIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}... :<', force=True)
 
 def getConnectorRoblox(proxies: list[str] | None = None) -> TCPConnector | ProxyConnector:
     if not (config['Roblox']['General']['Proxy']['Use_Proxy'] and proxies):
@@ -2957,7 +2941,7 @@ async def sendGetRequestRoblox(
     cookies: dict | None = None,
     proxies: list[str] | None = None,
     allow_redirects: bool = False,
-    timeout: int = 10
+    timeout: int = 5
 ) -> dict | None:
     internalServerErrorTry = 0
     while True:
@@ -2980,34 +2964,31 @@ async def sendGetRequestRoblox(
                         raise AccountBanned
                     case 500:
                         internalServerErrorTry += 1
-                        if configLoader['Debugger']['Debug']:
-                            logger.debug(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [500 | {MT_Try}: {internalServerErrorTry}] {url}')
+                        logger.debug(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [500 | {MT_Try}: {internalServerErrorTry}] {url}')
                         if internalServerErrorTry >= 3:
                             return
-                    case _:
-                        if configLoader['Debugger']['Debug']:
-                            logger.debug(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [{response.status}] {url}')
+                    # case _:
+                    #     logger.debug(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [{response.status}] {url}')
 
-                await asyncio.sleep(10)
+                await asyncio.sleep(5)
         except (InvalidCookie, AccountBanned):
             raise
-        except (
-            asyncio.TimeoutError,
-            asyncio.exceptions.CancelledError,
-            ClientOSError,
-            ConnectionResetError,
-            ServerDisconnectedError,
-            TransferEncodingError,
-            ClientPayloadError,
-            SocketTimeoutError,
-            ProxyError
-        ) as e:
-            if configLoader['Debugger']['Exception']:
-                logger.exception(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Error}: {e}')
-            await asyncio.sleep(10)
+        # except (
+        #     asyncio.TimeoutError,
+        #     asyncio.exceptions.CancelledError,
+        #     ClientOSError,
+        #     ConnectionResetError,
+        #     ServerDisconnectedError,
+        #     TransferEncodingError,
+        #     ClientPayloadError,
+        #     SocketTimeoutError,
+        #     ProxyError
+        # ) as e:
+        #     logger.exception(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Error}: {e}')
+        #     await asyncio.sleep(10)
         except Exception as e:
             logger.exception(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Critical_Error}: {e}... :<')
-            await asyncio.sleep(10)
+            await asyncio.sleep(5)
 
 async def sendPostRequestRoblox(
     url: str,
@@ -3035,29 +3016,28 @@ async def sendPostRequestRoblox(
                         return response
                     case 401:
                         raise InvalidCookie
-                    case _:
-                        if configLoader['Debugger']['Debug']:
-                            logger.debug(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [{response.status}] {url}')
-                        await asyncio.sleep(10)
+                    # case _:
+                    #     logger.debug(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [{response.status}] {url}')
+                    
+                await asyncio.sleep(5)
         except InvalidCookie:
             raise
-        except (
-            asyncio.TimeoutError,
-            asyncio.exceptions.CancelledError,
-            ClientOSError,
-            ConnectionResetError,
-            ServerDisconnectedError,
-            TransferEncodingError,
-            ClientPayloadError,
-            SocketTimeoutError,
-            ProxyError
-        ) as e:
-            if configLoader['Debugger']['Exception']:
-                logger.exception(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Error}: {e}')
-            await asyncio.sleep(10)
+        # except (
+        #     asyncio.TimeoutError,
+        #     asyncio.exceptions.CancelledError,
+        #     ClientOSError,
+        #     ConnectionResetError,
+        #     ServerDisconnectedError,
+        #     TransferEncodingError,
+        #     ClientPayloadError,
+        #     SocketTimeoutError,
+        #     ProxyError
+        # ) as e:
+        #     logger.exception(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Error}: {e}')
+        #     await asyncio.sleep(5)
         except Exception as e:
             logger.exception(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Critical_Error}: {e}... :<')
-            await asyncio.sleep(10)
+            await asyncio.sleep(5)
 
 ### Создание глобальных чек-листов для поиска
 
@@ -3077,8 +3057,7 @@ def createGlobalCheckListGamepassesRCC() -> None: # -> dict[str, list[str]]
             for gamepass in config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlace}_Gamepasses']:
                 if gamepass[2]:
                     checkListGamepasses[str(gamepass[0])] = {'PlaceName': removeSpecialChars(customPlaceData[1][0]), 'GamepassName': removeSpecialChars(gamepass[1])}
-    if configLoader['Debugger']['Debug']:
-        logger.debug(f'< [checkListGamepasses] > Generated: {checkListGamepasses}')
+    logger.debug(f'< [checkListGamepasses] > Generated: {checkListGamepasses}')
 
 def createGlobalCheckListBadgesRCC() -> None: # -> dict[str, list[str]]
     if not config['Roblox']['CookieChecker']['Main']['Badges']:
@@ -3096,40 +3075,35 @@ def createGlobalCheckListBadgesRCC() -> None: # -> dict[str, list[str]]
             for badge in config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlace}_Badges']:
                 if badge[2]:
                     checkListBadges[str(badge[0])] = {'PlaceName': removeSpecialChars(customPlaceData[1][0]), 'BadgeName': removeSpecialChars(badge[1])}
-    if configLoader['Debugger']['Debug']:
-        logger.debug(f'< [checkListBadges] > Generated: {checkListBadges}')
+    logger.debug(f'< [checkListBadges] > Generated: {checkListBadges}')
 
 def createGlobalCheckListCustomGamepassesRCC() -> None: # -> dict[str, int]
     if not config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']:
         return
     global checkListCustomGamepasses
     checkListCustomGamepasses = {customGamepass[0]: 0 for customGamepass in config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_List'] if customGamepass[1]}
-    if configLoader['Debugger']['Debug']:
-        logger.debug(f'< [checkListCustomGamepasses] > Generated: {checkListCustomGamepasses}')
+    logger.debug(f'< [checkListCustomGamepasses] > Generated: {checkListCustomGamepasses}')
 
 def createGlobalCheckListFavoritePlacesRCC() -> None: # -> dict[str, str]
     if not config['Roblox']['CookieChecker']['Main']['Favorite_Places']:
         return
     global checkListFavoritePlaces
     checkListFavoritePlaces = {str(favoritePlace[0]): removeSpecialChars(favoritePlace[1]) for favoritePlace in config['Roblox']['CookieChecker']['Main']['Favorite_Places_List'] if favoritePlace[2]}
-    if configLoader['Debugger']['Debug']:
-        logger.debug(f'< [checkListFavoritePlaces] > Generated: {checkListFavoritePlaces}')
+    logger.debug(f'< [checkListFavoritePlaces] > Generated: {checkListFavoritePlaces}')
 
 def createGlobalCheckListPlacesWeeklyPlaytime() -> None: # -> dict[str, str]
     if not config['Roblox']['CookieChecker']['Main']['Places_Weekly_Playtime']:
         return
     global checkListPlacesWeeklyPlaytime
     checkListPlacesWeeklyPlaytime = {str(place[1]): place[2] for place in config['Roblox']['CookieChecker']['Main']['Places_Weekly_Playtime_List'] if place[-1]}
-    if configLoader['Debugger']['Debug']:
-        logger.debug(f'< [checkListPlacesWeeklyPlaytime] > Generated: {checkListPlacesWeeklyPlaytime}')
+    logger.debug(f'< [checkListPlacesWeeklyPlaytime] > Generated: {checkListPlacesWeeklyPlaytime}')
 
 def createGlobalCheckListBundlesRCC() -> None: # -> dict[str, str]
     if not config['Roblox']['CookieChecker']['Main']['Bundles']:
         return
     global checkListBundles
     checkListBundles = {str(bundle[0]): removeSpecialChars(bundle[1]) for bundle in config['Roblox']['CookieChecker']['Main']['Bundles_List'] if bundle[2]}
-    if configLoader['Debugger']['Debug']:
-        logger.debug(f'< [checkListBundles] > Generated: {checkListBundles}')
+    logger.debug(f'< [checkListBundles] > Generated: {checkListBundles}')
 
 ### Поиск данных
 
@@ -3811,7 +3785,7 @@ async def getPlaceVisitsRoblox(data: dict) -> dict[str, dict | None]:
 def convertAgeGroupRoblox(text: str) -> str:
     match = AGE_GROUP_PATTERN.search(text)
     if not match:
-        logger.warning(f'< [convertAgeGroupRoblox] > Can\'t convert age: {text}')
+        logger.warning(f'< [convertAgeGroupRoblox] > Can\'t convert age: {text}', force=True)
         return 'UNK'
     
     direction, age, checked = match.groups()
@@ -4045,7 +4019,7 @@ async def sortingDataRoblox(locker: asyncio.Lock, path: Path, category: str, sor
             sortFromIntDataRoblox(locker, path, allDataString, sortOptions[category]['from'], simpleData),
             sortFromToIntDataRoblox(locker, path, allDataString, sortOptions[category]['fromTo'], simpleData)
         )
-    elif dataType is str:
+    elif dataType is str and simpleData != 'No':
         await sortStrDataRoblox(locker, path, allDataString, simpleData)
     elif dataType is dict:
         await asyncio.gather(
@@ -4198,7 +4172,7 @@ async def robloxCookieChecker(file: str) -> None:
     if isOutputTotal or isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
         totalDataCurrent = {}
         for key in ['Robux', 'Billing', 'Pending', 'Donate (1 Year)', 'Donate (All Time)', 'Rap', 'Card', 'Premium', 'Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Bundles', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds', 'Place Visits']:
-            mainValue, percentValue = [0, f'{ANSI.FG.GRAY}| 0 | 0.0% |'] if config['Roblox']['CookieChecker']['Main']['_'.join(re.sub(r'[()]', '', key).split(' '))] else [f'{ANSI.FG.GRAY}Off', '']
+            mainValue, percentValue = [0, f'{ANSI.FG.GRAY}| 0 | 0.0% |'] if config['Roblox']['CookieChecker']['Main']['_'.join(re.sub(r'[()]', '', key).split())] else [f'{ANSI.FG.GRAY}Off', '']
             totalDataCurrent[key] = mainValue
             if key in percentCategoriesList:
                 totalDataCurrent[f'{key} %'] = percentValue
@@ -4282,9 +4256,11 @@ async def robloxCookieChecker(file: str) -> None:
                     }
                 else:
                     sortOptions[category] = {'sort': False}
-        else:
-            for id, name in {'192': 'Korblox', '201': 'Headless'}.items():
-                sortOptions[name] = {'sort': True if (sortOptions['Bundles']['sort'] and id in checkListBundles) else False}
+
+        for id, name in {'192': 'Korblox', '201': 'Headless'}.items():
+            sortOptions[name] = {'sort': True if (sortOptions['Bundles']['sort'] and id in checkListBundles) else False}
+
+        logger.debug(f'< [sortOptions] > Generated: {sortOptions}')
 
     categoriesNames = {
         'ID'                        : 'ID',
@@ -4479,7 +4455,7 @@ async def robloxCookieChecker(file: str) -> None:
                         await file.write(f'ID: {resultsRCC} | Cookie: {cookie}\n')
                     consoleOutputHandlerRCC(f'\r [{ANSI.FG.YELLOW}>{ANSI.FG.WHITE}] {ANSI.FG.YELLOW}{MT_Account_Duplicate}{ANSI.FG.WHITE}\n')
             except Exception:
-                logger.exception(f'< [ROBLOX_COOKIE_CHECKER] > {MT_Critical_Error}... :<')
+                logger.exception(f'< [ROBLOX_COOKIE_CHECKER] > {MT_Critical_Error}... :<', force=True)
 
     savePath.mkdir(parents=True, exist_ok=True)
     cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}.txt{ANSI.DECOR.UNDERLINEOFF}\':\n')
@@ -4521,7 +4497,7 @@ def generalCategoryRCC(printItems: bool = False, categoryName = '') -> list:
     if printItems:
         length = len(str(len(noDuplicatedArrays))) + 12
         for index, item in enumerate(noDuplicatedArrays):
-            cmdWriter(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {enabledOrDisabledOption(item[-1])} {item[-2]}\n')
+            cmdWriter(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {enabledOrDisabledOption(item[-1])} {removeEmojies(item[-2])}\n')
     return noDuplicatedArrays
 
 def removeItemFromCategory(category: list, remove: str | int):
@@ -5411,7 +5387,7 @@ async def robloxTransactionAnalysis(file: str) -> None:
                         await file.write(f'{MT_Id}: {userId} | {MT_Cookie}: {cookie}\n')
                     consoleOutputHandlerRTA('duplicates', f'\r [{ANSI.FG.YELLOW}>{ANSI.FG.WHITE}] {ANSI.FG.YELLOW}{MT_Account_Duplicate}{ANSI.FG.WHITE}\n')
             except Exception:
-                logger.exception(f'< [ROBLOX_TRANSACTION_ANALYSIS] > {MT_Critical_Error}... :<')
+                logger.exception(f'< [ROBLOX_TRANSACTION_ANALYSIS] > {MT_Critical_Error}... :<', force=True)
 
     savePath.mkdir(parents=True, exist_ok=True)
     cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}.txt{ANSI.DECOR.UNDERLINEOFF}\':\n')
@@ -5434,32 +5410,6 @@ async def robloxTransactionAnalysis(file: str) -> None:
         cmdWriter('\n')
 
     waitingInput()
-
-### Roblox Time Booster
-
-def heartbeatRTB(data: dict) -> dict:
-    if not (data.get('pid') and data.get('name')):
-        return False
-    
-    
-
-# def convertFileToJsonRTB(file: str, fields: dict):
-#     cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Time Booster', f'{file}.txt'), 2, generateVisualPath(MT_Roblox, MT_Time_Booster))
-#     if not cookiesFromFile:
-#         return
-
-#     result = []
-#     for cookie in cookiesFromFile:
-#         for field in fields.items():
-#             result.append(
-                
-#             )
-            
-#     with open(Path('Roblox', 'Time Booster', f'{file}.json')) as f:
-#         json.dumps(result, f, ensure_ascii=False)
-
-async def robloxTimeBooster(file: str) -> None:
-    ...
 
 ### Другие функции
 
@@ -5535,7 +5485,7 @@ async def autoFindChatID() -> None:
     except TelegramNetworkError:
         return errorOrCorrectHandler(True, 2, f'{MT_Possibly_The_Internet_Is_Unstable}... :<', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
     except Exception as e:
-        logger.exception(f' < [TELEGRAM_BOT_AUTO_FIND_CHAT_ID] > {MT_Unknown_Error}: {e}... :<')
+        logger.exception(f' < [TELEGRAM_BOT_AUTO_FIND_CHAT_ID] > {MT_Unknown_Error}: {e}... :<', force=True)
         return errorOrCorrectHandler(True, 2, f'{MT_Unknown_Error}: {e}', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
 
 async def testMeowTelegramBot() -> None:
@@ -5629,7 +5579,7 @@ def addCustomGamepassRoblox(customGamepassName: str, nameOfCategory: str) -> Non
 async def addPlaceRoblox(placeId: str, nameOfCategory: Literal['Favorite Places', 'Places Weekly Playtime']) -> None:
     if placeId == '0':
         return
-    _nameOfCategory = '_'.join(nameOfCategory.split(' '))
+    _nameOfCategory = '_'.join(nameOfCategory.split())
     if checkExist(placeId, _nameOfCategory):
         return errorOrCorrectHandler(True, 5, MT_Place_With_This_ID_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
@@ -5639,17 +5589,18 @@ async def addPlaceRoblox(placeId: str, nameOfCategory: Literal['Favorite Places'
             return errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
         placeName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
+        cleanPlaceName = removeTwoSpaces(removeSpecialChars(removeBracketsAndIn(removeEmojies(placeName), round=True, square=True)))
 
         match nameOfCategory:
             case 'Favorite Places':
-                placeData = [int(placeId), placeName, False]
+                placeData = [int(placeId), cleanPlaceName, False]
             case 'Places Weekly Playtime':
-                placeData = [int(placeId), int(universeId), placeName, False]
+                placeData = [int(placeId), int(universeId), cleanPlaceName, False]
         
         config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_List'].append(placeData)
         autoSaveConfig()
     except Exception as e:
-        logger.exception(f'< [ROBLOX_ADD_{_nameOfCategory.upper()}] > {MT_Unknown_Error}: {e}... :<')
+        logger.exception(f'< [ROBLOX_ADD_{_nameOfCategory.upper()}] > {MT_Unknown_Error}: {e}... :<', force=True)
         return errorOrCorrectHandler(True, 5, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
 async def addBundleRoblox(bundleId: str, nameOfCategory: Literal['Bundles']) -> None:
@@ -5670,7 +5621,7 @@ async def addBundleRoblox(bundleId: str, nameOfCategory: Literal['Bundles']) -> 
             case _:
                 return errorOrCorrectHandler(True, 5, f'{MT_Unknown_Server_Response_Code}: {response.status}', generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
     except Exception as e:
-        logger.exception(f'< [ROBLOX_ADD_BUNDLE] > {MT_Unknown_Error}: {e}... :<')
+        logger.exception(f'< [ROBLOX_ADD_BUNDLE] > {MT_Unknown_Error}: {e}... :<', force=True)
         return errorOrCorrectHandler(True, 5, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
 # Настройки > Роблокс > Куки чекер > Сортировка
@@ -5690,9 +5641,9 @@ def addSortParameterFrom(sortValue: int | str, configRCCSorting: dict[str, dict[
 def addSortParameterFromTo(sortValue: str, configRCCSorting: dict[str, dict[str, dict[str, list[list]]]], categoryConfigName: str, categoryMenuName: str) -> None:
     if sortValue == '0':
         return
-    if len(sortValue.split(' ')) != 2:
+    if len(sortValue.split()) != 2:
         return errorOrCorrectHandler(True, 5, MT_Specify_Two_Numbers_Separated_By_A_Space, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
-    valueFrom, valueTo = sortValue.split(' ')
+    valueFrom, valueTo = sortValue.split()
     if len(valueFrom) > 25 or len(valueTo) > 25:
         return errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Parameter.format('25'), generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
     if not (valueFrom.isdigit() and valueTo.isdigit()):
@@ -5728,7 +5679,7 @@ async def addCustomPlaceRoblox(customPlaceId: str):
 
         normalPlaceName = removeEmojies(removeBracketsAndIn(customPlaceName, round=True, square=True)).replace('"', '').strip()
         if normalPlaceName:
-            abbreviatedPlaceName = ''.join(word[0] for word in normalPlaceName.split(' '))
+            abbreviatedPlaceName = ''.join(word[0] for word in normalPlaceName.split())
         else:
             normalPlaceName      = f'Unknown_{customPlaceId}'
             abbreviatedPlaceName = f'UNK_{customPlaceId[:5]}'
@@ -5739,7 +5690,7 @@ async def addCustomPlaceRoblox(customPlaceId: str):
         if customPlaceBadgesData:     config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlaceId}_Badges']     = [[badge['id'],    str(badge['name']).strip(),    False] for badge    in customPlaceBadgesData]
         autoSaveConfig()
     except Exception as e:
-        logger.exception(f' < [ADD_CUSTOM_PLACE_RCC] > {MT_Unknown_Error}: {e}... :<')
+        logger.exception(f' < [ADD_CUSTOM_PLACE_RCC] > {MT_Unknown_Error}: {e}... :<', force=True)
         return errorOrCorrectHandler(True, 5, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
 
 # Настройки > Роблокс > Анализ транзакций > Плейсы
@@ -5785,8 +5736,8 @@ async def parsePlaceGamepassesOrBadgesRoblox(info: dict[str, str], placeId: str,
         if not response:
             return errorOrCorrectHandler(True, 5, info['errorHasNo'], info['visualPath'])
 
-        gameName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
-        cleanPlaceName = removeTwoSpaces(removeSpecialChars(removeBracketsAndIn(removeEmojies(gameName, replace=''), round=True, square=True))).strip()
+        placeName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
+        cleanPlaceName = removeTwoSpaces(removeSpecialChars(removeBracketsAndIn(removeEmojies(placeName, replace=''), round=True, square=True))).strip()
 
         removeLines(3)
         cmdWriter(f' [{ANSI.FG.GREEN}>{ANSI.FG.WHITE}] {MT_Found_Data_On} {placeId} ({cleanPlaceName}):\n\n')
@@ -5802,8 +5753,8 @@ async def parsePlaceGamepassesOrBadgesRoblox(info: dict[str, str], placeId: str,
 
         parserPath = Path('Roblox', 'Misc', f'{info['category']} parser')
         parserPath.mkdir(parents=True, exist_ok=True)
-        open(parserPath / f'{placeId} ({cleanPlaceName}).txt', 'w', encoding='utf-8').write(f'\n  Meow :3\n\n  {MT_Place_ID}: {placeId}\n  {MT_Place_Name}: {gameName}\n  {MT_Place_Link}: https://www.roblox.com/games/{placeId}\n\n  [*] {info['label']}\n{columnar(parsedItems, columnarHeaders, no_borders=True)}')
-        cmdWriter(f'  {MT_Place_ID}: {placeId}\n  {MT_Place_Name}: {gameName}\n  {MT_Place_Link}: https://www.roblox.com/games/{placeId}\n\n  [{ANSI.FG.GREEN}*{ANSI.FG.WHITE}] {ANSI.DECOR.UNDERLINEON}{info['label']}{ANSI.DECOR.UNDERLINEOFF}\n{columnar(parsedItems, columnarHeaders, no_borders=True)}\n [{ANSI.FG.CYAN}>{ANSI.FG.WHITE}] {MT_The_Data_Is_Saved_In}: Roblox\\Misc\\{info['category']} parser\\{placeId} ({cleanPlaceName}).txt\n\n')
+        open(parserPath / f'{placeId} ({cleanPlaceName}).txt', 'w', encoding='utf-8').write(f'\n  Meow :3\n\n  {MT_Place_ID}: {placeId}\n  {MT_Place_Name}: {placeName}\n  {MT_Place_Link}: https://www.roblox.com/games/{placeId}\n\n  [*] {info['label']}\n{columnar(parsedItems, columnarHeaders, no_borders=True)}')
+        cmdWriter(f'  {MT_Place_ID}: {placeId}\n  {MT_Place_Name}: {placeName}\n  {MT_Place_Link}: https://www.roblox.com/games/{placeId}\n\n  [{ANSI.FG.GREEN}*{ANSI.FG.WHITE}] {ANSI.DECOR.UNDERLINEON}{info['label']}{ANSI.DECOR.UNDERLINEOFF}\n{columnar(parsedItems, columnarHeaders, no_borders=True)}\n [{ANSI.FG.CYAN}>{ANSI.FG.WHITE}] {MT_The_Data_Is_Saved_In}: Roblox\\Misc\\{info['category']} parser\\{placeId} ({cleanPlaceName}).txt\n\n')
         waitingInput()
     except Exception:
         return errorOrCorrectHandler(True, 5, MT_Unknown_Error, info['visualPath'])
@@ -5858,9 +5809,9 @@ def defaultConfigLoaderSettings() -> TOMLDocument:
     # Debugger
     configLoader.add('Debugger', table())
     configLoader['Debugger']['Debug'] = False
-    # configLoader['Debugger']['Info'] = False
-    # configLoader['Debugger']['Warning'] = False
-    # configLoader['Debugger']['Error'] = False
+    configLoader['Debugger']['Info'] = False
+    configLoader['Debugger']['Warning'] = False
+    configLoader['Debugger']['Error'] = False
     configLoader['Debugger']['Exception'] = False
 
     # Advanced
@@ -5885,7 +5836,7 @@ def loadConfigLoader() -> None:
         cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Checking_Integrity_Config_Loader}... :3{S}\r')
         validateConfigSettings(configLoader, defaultConfigLoaderSettings())
     except Exception as e:
-        logger.exception(f'< [LOAD_CONFIG_LOADER] > {MT_Critical_Error}: {e}... :<')
+        logger.exception(f'< [LOAD_CONFIG_LOADER] > {MT_Critical_Error}: {e}... :<', force=True)
         configLoader = defaultConfigLoaderSettings()
         autoSaveConfigLoader()
 
@@ -5894,7 +5845,7 @@ def getConfigOnLoad() -> str:
         configName = str(configLoader['Loader']['Load_Config'])
         return configName if configName in configFiles() else 'default'
     except Exception as e:
-        logger.exception(f'< [GET_CONFIG_ON_LOAD] > {MT_Critical_Error}: {e}... :<')
+        logger.exception(f'< [GET_CONFIG_ON_LOAD] > {MT_Critical_Error}: {e}... :<', force=True)
         return 'default'
 
 def defaultConfigSettings() -> TOMLDocument:
@@ -6285,20 +6236,25 @@ class Logger:
             
         self._logger.info(f'{MT_Eared_Assistant_Is_Watching}... :3')
     
-    def debug(self, message: str = ''):
-        self._logger.debug(message)
+    def debug(self, message: str = '', *, force: bool = False):
+        if force or configLoader['Debugger']['Debug']:
+            self._logger.debug(message)
     
-    def info(self, message: str = ''):
-        self._logger.info(message)
+    def info(self, message: str = '', *, force: bool = False):
+        if force or configLoader['Debugger']['Info']:
+            self._logger.info(message)
     
-    def warning(self, message: str = ''):
-        self._logger.warning(message)
+    def warning(self, message: str = '', *, force: bool = False):
+        if force or configLoader['Debugger']['Warning']:
+            self._logger.warning(message)
     
-    def error(self, message: str = ''):
-        self._logger.error(message)
+    def error(self, message: str = '', *, force: bool = False):
+        if force or configLoader['Debugger']['Error']:
+            self._logger.error(message)
     
-    def exception(self, message: str = ''):
-        self._logger.exception(message)
+    def exception(self, message: str = '', *, force: bool = False):
+        if force or configLoader['Debugger']['Exception']:
+            self._logger.exception(message)
 
 ### Меню
 
@@ -6979,7 +6935,7 @@ async def mainMenu() -> None:
                                                             # Gamepasses | Custom Gamepasses | Badges | Favorite Places | Places Weekly Playtime | Bundles | Groups Owned | Roblox Badges
                                                             case settingsRCCMainTab if (settingsRCCMainTab.isdigit() and int(settingsRCCMainTab) <= len(cookieData.listOfCookieData) and cookieData.listOfCookieData[int(settingsRCCMainTab) - 1][0] in ('Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Places Weekly Playtime', 'Bundles', 'Groups Owned', 'Roblox Badges')):
                                                                 nameOfCategory  = str(cookieData.listOfCookieData[int(settingsRCCMainTab) - 1][0])
-                                                                _nameOfCategory = '_'.join(nameOfCategory.split(' '))
+                                                                _nameOfCategory = '_'.join(nameOfCategory.split())
                                                                 sortLabels = {
                                                                     'Custom Gamepasses'      : [MT_Add_A_Gamepass_Name, MT_Enter_The_Gamepass_Name],
                                                                     **dict.fromkeys(
@@ -7761,4 +7717,4 @@ if __name__ == '__main__':
     except (SystemExit, KeyboardInterrupt, EOFError):
         raise
     except:
-        logger.exception(f'{MT_Oh_Noo_My_Home_It_Is_Over}... :<')
+        logger.exception(f'{MT_Oh_Noo_My_Home_It_Is_Over}... :<', force=True)
