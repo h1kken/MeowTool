@@ -32,7 +32,7 @@
   4. В открывшейся консоли введите `pip install -r requirements.txt`
   5. После установки всех зависимостей запустите `MeowTool.py`
 
-### 💾 Для `.exe`:
+### 💿 Для `.exe`:
 
   1. Перейдите в [релизные версии](https://github.com/h1kken/MeowTool/releases)
   2. Выберите нужную версию и скачайте `MeowTool.exe`
@@ -82,7 +82,7 @@
     - <img width="24" height="24" src="https://github.com/user-attachments/assets/ed857787-a403-4ace-8da2-639cf053e0bc"/>
     - <img width="24" height="24" src="https://github.com/user-attachments/assets/916bc90c-a2f4-465f-b200-2202729194d9"/>
 
-  - Система конфигов: не придётся что-то настраивать после каждого запуска
+  - 💾 Система конфигов: не придётся что-то настраивать после каждого запуска
 
 <br>
 <hr>
