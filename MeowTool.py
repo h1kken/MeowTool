@@ -99,8 +99,12 @@ class ANSI:
 ### Переводы
 
 def translateLoad(language: str) -> None:
-    global MT_Error, MT_Critical_Error, MT_Unknown_Error, MT_Waking_Up_Our_Eared_Helper, MT_Tidying_Folders_Onto_Their_Little_Shelves, MT_Eared_Assistant_Is_Watching, MT_Checking_Integrity_Config_Loader, MT_Checking_Integrity_Config, MT_We_Will_Find_Out_Name_Your_Config_From_Loader, MT_Asking_The_Config_Pretty_Please_For_Settings, MT_Crossing_Paws_For_Honest_Translations, MT_Cozying_Up_For_Comfort_And_Snugness, MT_Fantasizing_About_The_Name, MT_Almost_There_Just_A_Little_Couple_Of_Hours, MT_Checking_Your_Trendiness_Level, MT_Wow_New_Update_Available_Shall_We_Fetch_It, MT_Hooray_Youre_On_The_Latest_And_Greatest, MT_Current_Version, MT_Latest_Version, MT_Yes_I_Want_The_Version, MT_No_Maybe_Later, MT_Gathering_Update_Goodies, MT_Aww_Couldnt_Check_Maybe_The_Internets_Napping, MT_What_Now, MT_Lets_Check_It_Again, MT_Checking_Again, MT_Continue_Launching, MT_Oh_Noo_My_Home_It_Is_Over, MT_Enter_Something
+    global MT_Successfully_Saved_A_Backup_Copy_Of_Loader, MT_Successfully_Saved_A_Backup_Copy_Of_Config, MT_Saving_A_Backup_Copy_Of_Loader, MT_Saving_A_Backup_Copy_Of_Config, MT_Error, MT_Critical_Error, MT_Unknown_Error, MT_Waking_Up_Our_Eared_Helper, MT_Tidying_Folders_Onto_Their_Little_Shelves, MT_Eared_Assistant_Is_Watching, MT_Checking_Integrity_Config_Loader, MT_Checking_Integrity_Config, MT_We_Will_Find_Out_Name_Your_Config_From_Loader, MT_Asking_The_Config_Pretty_Please_For_Settings, MT_Crossing_Paws_For_Honest_Translations, MT_Cozying_Up_For_Comfort_And_Snugness, MT_Fantasizing_About_The_Name, MT_Almost_There_Just_A_Little_Couple_Of_Hours, MT_Checking_Your_Trendiness_Level, MT_Wow_New_Update_Available_Shall_We_Fetch_It, MT_Hooray_Youre_On_The_Latest_And_Greatest, MT_Current_Version, MT_Latest_Version, MT_Yes_I_Want_The_Version, MT_No_Maybe_Later, MT_Gathering_Update_Goodies, MT_Aww_Couldnt_Check_Maybe_The_Internets_Napping, MT_What_Now, MT_Lets_Check_It_Again, MT_Checking_Again, MT_Continue_Launching, MT_Oh_Noo_My_Home_It_Is_Over, MT_Enter_Something
     if 'russia' not in language:
+        MT_Successfully_Saved_A_Backup_Copy_Of_Loader = 'Successfully saved a backup copy of loader'
+        MT_Successfully_Saved_A_Backup_Copy_Of_Config = 'Successfully saved a backup copy of config'
+        MT_Saving_A_Backup_Copy_Of_Loader = 'Saving a backup copy of loader'
+        MT_Saving_A_Backup_Copy_Of_Config = 'Saving a backup copy of config'
         MT_Error = 'Error'
         MT_Critical_Error = 'Critical error'
         MT_Unknown_Error = 'Unknown error'
@@ -131,6 +135,10 @@ def translateLoad(language: str) -> None:
         MT_Oh_Noo_My_Home_It_Is_Over = 'Oh noo, my home, it\'s over'
         MT_Enter_Something = 'Enter something'
     else:
+        MT_Successfully_Saved_A_Backup_Copy_Of_Loader = 'Успешно сохранили резервную копию загрузчика'
+        MT_Successfully_Saved_A_Backup_Copy_Of_Config = 'Успешно сохранили резервную копию конфига'
+        MT_Saving_A_Backup_Copy_Of_Loader = 'Сохраняем резервную копию твоего загрузчика'
+        MT_Saving_A_Backup_Copy_Of_Config = 'Сохраняем резервную копию твоего конфига'
         MT_Error = 'Ошибка'
         MT_Critical_Error = 'Критическая ошибка'
         MT_Unknown_Error = 'Неизвестная ошибка'
@@ -780,15 +788,36 @@ class AccountBanned(RobloxException):
     def __init__(self, message = 'Account banned'):
         super().__init__(message)
 
+### Ошибки
+
+ETHERNET_ERRORS = [
+    asyncio.TimeoutError,
+    asyncio.exceptions.CancelledError,
+    ClientOSError,
+    ConnectionResetError,
+    ServerDisconnectedError,
+    TransferEncodingError,
+    ClientPayloadError,
+    SocketTimeoutError,
+    ProxyError
+]
+
+
 ### Константы
 
 COOKIE_START = '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_'
 
 ### Паттерны
 
+SPECIAL_CHARS = re.compile(
+    r'[\\/*?:"<>|\x00-\x1f]'
+)
+
 STRING_MINIMUM_100_SYMBOLS_PATTERN = re.compile(
     r'\S{100,}'
 )
+
+# Roblox
 
 COOKIE_PATTERN = re.compile(
     r'_\|(?:_|[^\s\r\n]*?\|_)\S{100,}' # :3
@@ -797,6 +826,8 @@ COOKIE_PATTERN = re.compile(
 AGE_GROUP_PATTERN = re.compile(
     r'(?i)(Over|Under)(\d+)(Checked)?'
 )
+
+# Proxy
 
 PROXY_PROTOCOL_IN_START_OF_STRING_PATTERN = re.compile(
     r'(?i)^(https?|socks[45])'
@@ -832,6 +863,7 @@ def timer(command: Literal['start', 'stop'], *, start: int | None = None) -> int
         case 'stop':  return time.perf_counter() - start
 
 def generateVisualPath(*pathArgs: str) -> str:
+    logger.debug(pathArgs)
     visualPath = osSep.join(pathArgs) if pathArgs else ''
     return f'[{ANSI.FG.CYAN}P{ANSI.FG.WHITE}] {ANSI.FG.CYAN}M:{osSep}{visualPath}{ANSI.FG.WHITE}'
 
@@ -860,7 +892,7 @@ def removeLines(amountOfLines: int) -> None:
     if amountOfLines:
         cmdWriter(f'\033[{amountOfLines}A\033[J')
 
-def removeBracketsAndIn(string: str, *, round: bool, square: bool) -> str:
+def rmBracketsAndIn(string: str, *, round: bool, square: bool) -> str:
     newString = ''
     skip = 0
     for char in string:
@@ -872,18 +904,13 @@ def removeBracketsAndIn(string: str, *, round: bool, square: bool) -> str:
             newString += char
     return newString
 
-def removeSpecialChars(string: str) -> str:
-    '''
-    Chars will be removed:
-     - \\\\, /, *, ?, :, ", <, >, |
-     - from \\x00 to \\x1f
-    '''
-    return re.sub(r'[\\/*?:"<>|\x00-\x1f]', '', str(string))
+def rmPatternFromString(pattern: re.Pattern[str], string: str) -> str:
+    return re.sub(pattern, '', string)
 
-def removeEmojies(string: str, *, replace: str = ' ') -> str: # Пробел, потому что есть разработчики использующие эмодзи как пробел между слов
+def rmEmojies(string: str, *, replace: str = ' ') -> str:
     return emoji.replace_emoji(string, replace=replace)
 
-def removeTwoSpaces(string: str) -> str:
+def rmTwoSpaces(string: str) -> str:
     return ' '.join(string.split())
 
 def amountOfLines(*pathArgs: str) -> str:
@@ -896,7 +923,7 @@ def amountOfLines(*pathArgs: str) -> str:
             amount = sum(1 for _ in file)
         return f'{amount} line{'s' if amount != 1 else ''}'
     except Exception as e:
-        logger.exception(f'< [amountOfLines] > {MT_Error}: {e} :<', force=True)
+        logger.exception(f'< [AMOUNT_OF_LINES] > {MT_Error}: {e}', force=True)
         return 'error'
 
 def waitingInput() -> None:
@@ -1054,7 +1081,7 @@ async def downloadPythonVersion() -> None:
     except (SystemExit, KeyboardInterrupt, EOFError):
         raise
     except Exception as e:
-        logger.exception(f' < [DOWNLOAD_PYTHON_VERSION] > {MT_Unknown_Error}: {e}... :<', force=True)
+        logger.exception(f' < [DOWNLOAD_PYTHON_VERSION] > {MT_Unknown_Error}: {e}...', force=True)
         while True:
             cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Aww_Couldnt_Check_Maybe_The_Internets_Napping}... {MT_What_Now} :3\n\n  [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] {MT_Lets_Check_It_Again}\n  [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] {MT_Continue_Launching}\n\n')
             couldNotDownloadUpdate = input(f'  [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ')
@@ -1101,7 +1128,7 @@ async def checkUpdates() -> None:
                         case _:
                             removeLines(10)
         except Exception as e:
-            logger.exception(f'< [CHECK_UPDATES] > {MT_Unknown_Error}: {e} :<', force=True)
+            logger.exception(f'< [CHECK_UPDATES] > {MT_Unknown_Error}: {e}', force=True)
             while True:
                 cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Aww_Couldnt_Check_Maybe_The_Internets_Napping}. {MT_What_Now} :3{spaces}\n\n  [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] {MT_Lets_Check_It_Again}\n  [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] {MT_Continue_Launching}\n\n')
                 couldNotCheckUpdate = input(f'  [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ')
@@ -1126,7 +1153,7 @@ def makeArchive(dateString: str, *pathArgs: str) -> None:
                     if filePath.is_file():
                         zipf.write(filePath, filePath.relative_to(path))
         except Exception as e:
-            logger.exception(f'< [MAKE_ARCHIVE] > {MT_Critical_Error}: {e}... :<', force=True)
+            logger.exception(f'< [MAKE_ARCHIVE] > {MT_Critical_Error}: {e}', force=True)
 
 async def sendMessageTelegramBot(text: str = None, *pathArgs: str) -> None:
     if not config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot']:
@@ -1173,7 +1200,7 @@ async def sendMessageTelegramBot(text: str = None, *pathArgs: str) -> None:
             )
         }
         if type(e) not in ERRORS:
-            logger.exception(f'< [SEND_MESSAGE_TELEGRAM_BOT] > {MT_Unknown_Error}: {e}... :<', force=True)
+            logger.exception(f'< [SEND_MESSAGE_TELEGRAM_BOT] > {MT_Unknown_Error}: {e}', force=True)
         cmdWriter(f'\r [{ANSI.FG.RED}{MT_Telegram[1]}{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.FG.WHITE} | {ERRORS.get(type(e), f'{MT_Unknown_Error}: {e}')}... :<\n')
     finally:
         cmdFlusher()
@@ -1247,7 +1274,7 @@ def sendMessageDiscordWebhook(test: bool = False, text: str = None, filename: st
             )
         }
         if type(e) not in ERRORS:
-            logger.exception(f'< [SEND_MESSAGE_DISCORD_WEBHOOK] > {MT_Unknown_Error}: {e}... :<', force=True)
+            logger.exception(f'< [SEND_MESSAGE_DISCORD_WEBHOOK] > {MT_Unknown_Error}: {e}', force=True)
         cmdWriter(f'\r [{ANSI.FG.RED}{MT_Discord[1]}{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.FG.WHITE} | {ERRORS.get(type(e), f'{MT_Unknown_Error}: {e}')}... :<\n')
     finally:
         cmdFlusher()
@@ -1285,7 +1312,7 @@ def getProxiesFromFile(proxiesPath: Path, amountOfRemoveLines: int, visualPath: 
     except FileNotFoundError:
         return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Proxy_Was_Found, visualPath)
     except Exception as e:
-        logger.exception(f'< [GET_PROXIES_FROM_FILE] > {MT_Critical_Error}: {e}... :<', force=True)
+        logger.exception(f'< [GET_PROXIES_FROM_FILE] > {MT_Critical_Error}: {e}', force=True)
 
 # Запросы
 
@@ -1323,7 +1350,7 @@ async def checkProxy(workProtocols: dict[str, None], proxy: str, protocol: str, 
             workProtocols[protocol] = 'timeout'
             return
         except Exception as e:
-            logger.exception(f'< [CHECK_PROXY] > {MT_Critical_Error}: {e}... :<', force=True)
+            logger.exception(f'< [CHECK_PROXY] > {MT_Critical_Error}: {e}', force=True)
 
 async def proxyChecker(file: str) -> None:
     cls()
@@ -1476,7 +1503,7 @@ def getProxiesFromFileRoblox(isUseProxy: bool, proxiesPath: Path, amountOfRemove
     except FileNotFoundError:
         return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Proxy_Was_Found, generateVisualPath(*visualPathArgs))
     except Exception as e:
-        logger.exception(f'< [GET_PROXIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}... :<', force=True)
+        logger.exception(f'< [GET_PROXIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}', force=True)
 
 def getCookiesFromFileRoblox(cookiesPath: Path, amountOfRemoveLines: int, visualPath: str) -> set[str] | None:
     symbolsBetweenWarningAndCookie = str(config['Roblox']['General']['Symbols_Between_Warning_And_Cookie']).strip() if config['Roblox']['General']['Add_Symbols_Between_Warning_And_Cookie'] else ''
@@ -1504,7 +1531,7 @@ def getCookiesFromFileRoblox(cookiesPath: Path, amountOfRemoveLines: int, visual
     except FileNotFoundError:
         return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Cookie_Was_Found, visualPath)
     except Exception as e:
-        logger.exception(f'< [GET_COOKIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}... :<', force=True)
+        logger.exception(f'< [GET_COOKIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}', force=True)
 
 def getConnectorRoblox(proxies: list[str] | None = None) -> TCPConnector | ProxyConnector:
     if not (config['Roblox']['General']['Proxy']['Use_Proxy'] and proxies):
@@ -1515,6 +1542,52 @@ def getConnectorRoblox(proxies: list[str] | None = None) -> TCPConnector | Proxy
             use_dns_cache=True
         )
     return ProxyConnector.from_url(random.choice(proxies))
+
+class NinetyNineNightsintheForest: # https://www.roblox.com/games/79546208627805
+    placeNames = '99 Nights in the Forest', '99_Nights_in_the_Forest', '99NITF', 79546208627805
+    class Gamepasses:
+        MedicClass  = 'Medic Class',  1236071562, 'Medic_Class'
+        RangerClass = 'Ranger Class', 1235909977, 'Ranger_Class'
+        # List Of Gamepasses
+        listOfGamepasses = [MedicClass, RangerClass]
+    class Badges:
+        Survive10days      = 'Survive 10 days',      2310366779580636, 'Survive_10_days'
+        Survive20days      = 'Survive 20 days',      2491852490394472, 'Survive_20_days'
+        Survive30days      = 'Survive 30 days',      2419608566642291, 'Survive_30_days'
+        Survive40days      = 'Survive 40 days',      554308544894889,  'Survive_40_days'
+        Survive50days      = 'Survive 50 days',      3412064596604231, 'Survive_50_days'
+        Survive60days      = 'Survive 60 days',      1737414705437281, 'Survive_60_days'
+        Survive70days      = 'Survive 70 days',      4033173523231173, 'Survive_70_days'
+        Survive80days      = 'Survive 80 days',      2567683149214007, 'Survive_80_days'
+        Survive90days      = 'Survive 90 days',      4230596623100073, 'Survive_90_days'
+        Survive100days     = 'Survive 100 days',     3189171443259717, 'Survive_100_days'
+        Combat             = 'Combat',               3019204750024378, 'Combat'
+        Gardening          = 'Gardening',            1806706511193732, 'Gardening'
+        FiremakingI        = 'Firemaking I',         2438152097371936, 'Firemaking_I'
+        FiremakingII       = 'Firemaking II',        2005749031618947, 'Firemaking_II'
+        FirstAid           = 'First Aid',            2001789220731988, 'First_Aid'
+        Taming             = 'Taming',               3377143203517885, 'Taming'
+        Crafting           = 'Crafting',             2027865090521852, 'Crafting'
+        FiremakingIII      = 'Firemaking III',       3677382718476753, 'Firemaking_III'
+        Beastmaster        = 'Beastmaster',          1339575633400553, 'Beastmaster'
+        Usurpation         = 'Usurpation',           387000908551525,  'Usurpation'
+        Husbandry          = 'Husbandry',            1674875257275150, 'Husbandry'
+        Infiltration       = 'Infiltration',         4351793822740062, 'Infiltration'
+        Hunting            = 'Hunting',              1551739613632860, 'Hunting'
+        FiremakingIV       = 'Firemaking IV',        749743730964646,  'Firemaking_IV'
+        Orienteering       = 'Orienteering',         3309153759455296, 'Orienteering'
+        Teamwork           = 'Teamwork',             3168356882259569, 'Teamwork'
+        SelfPreservation   = 'Self-Preservation',    334197250508484,  'Self_Preservation'
+        Vegetarian         = 'Vegetarian',           416205278974903,  'Vegetarian'
+        Swiftness          = 'Swiftness',            2405041291915669, 'Swiftness'
+        Durability         = 'Durability',           3775784138528895, 'Durability'
+        Humiliation        = 'Humiliation',          1578027557968563, 'Humiliation'
+        DeterminedI        = 'Determined I',         2410517601139369, 'Determined_I'
+        DeterminedII       = 'Determined II',        4316839073409710, 'Determined_II'
+        HalloweenRuneToken = 'Halloween Rune Token', 517976950795023,  'Halloween_Rune_Token'
+        HalloweenKeyToken  = 'Halloween Key Token',  2790425224066975, 'Halloween_Key_Token'
+        # List Of Badges
+        listOfBadges = [Survive10days, Survive20days, Survive30days, Survive40days, Survive50days, Survive60days, Survive70days, Survive80days, Survive90days, Survive100days, Combat, Gardening, FiremakingI, FiremakingII, FirstAid, Taming, Crafting, FiremakingIII, Beastmaster, Usurpation, Husbandry, Infiltration, Hunting, FiremakingIV, Orienteering, Teamwork, SelfPreservation, Vegetarian, Swiftness, Durability, Humiliation, DeterminedI, DeterminedII, HalloweenRuneToken, HalloweenKeyToken]
 
 class AUniversalTime: # https://www.roblox.com/games/5130598377
     placeNames = 'A Universal Time', 'A_Universal_Time', 'AUT', 5130598377
@@ -1605,8 +1678,10 @@ class AdoptMe: # https://www.roblox.com/games/920587237
         WhereBearBadge              = 'Where Bear? Badge',                     211728180632535,  'Where_Bear_Badge'
         SurvivorBadge               = 'Survivor Badge',                        639601989428398,  'Survivor_Badge'
         Testing                     = 'Testing',                               2388128713374485, 'Testing'
+        HalloweenSpotlightRune      = 'Halloween Spotlight Rune',              2876404161740375, 'Halloween_Spotlight_Rune'
+        HalloweenSpotlightKey       = 'Halloween Spotlight Key',               2865954472113762, 'Halloween_Spotlight_Key'
         # List Of Badges
-        listOfBadges = [TinyIsles, AncientRuins, CoastalClimb, LonelyPeak, Miniworld, Pyramid, ShipwreckBay, RobloxEggHunt2020, RBBattlesChallenge, Unnamed, Garden, RobloxTheGamesAdoptMeQuest1, RobloxTheGamesAdoptMeQuest2, RobloxTheGamesAdoptMeQuest3, RobloxTheGamesAdoptMeShine1, RobloxTheGamesAdoptMeShine2, RobloxTheGamesAdoptMeShine3, RobloxTheGamesAdoptMeShine4, RobloxTheGamesAdoptMeShine5, HunterBadge, WhereBearBadge, SurvivorBadge, Testing]
+        listOfBadges = [TinyIsles, AncientRuins, CoastalClimb, LonelyPeak, Miniworld, Pyramid, ShipwreckBay, RobloxEggHunt2020, RBBattlesChallenge, Unnamed, Garden, RobloxTheGamesAdoptMeQuest1, RobloxTheGamesAdoptMeQuest2, RobloxTheGamesAdoptMeQuest3, RobloxTheGamesAdoptMeShine1, RobloxTheGamesAdoptMeShine2, RobloxTheGamesAdoptMeShine3, RobloxTheGamesAdoptMeShine4, RobloxTheGamesAdoptMeShine5, HunterBadge, WhereBearBadge, SurvivorBadge, Testing, HalloweenSpotlightRune, HalloweenSpotlightKey]
 
 class AnimeAdventures: # https://www.roblox.com/games/8304191830
     placeNames = 'Anime Adventures', 'Anime_Adventures', 'AA', 8304191830
@@ -1741,8 +1816,10 @@ class BedWars: # https://www.roblox.com/games/6872265039
         EggHunt2025                    = 'Egg Hunt 2025',                      731758855100911,  'Egg_Hunt_2025'
         RobloxClassicEventToken1       = 'Roblox Classic Event - Token 1',     1229219986658067, 'Roblox_Classic_Event_Token_1'
         RobloxClassicEventTix1         = 'Roblox Classic Event - Tix 1',       2466928501842682, 'Roblox_Classic_Event_Tix_1'
+        DefeatedArachnesLair           = 'Defeated Arachne\'s Lair',           2770029890136596, 'Defeated_Arachnes_Lair'
+        DefeatedMarrowsMadness2025     = 'Defeated Marrow\'s Madness 2025',    3344558891408093, 'Defeated_Marrows_Madness_2025'
         # List Of Badges
-        listOfBadges = [BeVictoriousonMinigameMountain, Champion, NewYears2025, TheHuntBedWars, EggHunt2025, RobloxClassicEventToken1, RobloxClassicEventTix1]
+        listOfBadges = [BeVictoriousonMinigameMountain, Champion, NewYears2025, TheHuntBedWars, EggHunt2025, RobloxClassicEventToken1, RobloxClassicEventTix1, DefeatedArachnesLair, DefeatedMarrowsMadness2025]
 
 class BeeSwarmSimulator: # https://www.roblox.com/games/1537690962
     placeNames = 'Bee Swarm Simulator', 'Bee_Swarm_Simulator', 'BSS', 1537690962
@@ -1921,9 +1998,9 @@ class BubbleGumSimulatorINFINITY: # https://www.roblox.com/games/85896571713843
         DoubleLuck      = 'Double Luck',       1109987673, 'Double_Luck'
         DoubleCurrency  = 'Double Currency',   1169607896, 'Double_Currency'
         DoubleGems      = 'Double Gems',       1111001300, 'Double_Gems'
-        DoubleFishingXP = 'Double Fishing XP', 1384697982, 'Double Fishing XP'
-        AutoFishing     = 'Auto Fishing',      1384649993, 'Auto Fishing'
-        LuckyEnchants   = 'Lucky Enchants',    1404811119, 'Lucky Enchants'
+        DoubleFishingXP = 'Double Fishing XP', 1384697982, 'Double_Fishing_XP'
+        AutoFishing     = 'Auto Fishing',      1384649993, 'Auto_Fishing'
+        LuckyEnchants   = 'Lucky Enchants',    1404811119, 'Lucky_Enchants'
         # List Of Gamepasses
         listOfGamepasses = [VIP, InfinityGum, ExtraEquips, FastHatch, TripleHatch, DigitalStorage, DoubleLuck, DoubleCurrency, DoubleGems, DoubleFishingXP, AutoFishing, LuckyEnchants]
     class Badges:
@@ -2040,9 +2117,9 @@ class DragonAdventures: # https://www.roblox.com/games/3475397644
     class Badges:
         MetaDeveloper   = 'Met a Developer!',    2124634392,       'Met_a_Developer'
         RiyusTrustBadge = 'Riyu\'s Trust Badge', 530731637639832,  'Riyus_Trust_Badge'
-        Christmas2022   = 'Christmas 2022',      2129850167,       'Christmas_2022'
         Winter2019      = 'Winter 2019',         2124564089,       'Winter_2019'
         Winter2021      = 'Winter 2021',         2124879418,       'Winter_2021'
+        Christmas2022   = 'Christmas 2022',      2129850167,       'Christmas_2022'
         Winter2023      = 'Winter 2023',         1724546607470910, 'Winter_2023'
         Winter2024      = 'Winter 2024',         1680929594185010, 'Winter_2024'
         Valentines2020  = 'Valentines 2020',     2124564091,       'Valentines_2020'
@@ -2056,6 +2133,7 @@ class DragonAdventures: # https://www.roblox.com/games/3475397644
         Halloween2022   = 'Halloween 2022',      2129053839,       'Halloween_2022'
         Halloween2023   = 'Halloween 2023',      2153596435,       'Halloween_2023'
         Halloween2024   = 'Halloween 2024',      778861698160847,  'Halloween_2024'
+        Halloween2025   = 'Halloween 2025',      795755868351989,  'Halloween_2025'
         Easter2020      = 'Easter 2020',         2124564092,       'Easter_2020'
         Easter2021      = 'Easter 2021',         2124706777,       'Easter_2021'
         Easter2022      = 'Easter 2022',         2125832921,       'Easter_2022'
@@ -2073,7 +2151,7 @@ class DragonAdventures: # https://www.roblox.com/games/3475397644
         Galaxy2024      = 'Galaxy 2024',         2412831398413312, 'Galaxy_2024'
         Galaxy2025      = 'Galaxy 2025',         3448916649511144, 'Galaxy_2025'
         # List Of Badges
-        listOfBadges = [MetaDeveloper, RiyusTrustBadge, Christmas2022, Winter2019, Winter2021, Winter2023, Winter2024, Valentines2020, Valentines2022, Valentines2023, Valentines2024, Valentines2025, Halloween2019, Halloween2020, Halloween2021, Halloween2022, Halloween2023, Halloween2024, Easter2020, Easter2021, Easter2022, Easter2023, Easter2024, Easter2025, Solstice2020, Solstice2021, Solstice2022, Solstice2023, Solstice2024, Solstice2025, Galaxy2022, Galaxy2023, Galaxy2024, Galaxy2025]
+        listOfBadges = [MetaDeveloper, RiyusTrustBadge, Winter2019, Winter2021, Christmas2022, Winter2023, Winter2024, Valentines2020, Valentines2022, Valentines2023, Valentines2024, Valentines2025, Halloween2019, Halloween2020, Halloween2021, Halloween2022, Halloween2023, Halloween2024, Halloween2025, Easter2020, Easter2021, Easter2022, Easter2023, Easter2024, Easter2025, Solstice2020, Solstice2021, Solstice2022, Solstice2023, Solstice2024, Solstice2025, Galaxy2022, Galaxy2023, Galaxy2024, Galaxy2025]
 
 class Fisch: # https://www.roblox.com/games/16732694052
     placeNames = 'Fisch', 'Fisch', 'Fi', 16732694052
@@ -2163,8 +2241,10 @@ class Fisch: # https://www.roblox.com/games/16732694052
         JurassicIslandBestiary      = 'Jurassic Island Bestiary',         385394182585789,  'Jurassic_Island_Bestiary'
         Unnamed                     = '?',                                1857933038828956, 'Unnamed'
         FischFright2024             = 'FISCHFRIGHT 2024',                 2594646182778359, 'Fisch_Fright_2024'
+        RuneTier                    = 'Rune Tier',                        3562788701459850, 'Rune_Tier'
+        KeyTier                     = 'Key Tier',                         2405124869714453, 'Key_Tier'
         # List Of Badges    
-        listOfBadges = [FirstTimeFischer, SpecialSomeone, EconomyExpert, RareHunter, KeepersPupil, AttemptedUpgrade, DivineRelic, Catches50, Catches100, Catches500, Catches1000, Catches2000, Catches3000, Catches4000, Catches5000, Catches10000, LavaCaster, ReconExpert, TruePower, ExperiencedTrueBeauty, BestiaryOcean, BestiaryMoosewood, BestiaryRoslit, BestiarySunstoneIsland, BestiaryTerrapinIsland, BestiaryRoslitVolcano, BestiaryVertigo, BestiaryMushgroveSwamp, BestiarySnowcap, BestiaryEverything, BestiaryKeepersAltar, BestiaryDesolateDeep, BestiaryBrinePool, BestiaryForsakenShores, BestiaryTheDepths, BestiaryAncientArchives, BestiaryAncientIsle, BestiaryOvergrowthCaves, BestiaryFrigidCavern, BestiaryCryogenicCanal, BestiaryGlacialGrotto, BestiaryGrandReef, BestiaryAtlanteanStorm, BestiaryAtlantis, BestiaryVolcanicVents, BestiaryChallengersDeep, BestiaryAbyssalZenith, BestiaryCalmZone, BestiaryVeiloftheForsaken, BestiaryWaveborne, BestiaryAzureLagoon, BestiaryIsleOfNewBeginnings, BestiaryLushgrove, BestiaryEmberreach, BestiaryTheCursedShores, BestiaryPineShoals, BestiaryOpenOcean, BestiaryOctophant, BestiaryAnimalsFirstSea, BestiaryAnimalsSecondSea, BestiaryBlueMoonFirstSea, BestiaryBlueMoonSecondSea, BestiaryLego, BestiaryCarrotGarden, ATripThroughSpace, SilentLullaby, LEGOBackpack, SharkFrenzy, JurassicWorldFischQuest, JurassicIslandBestiary, Unnamed, FischFright2024]
+        listOfBadges = [FirstTimeFischer, SpecialSomeone, EconomyExpert, RareHunter, KeepersPupil, AttemptedUpgrade, DivineRelic, Catches50, Catches100, Catches500, Catches1000, Catches2000, Catches3000, Catches4000, Catches5000, Catches10000, LavaCaster, ReconExpert, TruePower, ExperiencedTrueBeauty, BestiaryOcean, BestiaryMoosewood, BestiaryRoslit, BestiarySunstoneIsland, BestiaryTerrapinIsland, BestiaryRoslitVolcano, BestiaryVertigo, BestiaryMushgroveSwamp, BestiarySnowcap, BestiaryEverything, BestiaryKeepersAltar, BestiaryDesolateDeep, BestiaryBrinePool, BestiaryForsakenShores, BestiaryTheDepths, BestiaryAncientArchives, BestiaryAncientIsle, BestiaryOvergrowthCaves, BestiaryFrigidCavern, BestiaryCryogenicCanal, BestiaryGlacialGrotto, BestiaryGrandReef, BestiaryAtlanteanStorm, BestiaryAtlantis, BestiaryVolcanicVents, BestiaryChallengersDeep, BestiaryAbyssalZenith, BestiaryCalmZone, BestiaryVeiloftheForsaken, BestiaryWaveborne, BestiaryAzureLagoon, BestiaryIsleOfNewBeginnings, BestiaryLushgrove, BestiaryEmberreach, BestiaryTheCursedShores, BestiaryPineShoals, BestiaryOpenOcean, BestiaryOctophant, BestiaryAnimalsFirstSea, BestiaryAnimalsSecondSea, BestiaryBlueMoonFirstSea, BestiaryBlueMoonSecondSea, BestiaryLego, BestiaryCarrotGarden, ATripThroughSpace, SilentLullaby, LEGOBackpack, SharkFrenzy, JurassicWorldFischQuest, JurassicIslandBestiary, Unnamed, FischFright2024, RuneTier, KeyTier]
 
 class FiveNightsTD: # https://www.roblox.com/games/15846919378
     placeNames = 'Five Nights TD', 'Five_Nights_TD', 'FNTD', 15846919378
@@ -2438,8 +2518,11 @@ class MurderMystery2: # https://www.roblox.com/games/142823291
         GODLYFlora               = 'GODLY: Flora',                            1167438350, 'GODLY_Flora'
         GODLYBloom               = 'GODLY: Bloom',                            1165838634, 'GODLY_Bloom'
         BUNDLEBloom              = 'BUNDLE: Bloom',                           1166580569, 'BUNDLE_Bloom'
+        GODLYXenoknife           = 'GODLY: Xenoknife',                        1534775989, 'GODLY_Xenoknife'
+        GODLYXenoshot            = 'GODLY: Xenoshot',                         1533049236, 'GODLY_Xenoshot'
+        BUNDLEXenotech           = 'BUNDLE: Xenotech',                        1535587918, 'BUNDLE_Xenotech'
         # List Of Gamepasses
-        listOfGamepasses = [Elite, Radio, RandomizedFaces1, RandomizedFaces2, ShadowItemPack, ClockworkItemPack, BIT8ItemPack, FuturisticItemPack, AmericanItemPack, HalloweenItemPack, WinterItemPack, Batwing, Icewing, GhostlyItemPack, FrostbiteItemPack, Bioblade, Prismatic, VampiresEdge, Peppermint, Cookieblade, Heartblade, Eggblade, EVOReaver, EVOIcecrusher, EVOGingerscythe, EVOSynthwave, PACKLatte, GODLYNebula, GODLYIceBeam, GODLYIceFlake, BUNDLEIceBeamFlakeEffect, GODLYPlasmabeam, GODLYPlasmablade, BUNDLEPlasma, GODLYPhantom, GODLYSpectre, BUNDLEPhantomSpectre, GODLYBlossom, GODLYSakura, BUNDLESakura, GODLYRainbowGun, GODLYRainbow, BUNDLERainbow, GODLYOcean, GODLYWaves, BUNDLEBeachPack, GODLYDarkshot, GODLYDarksword, BUNDLEDarknessPack, GODLYTurkey, GODLYFlowerwoodGun, GODLYFlowerwood, BUNDLEFlowerwood, GODLYPearlshine, GODLYPearl, BUNDLEPearls, GODLYSpirit, GODLYSoul, BUNDLESpiritSoul, GODLYBorealis, GODLYAustralis, BUNDLEAurora, GODLYFlora, GODLYBloom, BUNDLEBloom]
+        listOfGamepasses = [Elite, Radio, RandomizedFaces1, RandomizedFaces2, ShadowItemPack, ClockworkItemPack, BIT8ItemPack, FuturisticItemPack, AmericanItemPack, HalloweenItemPack, WinterItemPack, Batwing, Icewing, GhostlyItemPack, FrostbiteItemPack, Bioblade, Prismatic, VampiresEdge, Peppermint, Cookieblade, Heartblade, Eggblade, EVOReaver, EVOIcecrusher, EVOGingerscythe, EVOSynthwave, PACKLatte, GODLYNebula, GODLYIceBeam, GODLYIceFlake, BUNDLEIceBeamFlakeEffect, GODLYPlasmabeam, GODLYPlasmablade, BUNDLEPlasma, GODLYPhantom, GODLYSpectre, BUNDLEPhantomSpectre, GODLYBlossom, GODLYSakura, BUNDLESakura, GODLYRainbowGun, GODLYRainbow, BUNDLERainbow, GODLYOcean, GODLYWaves, BUNDLEBeachPack, GODLYDarkshot, GODLYDarksword, BUNDLEDarknessPack, GODLYTurkey, GODLYFlowerwoodGun, GODLYFlowerwood, BUNDLEFlowerwood, GODLYPearlshine, GODLYPearl, BUNDLEPearls, GODLYSpirit, GODLYSoul, BUNDLESpiritSoul, GODLYBorealis, GODLYAustralis, BUNDLEAurora, GODLYFlora, GODLYBloom, BUNDLEBloom, GODLYXenoknife, GODLYXenoshot, BUNDLEXenotech]
     class Badges:
         Level10            = 'Level 10',             196198137,  'Level_10'
         Level20            = 'Level 20',             196198654,  'Level_20'
@@ -2483,31 +2566,6 @@ class PetSimulator99: # https://www.roblox.com/games/8737899170
         JourneysEnd         = 'Journey\'s End',          327631483993374,  'Journeys_End'
         # List Of Badges
         listOfBadges = [Welcome, TheHuntFirstEdition, TheHuntMegaEdition, JourneysEnd]
-
-class PetSimulatorX: # https://www.roblox.com/games/6284583030
-    placeNames = 'Pet Simulator X', 'Pet_Simulator_X', 'PSX', 6284583030
-    class Gamepasses:
-        Pets8Equipped   = '8 Pets Equipped!',   18674288,  '8_Pets_Equipped'
-        Teleport        = 'Teleport!',          18674296,  'Teleport'
-        Hoverboard      = 'Hoverboard!',        18674298,  'Hoverboard'
-        VIP             = 'VIP!',               18674305,  'VIP'
-        TripleEggs      = 'Triple Eggs!',       18674307,  'Triple_Eggs'
-        EggSkip         = 'Egg Skip!',          18674321,  'Egg_Skip'
-        PetStorage      = 'Pet Storage!',       18674317,  'Pet_Storage'
-        SuperPetStorage = 'Super Pet Storage!', 18829757,  'Super_Pet_Storage'
-        AutoHatch       = 'Auto Hatch!',        21176989,  'Auto_Hatch'
-        Lucky           = 'Lucky!',             21583760,  'Lucky'
-        MagicEggs       = 'Magic Eggs!',        22596039,  'Magic_Eggs'
-        SuperMagnet     = 'Super Magnet!',      26398305,  'Super_Magnet'
-        MythicalHunter  = 'Mythical Hunter!',   21641016,  'Mythical_Hunter'
-        ShinyHunter     = 'Shiny Hunter!',      109685917, 'Shiny_Hunter'
-        SecretHunter    = 'Secret Hunter!',     122535467, 'Secret_Hunter'
-        # List Of Gamepasses
-        listOfGamepasses = [Pets8Equipped, Teleport, Hoverboard, VIP, TripleEggs, EggSkip, PetStorage, SuperPetStorage, AutoHatch, Lucky, MagicEggs, SuperMagnet, MythicalHunter, ShinyHunter, SecretHunter]
-    class Badges:
-        Welcome = 'Welcome!', 2124793144, 'Welcome'
-        # List Of Badges
-        listOfBadges = [Welcome]
         
 class PETSGO: # https://www.roblox.com/games/18901165922
     placeNames = 'PETS GO', 'PETS_GO', 'PG', 18901165922
@@ -2565,17 +2623,17 @@ class ProjectSlayers: # https://www.roblox.com/games/5956785391
 class Rivals: # https://www.roblox.com/games/71874690745115
     placeNames = 'Rivals', 'Rivals', 'Ri', 71874690745115
     class Gamepasses:
-        StandardWeaponsBundle = 'Standard Weapons Bundle!', 838203071,  'Standard_Weapons_Bundle'
         EnergyBundle          = 'Energy Bundle!',           977061826,  'Energy_Bundle'
+        StarterBundle         = 'Starter Bundle!',          839491390,  'Starter_Bundle'
+        StandardWeaponsBundle = 'Standard Weapons Bundle!', 838203071,  'Standard_Weapons_Bundle'
         HeavyDutyBundle       = 'Heavy Duty Bundle!',       838198043,  'Heavy_Duty_Bundle'
         ClassicBundle         = 'Classic Bundle!',          838160059,  'Classic_Bundle'
         ExogunBundle          = 'Exogun Bundle!',           838087219,  'Exogun_Bundle'
         MedkitBundle          = 'Medkit Bundle!',           837904767,  'Medkit_Bundle'
         PixelBundle           = 'Pixel Bundle!',            938353691,  'Pixel_Bundle'
-        StarterBundle         = 'Starter Bundle!',          839491390,  'Starter_Bundle'
         RPGBundle             = 'RPG Bundle!',              1162134376, 'RPG_Bundle'
         # List Of Gamepasses
-        listOfGamepasses = [StandardWeaponsBundle, EnergyBundle, HeavyDutyBundle, ClassicBundle, ExogunBundle, MedkitBundle, PixelBundle, StarterBundle, RPGBundle]
+        listOfGamepasses = [EnergyBundle, StarterBundle, StandardWeaponsBundle, HeavyDutyBundle, ClassicBundle, ExogunBundle, MedkitBundle, PixelBundle, RPGBundle]
     class Badges:
         Welcome     = 'Welcome!',      2904819966736756, 'Welcome'
         AlphaTester = 'Alpha Tester!', 1330297521556384, 'Alpha_Tester'
@@ -2599,11 +2657,6 @@ class RoyalHigh: # https://www.roblox.com/games/735030788
         # List Of Gamepasses
         listOfGamepasses = [FasterFlight, x2DoubleDiamonds, x4QuadrupleDiamonds, PaintbrushPass, NewHairColorsPlusGLOWINGHairPass, FlyonEarth, SpecialFabricDesigns, UploadCustomFabricsPass, CrystalBallPower, StickerPacksPass, MaterialsPass]
     class Badges:
-        PumpkinContest2018                      = 'Pumpkin Contest 2018',                            2124428491,       'Pumpkin_Contest_2018'
-        Halloween2018                           = 'Halloween 2018',                                  2124428509,       'Halloween_2018'
-        Halloween2019DesignerEventCompletionist = 'Halloween 2019 Designer Event Completionist!',    2124487935,       'Halloween_2019_Designer_Event_Completionist'
-        RoyaleHighHalloween2019                 = 'Royale High Halloween 2019!',                     2124490533,       'Royale_High_Halloween_2019'
-        CompletedSuperHardMaze2019              = 'Completed Super Hard Maze 2019',                  2124490534,       'Completed_Super_Hard_Maze_2019'
         RoyaleChristmas2019                     = 'Royale Christmas 2019!',                          2124498675,       'Royale_Christmas_2019'
         HappyNewYearswithRoyaleHigh2020         = 'Happy New Years with Royale High 2020!',          2124500186,       'Happy_New_Years_with_Royale_High_2020'
         RoyaleValentinesDay2020                 = 'Royale Valentines Day 2020!',                     2124509827,       'Royale_Valentines_Day_2020'
@@ -2611,7 +2664,13 @@ class RoyalHigh: # https://www.roblox.com/games/735030788
         SaintPatricksDay2020                    = 'Saint Patrick\'s Day 2020!',                      2124517063,       'Saint_Patricks_Day_2020'
         RoyaleGlitterfrost2023                  = 'Royale Glitterfrost 2023!',                       410317500135558,  'Royale_Glitterfrost_2023'
         AdventCalendar2023Completionist         = 'Advent Calendar 2023 Completionist!',             946888967668846,  'Advent_Calendar_2023_Completionist'
+        PumpkinContest2018                      = 'Pumpkin Contest 2018',                            2124428491,       'Pumpkin_Contest_2018'
+        Halloween2018                           = 'Halloween 2018',                                  2124428509,       'Halloween_2018'
+        Halloween2019DesignerEventCompletionist = 'Halloween 2019 Designer Event Completionist!',    2124487935,       'Halloween_2019_Designer_Event_Completionist'
+        RoyaleHighHalloween2019                 = 'Royale High Halloween 2019!',                     2124490533,       'Royale_High_Halloween_2019'
+        CompletedSuperHardMaze2019              = 'Completed Super Hard Maze 2019',                  2124490534,       'Completed_Super_Hard_Maze_2019'
         BeattheSuperScaryMaze2023               = 'Beat the Super Scary Maze 2023!',                 2152604997,       'Beat_the_Super_Scary_Maze_2023'
+        BeattheSuperScaryMaze2025               = 'Beat the Super Scary Maze 2025!',                 4025403312692129, 'Beat_the_Super_Scary_Maze_2025'
         Royalloween2023                         = 'Royalloween 2023!',                               2152604993,       'Royalloween_2023'
         Royalloween2024                         = 'Royalloween 2024!',                               2559633734876320, 'Royalloween_2024'
         Royalloween2025                         = 'Royalloween 2025!',                               3494963190309092, 'Royalloween_2025'
@@ -2620,9 +2679,9 @@ class RoyalHigh: # https://www.roblox.com/games/735030788
         TopLeaderboardContributor2025           = 'Top Leaderboard Contributor! 2025',               1974333512672108, 'Top_Leaderboard_Contributor_2025'
         PurchasedAllGoddessofTriumphItems2023   = 'Purchased All Goddess of Triumph Items! 2023',    2150899380,       'Purchased_All_Goddess_of_Triumph_Items_2023'
         PurchasedAllGoddessofTriumphItems2024   = 'Purchased All Goddess of Triumph Items! 2024',    4117382963595102, 'Purchased_All_Goddess_of_Triumph_Items_2024'
-        PurchasedaPiecefromGoddessofTriumph2024 = 'Purchased a Piece from Goddess of Triumph! 2024', 3500868758609792, 'Purchased_a_Piece_from Goddess_of_Triumph_2024'
+        PurchasedaPiecefromGoddessofTriumph2024 = 'Purchased a Piece from Goddess of Triumph! 2024', 3500868758609792, 'Purchased_a_Piece_from_Goddess_of_Triumph_2024'
         # List Of Badges
-        listOfBadges = [PumpkinContest2018, Halloween2018, Halloween2019DesignerEventCompletionist, RoyaleHighHalloween2019, CompletedSuperHardMaze2019, RoyaleChristmas2019, HappyNewYearswithRoyaleHigh2020, RoyaleValentinesDay2020, SaintPatricksDay2019, SaintPatricksDay2020, RoyaleGlitterfrost2023, AdventCalendar2023Completionist, BeattheSuperScaryMaze2023, Royalloween2023, Royalloween2024, Royalloween2025, TopLeaderboardContributor2023, TopLeaderboardContributor2024, TopLeaderboardContributor2025, PurchasedAllGoddessofTriumphItems2023, PurchasedAllGoddessofTriumphItems2024, PurchasedaPiecefromGoddessofTriumph2024]
+        listOfBadges = [RoyaleChristmas2019, HappyNewYearswithRoyaleHigh2020, RoyaleValentinesDay2020, SaintPatricksDay2019, SaintPatricksDay2020, RoyaleGlitterfrost2023, AdventCalendar2023Completionist, PumpkinContest2018, Halloween2018, Halloween2019DesignerEventCompletionist, RoyaleHighHalloween2019, CompletedSuperHardMaze2019, BeattheSuperScaryMaze2023, BeattheSuperScaryMaze2025, Royalloween2023, Royalloween2024, Royalloween2025, TopLeaderboardContributor2023, TopLeaderboardContributor2024, TopLeaderboardContributor2025, PurchasedAllGoddessofTriumphItems2023, PurchasedAllGoddessofTriumphItems2024, PurchasedaPiecefromGoddessofTriumph2024]
 
 class SolsRNG: # https://www.roblox.com/games/15532962292
     placeNames = 'Sol\'s RNG', 'Sols_RNG', 'SRNG', 15532962292
@@ -2699,6 +2758,7 @@ class SolsRNG: # https://www.roblox.com/games/15532962292
         Myfirst10MPlusfinding   = 'My first 10M+ finding',            1121298629065726, 'My_first_10M_Plus_finding'
         Myfirst100MPlusfinding  = 'My first 100M+ finding',           3516455555443766, 'My_first_100M_Plus_finding'
         Myfirst1BPlusfinding    = 'My first 1B+ finding',             1224551724339726, 'My_first_1B_Plus_finding'
+        Dimensional             = 'Dimensional',                      26095976848236,   'Dimensional'
         Unnamed1                = '??? 1',                            734804938884338,  'Unnamed_1'
         Unnamed2                = '??? 2',                            807013057656632,  'Unnamed_2'
         Unnamed3                = '??? 3',                            1324193838431233, 'Unnamed_3'
@@ -2708,7 +2768,7 @@ class SolsRNG: # https://www.roblox.com/games/15532962292
         Unnamed7                = '??? 7',                            3618488813178695, 'Unnamed_7'
         Unnamed8                = '??? 8',                            4100206722227429, 'Unnamed_8'
         # List Of Badges
-        listOfBadges = [IjuststartedSolsRNG, Alittlebitofrolls, ImaddictedtoSolsRNG, WouldYouLeaveNahIdRoll, RollEatSleepRepeat, Takeabreak, Icantstopplayingthis, Wasteoftime, Touchthegrass, SpottedtheSol, Indev, Finishedworkfortoday, Goodjobthisweektoo, Asincereperson, Whenispayday, StarEgg, LockEgg, Theresnowaytostopit, Igivemylife, Eternaltime, Myeternaljourney, Breakthrough, Breakthelimit, BreaktheSpace, BreaktheGalaxy, BreaktheReality, PerfectAttendanceAward, FlawsintheWorld, OnewhostandsbeforeGod, TheUnknown, AchievementSlayer, AchievementMaster, AchievementChampion, TheStigma, DAY100, Missioncomplete, Excellentservice, Professionalhelper, Questmaster, Questslayer, SecretTrade, Biomeitself, Famous, Grandmaster, Amemorytobeforgotten, TheLost, TheLimbo, TheZero, PreSandWormSlayer, CrawlerSlayer, Millions10, Millions15, Millions20, Millions30, Millions50, Myfirst10MPlusfinding, Myfirst100MPlusfinding, Myfirst1BPlusfinding, Unnamed1, Unnamed2, Unnamed3, Unnamed4, Unnamed5, Unnamed6, Unnamed7, Unnamed8]
+        listOfBadges = [IjuststartedSolsRNG, Alittlebitofrolls, ImaddictedtoSolsRNG, WouldYouLeaveNahIdRoll, RollEatSleepRepeat, Takeabreak, Icantstopplayingthis, Wasteoftime, Touchthegrass, SpottedtheSol, Indev, Finishedworkfortoday, Goodjobthisweektoo, Asincereperson, Whenispayday, StarEgg, LockEgg, Theresnowaytostopit, Igivemylife, Eternaltime, Myeternaljourney, Breakthrough, Breakthelimit, BreaktheSpace, BreaktheGalaxy, BreaktheReality, PerfectAttendanceAward, FlawsintheWorld, OnewhostandsbeforeGod, TheUnknown, AchievementSlayer, AchievementMaster, AchievementChampion, TheStigma, DAY100, Missioncomplete, Excellentservice, Professionalhelper, Questmaster, Questslayer, SecretTrade, Biomeitself, Famous, Grandmaster, Amemorytobeforgotten, TheLost, TheLimbo, TheZero, PreSandWormSlayer, CrawlerSlayer, Millions10, Millions15, Millions20, Millions30, Millions50, Myfirst10MPlusfinding, Myfirst100MPlusfinding, Myfirst1BPlusfinding, Dimensional, Unnamed1, Unnamed2, Unnamed3, Unnamed4, Unnamed5, Unnamed6, Unnamed7, Unnamed8]
 
 class StealaBrainrot: # https://www.roblox.com/games/109983668079237
     placeNames = 'Steal a Brainrot', 'Steal_a_Brainrot', 'SaB', 109983668079237
@@ -2852,9 +2912,15 @@ class TowerDefenseSimulator: # https://www.roblox.com/games/3260590327
         TheLostSouls           = 'The Lost Souls',            2129234540,       'The_Lost_Souls'
         FrostInvasionEasy      = 'Frost Invasion - Easy',     1566890568849948, 'Frost_Invasion_Easy'
         FrostInvasionHard      = 'Frost Invasion - Hard',     842976148689508,  'Frost_Invasion_Hard'
+        NightI                 = 'Night I',                   103759295562992,  'Night_I'
+        NightIEasy             = 'Night I Easy',              1029294163081388, 'Night_I_Easy'
+        NightII                = 'Night II',                  3061903590409955, 'Night_II'
+        NightIIEasy            = 'Night II Easy',             1785439979300169, 'Night_II_Easy'
+        NightIII               = 'Night III',                 1632959225008577, 'Night_III'
+        NightIIIEasy           = 'Night III Easy',            1522290797999169, 'Night_III_Easy'
         Unnamed                = '???',                       1270412135564244, 'Unnamed'
         # List Of Badges
-        listOfBadges = [WelcometoTDS, Level10, Level20, Level30, Level50, Level75, Level100, Level150, DefeatedtheBrute, DefeatGraveDigger, DefeatMoltenWarlord, DefeattheFallenKing, DefeatedNuclearMonster, DefeatedGunslinger, DefeatedWoxTheFox, DefeatedPatientZero, TriumphHardcore, Quickdraw, TheLostSouls, FrostInvasionEasy, FrostInvasionHard, Unnamed]
+        listOfBadges = [WelcometoTDS, Level10, Level20, Level30, Level50, Level75, Level100, Level150, DefeatedtheBrute, DefeatGraveDigger, DefeatMoltenWarlord, DefeattheFallenKing, DefeatedNuclearMonster, DefeatedGunslinger, DefeatedWoxTheFox, DefeatedPatientZero, TriumphHardcore, Quickdraw, TheLostSouls, FrostInvasionEasy, FrostInvasionHard, NightI, NightIEasy, NightII, NightIIEasy, NightIII, NightIIIEasy, Unnamed]
 
 class YourBizarreAdventure: # https://www.roblox.com/games/2809202155
     placeNames = 'Your Bizarre Adventure', 'Your_Bizarre_Adventure', 'YBA', 2809202155
@@ -2882,7 +2948,7 @@ class YourBizarreAdventure: # https://www.roblox.com/games/2809202155
         # List Of Badges
         listOfBadges = [Prestige1, Prestige2, Prestige3]
 
-listOfPlaces = [AUniversalTime, AdoptMe, AnimeAdventures, AnimeDefenders, AnimeVanguards, BedWars, BeeSwarmSimulator, BladeBall, BloxFruits, BlueLockRivals, BubbleGumSimulatorINFINITY, CreaturesofSonaria, DaHood, DragonAdventures, Fisch, FiveNightsTD, GrandPieceOnline, GrowaGarden, Jailbreak, JujutsuInfinite, KingLegacy, MurderMystery2, PetSimulator99, PetSimulatorX, PETSGO, ProjectSlayers, Rivals, RoyalHigh, SolsRNG, StealaBrainrot, ToiletTowerDefense, TowerDefenseSimulator, YourBizarreAdventure]
+listOfPlaces = [NinetyNineNightsintheForest, AUniversalTime, AdoptMe, AnimeAdventures, AnimeDefenders, AnimeVanguards, BedWars, BeeSwarmSimulator, BladeBall, BloxFruits, BlueLockRivals, BubbleGumSimulatorINFINITY, CreaturesofSonaria, DaHood, DragonAdventures, Fisch, FiveNightsTD, GrandPieceOnline, GrowaGarden, Jailbreak, JujutsuInfinite, KingLegacy, MurderMystery2, PetSimulator99, PETSGO, ProjectSlayers, Rivals, RoyalHigh, SolsRNG, StealaBrainrot, ToiletTowerDefense, TowerDefenseSimulator, YourBizarreAdventure]
 
 class cookieData: #          Normal Name                    Config Name                  Sort
     link                   = 'Link',                        'Link',                      None
@@ -2947,12 +3013,7 @@ async def sendGetRequestRoblox(
     while True:
         try:
             async with ClientSession(connector=getConnectorRoblox(proxies), cookies=cookies, headers=headers, timeout=ClientTimeout(timeout)) as session:
-                response: ClientResponse = await session.get(
-                    url,
-                    params=params,
-                    allow_redirects=allow_redirects,
-                    ssl=False
-                )
+                response: ClientResponse = await session.get(url, params=params, allow_redirects=allow_redirects, ssl=False)
                 match response.status:
                     case 200:
                         return await response.json()
@@ -2966,28 +3027,18 @@ async def sendGetRequestRoblox(
                         internalServerErrorTry += 1
                         logger.debug(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [500 | {MT_Try}: {internalServerErrorTry}] {url}')
                         if internalServerErrorTry >= 3:
-                            return
-                    # case _:
-                    #     logger.debug(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [{response.status}] {url}')
+                            return 'ERROR'
+                    case _:
+                        logger.debug(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [{response.status}] {url}')
 
                 await asyncio.sleep(5)
         except (InvalidCookie, AccountBanned):
             raise
-        # except (
-        #     asyncio.TimeoutError,
-        #     asyncio.exceptions.CancelledError,
-        #     ClientOSError,
-        #     ConnectionResetError,
-        #     ServerDisconnectedError,
-        #     TransferEncodingError,
-        #     ClientPayloadError,
-        #     SocketTimeoutError,
-        #     ProxyError
-        # ) as e:
-        #     logger.exception(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Error}: {e}')
-        #     await asyncio.sleep(10)
         except Exception as e:
-            logger.exception(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Critical_Error}: {e}... :<')
+            if type(e) in ETHERNET_ERRORS:
+                logger.exception(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Error}: {e}')
+            else:
+                logger.exception(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Critical_Error}: {e}', force=True)
             await asyncio.sleep(5)
 
 async def sendPostRequestRoblox(
@@ -2999,44 +3050,28 @@ async def sendPostRequestRoblox(
     headers: dict | None = None,
     cookies: dict | None = None,
     proxies: list[str] | None = None,
-    timeout: int = 10
+    timeout: int = 5
 ) -> ClientResponse:
     while True:
         try:
             async with ClientSession(connector=getConnectorRoblox(proxies), cookies=cookies, headers=headers, timeout=ClientTimeout(timeout)) as session:
-                response: ClientResponse = await session.post(
-                    url,
-                    params=params,
-                    data=data,
-                    json=json,
-                    ssl=False
-                )
+                response: ClientResponse = await session.post(url, params=params, data=data, json=json, ssl=False)
                 match response.status:
                     case 200 | 403:
                         return response
                     case 401:
                         raise InvalidCookie
-                    # case _:
-                    #     logger.debug(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [{response.status}] {url}')
-                    
+                    case _:
+                        logger.debug(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | [{response.status}] {url}')
+
                 await asyncio.sleep(5)
         except InvalidCookie:
             raise
-        # except (
-        #     asyncio.TimeoutError,
-        #     asyncio.exceptions.CancelledError,
-        #     ClientOSError,
-        #     ConnectionResetError,
-        #     ServerDisconnectedError,
-        #     TransferEncodingError,
-        #     ClientPayloadError,
-        #     SocketTimeoutError,
-        #     ProxyError
-        # ) as e:
-        #     logger.exception(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Error}: {e}')
-        #     await asyncio.sleep(5)
         except Exception as e:
-            logger.exception(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Critical_Error}: {e}... :<')
+            if type(e) in ETHERNET_ERRORS:
+                logger.exception(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Error}: {e}')
+            else:
+                logger.exception(f'< [POST_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130]} | {MT_Critical_Error}: {e}', force=True)
             await asyncio.sleep(5)
 
 ### Создание глобальных чек-листов для поиска
@@ -3050,13 +3085,13 @@ def createGlobalCheckListGamepassesRCC() -> None: # -> dict[str, list[str]]
         if config['Roblox']['CookieChecker']['Places'][place.placeNames[1]] and hasattr(place, 'Gamepasses') and [gamepass[1] for gamepass in place.Gamepasses.listOfGamepasses if config['Roblox']['CookieChecker'][place.__name__][gamepass[2]]]:
             for gamepass in place.Gamepasses.listOfGamepasses:
                 if config['Roblox']['CookieChecker'][place.__name__][gamepass[2]]:
-                    checkListGamepasses[str(gamepass[1])] = {'PlaceName': removeSpecialChars(place.placeNames[0]), 'GamepassName': removeSpecialChars(gamepass[0])}
+                    checkListGamepasses[str(gamepass[1])] = {'PlaceName': rmPatternFromString(SPECIAL_CHARS, place.placeNames[0]), 'GamepassName': rmPatternFromString(SPECIAL_CHARS, gamepass[0])}
     for customPlace in config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places']:
-        customPlaceData = config['Roblox']['CookieChecker']['CustomPlaces'][removeSpecialChars(customPlace)]
+        customPlaceData = config['Roblox']['CookieChecker']['CustomPlaces'][rmPatternFromString(SPECIAL_CHARS, customPlace)]
         if customPlaceData[2] and f'{customPlace}_Gamepasses' in config['Roblox']['CookieChecker']['CustomPlaces'] and [gamepass[1] for gamepass in config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlace}_Gamepasses'] if gamepass[2]]:
             for gamepass in config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlace}_Gamepasses']:
                 if gamepass[2]:
-                    checkListGamepasses[str(gamepass[0])] = {'PlaceName': removeSpecialChars(customPlaceData[1][0]), 'GamepassName': removeSpecialChars(gamepass[1])}
+                    checkListGamepasses[str(gamepass[0])] = {'PlaceName': rmPatternFromString(SPECIAL_CHARS, customPlaceData[1][0]), 'GamepassName': rmPatternFromString(SPECIAL_CHARS, gamepass[1])}
     logger.debug(f'< [checkListGamepasses] > Generated: {checkListGamepasses}')
 
 def createGlobalCheckListBadgesRCC() -> None: # -> dict[str, list[str]]
@@ -3068,13 +3103,13 @@ def createGlobalCheckListBadgesRCC() -> None: # -> dict[str, list[str]]
         if config['Roblox']['CookieChecker']['Places'][place.placeNames[1]] and hasattr(place, 'Badges') and [badge[1] for badge in place.Badges.listOfBadges if config['Roblox']['CookieChecker'][place.__name__][badge[2]]]:
             for badge in place.Badges.listOfBadges:
                 if config['Roblox']['CookieChecker'][place.__name__][badge[2]]:
-                    checkListBadges[str(badge[1])] = {'PlaceName': removeSpecialChars(place.placeNames[0]), 'BadgeName': removeSpecialChars(badge[0])}
+                    checkListBadges[str(badge[1])] = {'PlaceName': rmPatternFromString(SPECIAL_CHARS, place.placeNames[0]), 'BadgeName': rmPatternFromString(SPECIAL_CHARS, badge[0])}
     for customPlace in config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places']:
-        customPlaceData = config['Roblox']['CookieChecker']['CustomPlaces'][removeSpecialChars(str(customPlace))]
+        customPlaceData = config['Roblox']['CookieChecker']['CustomPlaces'][rmPatternFromString(SPECIAL_CHARS, str(customPlace))]
         if customPlaceData[2] and f'{customPlace}_Badges' in config['Roblox']['CookieChecker']['CustomPlaces'] and [badge[1] for badge in config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlace}_Badges'] if badge[2]]:
             for badge in config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlace}_Badges']:
                 if badge[2]:
-                    checkListBadges[str(badge[0])] = {'PlaceName': removeSpecialChars(customPlaceData[1][0]), 'BadgeName': removeSpecialChars(badge[1])}
+                    checkListBadges[str(badge[0])] = {'PlaceName': rmPatternFromString(SPECIAL_CHARS, customPlaceData[1][0]), 'BadgeName': rmPatternFromString(SPECIAL_CHARS, badge[1])}
     logger.debug(f'< [checkListBadges] > Generated: {checkListBadges}')
 
 def createGlobalCheckListCustomGamepassesRCC() -> None: # -> dict[str, int]
@@ -3088,7 +3123,7 @@ def createGlobalCheckListFavoritePlacesRCC() -> None: # -> dict[str, str]
     if not config['Roblox']['CookieChecker']['Main']['Favorite_Places']:
         return
     global checkListFavoritePlaces
-    checkListFavoritePlaces = {str(favoritePlace[0]): removeSpecialChars(favoritePlace[1]) for favoritePlace in config['Roblox']['CookieChecker']['Main']['Favorite_Places_List'] if favoritePlace[2]}
+    checkListFavoritePlaces = {str(favoritePlace[0]): rmPatternFromString(SPECIAL_CHARS, favoritePlace[1]) for favoritePlace in config['Roblox']['CookieChecker']['Main']['Favorite_Places_List'] if favoritePlace[2]}
     logger.debug(f'< [checkListFavoritePlaces] > Generated: {checkListFavoritePlaces}')
 
 def createGlobalCheckListPlacesWeeklyPlaytime() -> None: # -> dict[str, str]
@@ -3102,7 +3137,7 @@ def createGlobalCheckListBundlesRCC() -> None: # -> dict[str, str]
     if not config['Roblox']['CookieChecker']['Main']['Bundles']:
         return
     global checkListBundles
-    checkListBundles = {str(bundle[0]): removeSpecialChars(bundle[1]) for bundle in config['Roblox']['CookieChecker']['Main']['Bundles_List'] if bundle[2]}
+    checkListBundles = {str(bundle[0]): rmPatternFromString(SPECIAL_CHARS, bundle[1]) for bundle in config['Roblox']['CookieChecker']['Main']['Bundles_List'] if bundle[2]}
     logger.debug(f'< [checkListBundles] > Generated: {checkListBundles}')
 
 ### Поиск данных
@@ -3331,7 +3366,7 @@ async def getDonateAllTimeRoblox(cookies: dict, proxies: list[str] | None, userI
             'color': f'{ANSI.FG.CYAN}Custom Gamepasses:{color} {value}{ANSI.FG.WHITE}',
             'no-color': f'Custom Gamepasses: {value}',
             'sort-int': amountOfCustomGamepasses,
-            'sort-list': [removeSpecialChars(name) for name, amount in customGamepasses.items() if amount]
+            'sort-list': [rmPatternFromString(SPECIAL_CHARS, name) for name, amount in customGamepasses.items() if amount]
         }
     else:
         returner['Custom Gamepasses'] = None
@@ -3702,7 +3737,7 @@ async def getGroupsInformationRoblox(cookies: dict, proxies: list[str] | None, u
     groupsMembers = 0
     for group in response['data']:
         if group['role']['rank'] == 255:
-            groupsOwned[removeSpecialChars(group['group']['name'])] = group['group']['id']
+            groupsOwned[rmPatternFromString(SPECIAL_CHARS, group['group']['name'])] = group['group']['id']
             groupsMembers += group['group']['memberCount']
 
     color, value = [ANSI.FG.GREEN, formatNNOutput(groupsOwned, mode=outputMode)] if groupsOwned else [ANSI.FG.RED, '0']
@@ -4321,7 +4356,7 @@ async def robloxCookieChecker(file: str) -> None:
     moveCookieNextLine = '\n' if config['Roblox']['CookieChecker']['General']['Move_Cookie_To_The_Next_Line'] else ' | '
     dateOfCheck = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Roblox', 'Cookie Checker', 'outputs', dateOfCheck)
-    semaphore = asyncio.Semaphore(int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']) if str(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']).isdigit() and (0 < int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']) <= 200) else 20)
+    semaphore = asyncio.Semaphore(int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']) if str(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']).isdigit() and (0 < int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker']) <= 100) else 20)
 
     def consoleOutputHandlerRCC(message: str) -> None:
         if isOutputTotal and counters['cookie']:
@@ -4454,8 +4489,8 @@ async def robloxCookieChecker(file: str) -> None:
                     async with aiofiles.open(savePath / 'duplicates.txt', 'a', encoding='utf-8') as file:
                         await file.write(f'ID: {resultsRCC} | Cookie: {cookie}\n')
                     consoleOutputHandlerRCC(f'\r [{ANSI.FG.YELLOW}>{ANSI.FG.WHITE}] {ANSI.FG.YELLOW}{MT_Account_Duplicate}{ANSI.FG.WHITE}\n')
-            except Exception:
-                logger.exception(f'< [ROBLOX_COOKIE_CHECKER] > {MT_Critical_Error}... :<', force=True)
+            except Exception as e:
+                logger.exception(f'< [ROBLOX_COOKIE_CHECKER] > {MT_Critical_Error}: {e}', force=True)
 
     savePath.mkdir(parents=True, exist_ok=True)
     cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}.txt{ANSI.DECOR.UNDERLINEOFF}\':\n')
@@ -4497,7 +4532,7 @@ def generalCategoryRCC(printItems: bool = False, categoryName = '') -> list:
     if printItems:
         length = len(str(len(noDuplicatedArrays))) + 12
         for index, item in enumerate(noDuplicatedArrays):
-            cmdWriter(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {enabledOrDisabledOption(item[-1])} {removeEmojies(item[-2])}\n')
+            cmdWriter(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {enabledOrDisabledOption(item[-1])} {rmEmojies(item[-2])}\n')
     return noDuplicatedArrays
 
 def removeItemFromCategory(category: list, remove: str | int):
@@ -4939,13 +4974,14 @@ async def robloxCookieSorter() -> None:
 
 async def saveCookieRCR(mode: Literal['MassMode', 'SingleMode'], oldCookie: str, newCookie: str, savePath: Path) -> None:
     savePath.mkdir(parents=True, exist_ok=True)
-    if 1 in config['Roblox']['CookieRefresher'][mode]['Cookie_Save_Mode'] or not any(mode in config['Roblox']['CookieRefresher'][mode]['Cookie_Save_Mode'] for mode in [2, 3]):
+    modes = config['Roblox']['CookieRefresher'][mode]['Cookie_Save_Mode']
+    if 1 in modes or not any(mode in modes for mode in [2, 3]):
         async with aiofiles.open(savePath / 'refreshed_cookies_mode_1.txt', 'a', encoding='utf-8') as file:
             await file.write(f'{oldCookie} -> {newCookie}\n')
-    if 2 in config['Roblox']['CookieRefresher'][mode]['Cookie_Save_Mode']:
+    if 2 in modes:
         async with aiofiles.open(savePath / 'refreshed_cookies_mode_2.txt', 'a', encoding='utf-8') as file:
             await file.write(f'{newCookie}\n')
-    if 3 in config['Roblox']['CookieRefresher'][mode]['Cookie_Save_Mode']:
+    if 3 in modes:
         (savePath / 'refreshed_cookies_mode_3').mkdir(parents=True, exist_ok=True)
         async with aiofiles.open(savePath / 'refreshed_cookies_mode_3' / f'{oldCookie}.txt', 'a', encoding='utf-8') as file:
             await file.write(f'{newCookie}\n')
@@ -5312,7 +5348,7 @@ async def robloxTransactionAnalysis(file: str) -> None:
     isOutputTotal = config['Outputs']['Output_Total']
     dateOfCheck = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Roblox', 'Transaction Analysis', 'outputs', dateOfCheck)
-    semaphore = asyncio.Semaphore(int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) if str(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) <= 200) else 20)
+    semaphore = asyncio.Semaphore(int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) if str(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) <= 100) else 20)
     minuses = '-'*52
 
     def consoleOutputHandlerRTA(counter: str, message: str) -> None:
@@ -5386,8 +5422,8 @@ async def robloxTransactionAnalysis(file: str) -> None:
                     async with aiofiles.open(savePath / 'duplicates.txt', 'a', encoding='utf-8') as file:
                         await file.write(f'{MT_Id}: {userId} | {MT_Cookie}: {cookie}\n')
                     consoleOutputHandlerRTA('duplicates', f'\r [{ANSI.FG.YELLOW}>{ANSI.FG.WHITE}] {ANSI.FG.YELLOW}{MT_Account_Duplicate}{ANSI.FG.WHITE}\n')
-            except Exception:
-                logger.exception(f'< [ROBLOX_TRANSACTION_ANALYSIS] > {MT_Critical_Error}... :<', force=True)
+            except Exception as e:
+                logger.exception(f'< [ROBLOX_TRANSACTION_ANALYSIS] > {MT_Critical_Error}: {e}', force=True)
 
     savePath.mkdir(parents=True, exist_ok=True)
     cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}.txt{ANSI.DECOR.UNDERLINEOFF}\':\n')
@@ -5475,17 +5511,17 @@ async def autoFindChatID() -> None:
                     removeLines(8)
                     whileTrueStageChatID = False
                 case 'N' | 'Т':
-                    return errorOrCorrectHandler(True, 8, f'{MT_Send_Any_Message_To_The_Bot_And_Try_Again}... :<', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+                    return errorOrCorrectHandler(True, 8, f'{MT_Send_Any_Message_To_The_Bot_And_Try_Again}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
                 case _:
                     removeLines(7)
     except AttributeError:
-        return errorOrCorrectHandler(True, 2, f'{MT_Possibly_A_Typo_In_The_Bot_Token}... :<', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, 2, f'{MT_Possibly_A_Typo_In_The_Bot_Token}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
     except IndexError:
-        return errorOrCorrectHandler(True, 2, f'{MT_Send_Any_Message_To_The_Bot_And_Try_Again}... :<', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, 2, f'{MT_Send_Any_Message_To_The_Bot_And_Try_Again}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
     except TelegramNetworkError:
-        return errorOrCorrectHandler(True, 2, f'{MT_Possibly_The_Internet_Is_Unstable}... :<', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, 2, f'{MT_Possibly_The_Internet_Is_Unstable}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
     except Exception as e:
-        logger.exception(f' < [TELEGRAM_BOT_AUTO_FIND_CHAT_ID] > {MT_Unknown_Error}: {e}... :<', force=True)
+        logger.exception(f' < [TELEGRAM_BOT_AUTO_FIND_CHAT_ID] > {MT_Unknown_Error}: {e}', force=True)
         return errorOrCorrectHandler(True, 2, f'{MT_Unknown_Error}: {e}', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
 
 async def testMeowTelegramBot() -> None:
@@ -5589,7 +5625,7 @@ async def addPlaceRoblox(placeId: str, nameOfCategory: Literal['Favorite Places'
             return errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
         placeName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
-        cleanPlaceName = removeTwoSpaces(removeSpecialChars(removeBracketsAndIn(removeEmojies(placeName), round=True, square=True)))
+        cleanPlaceName = rmTwoSpaces(rmPatternFromString(SPECIAL_CHARS, rmBracketsAndIn(rmEmojies(placeName), round=True, square=True)))
 
         match nameOfCategory:
             case 'Favorite Places':
@@ -5600,7 +5636,7 @@ async def addPlaceRoblox(placeId: str, nameOfCategory: Literal['Favorite Places'
         config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_List'].append(placeData)
         autoSaveConfig()
     except Exception as e:
-        logger.exception(f'< [ROBLOX_ADD_{_nameOfCategory.upper()}] > {MT_Unknown_Error}: {e}... :<', force=True)
+        logger.exception(f'< [ROBLOX_ADD_{_nameOfCategory.upper()}] > {MT_Unknown_Error}: {e}', force=True)
         return errorOrCorrectHandler(True, 5, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
 async def addBundleRoblox(bundleId: str, nameOfCategory: Literal['Bundles']) -> None:
@@ -5621,7 +5657,7 @@ async def addBundleRoblox(bundleId: str, nameOfCategory: Literal['Bundles']) -> 
             case _:
                 return errorOrCorrectHandler(True, 5, f'{MT_Unknown_Server_Response_Code}: {response.status}', generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
     except Exception as e:
-        logger.exception(f'< [ROBLOX_ADD_BUNDLE] > {MT_Unknown_Error}: {e}... :<', force=True)
+        logger.exception(f'< [ROBLOX_ADD_BUNDLE] > {MT_Unknown_Error}: {e}', force=True)
         return errorOrCorrectHandler(True, 5, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
 # Настройки > Роблокс > Куки чекер > Сортировка
@@ -5677,7 +5713,7 @@ async def addCustomPlaceRoblox(customPlaceId: str):
 
         customPlaceName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
 
-        normalPlaceName = removeEmojies(removeBracketsAndIn(customPlaceName, round=True, square=True)).replace('"', '').strip()
+        normalPlaceName = rmEmojies(rmBracketsAndIn(customPlaceName, round=True, square=True)).replace('"', '').strip()
         if normalPlaceName:
             abbreviatedPlaceName = ''.join(word[0] for word in normalPlaceName.split())
         else:
@@ -5686,11 +5722,25 @@ async def addCustomPlaceRoblox(customPlaceId: str):
 
         config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places'].append(int(customPlaceId))
         config['Roblox']['CookieChecker']['CustomPlaces'][customPlaceId] = [int(customPlaceId), [normalPlaceName, str(customPlaceName).strip(), abbreviatedPlaceName.upper()], False]
-        if customPlaceGamepassesData: config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlaceId}_Gamepasses'] = [[gamepass['id'], str(gamepass['name']).strip(), False] for gamepass in customPlaceGamepassesData]
-        if customPlaceBadgesData:     config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlaceId}_Badges']     = [[badge['id'],    str(badge['name']).strip(),    False] for badge    in customPlaceBadgesData]
+        if customPlaceGamepassesData:
+            config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlaceId}_Gamepasses'] = [
+                [
+                    gamepass['id'],
+                    rmTwoSpaces(rmBracketsAndIn(rmPatternFromString(SPECIAL_CHARS, rmEmojies(str(gamepass['name']).strip())), round=True, square=True)),
+                    False
+                ] for gamepass in customPlaceGamepassesData
+            ]
+        if customPlaceBadgesData:
+            config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlaceId}_Badges'] = [
+                [
+                    badge['id'],
+                    rmTwoSpaces(rmBracketsAndIn(rmPatternFromString(SPECIAL_CHARS, rmEmojies(str(badge['name']).strip())), round=True, square=True)),
+                    False
+                ] for badge in customPlaceBadgesData
+            ]
         autoSaveConfig()
     except Exception as e:
-        logger.exception(f' < [ADD_CUSTOM_PLACE_RCC] > {MT_Unknown_Error}: {e}... :<', force=True)
+        logger.exception(f' < [ADD_CUSTOM_PLACE_RCC] > {MT_Unknown_Error}: {e}', force=True)
         return errorOrCorrectHandler(True, 5, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
 
 # Настройки > Роблокс > Анализ транзакций > Плейсы
@@ -5709,7 +5759,7 @@ async def addPlaceRTA(placeId: str) -> None:
 
         placeName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
 
-        normalPlaceName = removeEmojies(removeSpecialChars(removeBracketsAndIn(placeName, round=True, square=True))).strip()
+        normalPlaceName = rmEmojies(rmPatternFromString(SPECIAL_CHARS, rmBracketsAndIn(placeName, round=True, square=True))).strip()
         if not normalPlaceName:
             normalPlaceName = f'Unknown_{placeId}'
 
@@ -5737,7 +5787,7 @@ async def parsePlaceGamepassesOrBadgesRoblox(info: dict[str, str], placeId: str,
             return errorOrCorrectHandler(True, 5, info['errorHasNo'], info['visualPath'])
 
         placeName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
-        cleanPlaceName = removeTwoSpaces(removeSpecialChars(removeBracketsAndIn(removeEmojies(placeName, replace=''), round=True, square=True))).strip()
+        cleanPlaceName = rmTwoSpaces(rmPatternFromString(SPECIAL_CHARS, rmBracketsAndIn(rmEmojies(placeName, replace=''), round=True, square=True))).strip()
 
         removeLines(3)
         cmdWriter(f' [{ANSI.FG.GREEN}>{ANSI.FG.WHITE}] {MT_Found_Data_On} {placeId} ({cleanPlaceName}):\n\n')
@@ -5746,9 +5796,9 @@ async def parsePlaceGamepassesOrBadgesRoblox(info: dict[str, str], placeId: str,
         for item in response:
             id   = item['id']
             name = item['name']
-            if config['Roblox']['Misc'][f'{info['category']}Parser']['Remove_Emojies_From_Name']:                name = removeEmojies(name, replace='')
-            if config['Roblox']['Misc'][f'{info['category']}Parser']['Remove_Round_Brackets_And_In_From_Name']:  name = removeBracketsAndIn(name, round=True,  square=False)
-            if config['Roblox']['Misc'][f'{info['category']}Parser']['Remove_Square_Brackets_And_In_From_Name']: name = removeBracketsAndIn(name, round=False, square=True)
+            if config['Roblox']['Misc'][f'{info['category']}Parser']['Remove_Emojies_From_Name']:                name = rmEmojies(name, replace='')
+            if config['Roblox']['Misc'][f'{info['category']}Parser']['Remove_Round_Brackets_And_In_From_Name']:  name = rmBracketsAndIn(name, round=True,  square=False)
+            if config['Roblox']['Misc'][f'{info['category']}Parser']['Remove_Square_Brackets_And_In_From_Name']: name = rmBracketsAndIn(name, round=False, square=True)
             parsedItems.append([id, name.strip(), f'https://www.roblox.com/{info['categoryUrl']}/{id}'])
 
         parserPath = Path('Roblox', 'Misc', f'{info['category']} parser')
@@ -5762,28 +5812,30 @@ async def parsePlaceGamepassesOrBadgesRoblox(info: dict[str, str], placeId: str,
 ### Конфиг функции
 
 def validateConfigSettings(userConfig: TOMLDocument, defaultConfig: Table | TOMLDocument, path: Path | str = ''):
-    if isinstance(defaultConfig, (Table, TOMLDocument)):
-        for key in defaultConfig.keys():
-            fullPath = Path(path, key) if path else key
+    if not isinstance(defaultConfig, (Table, TOMLDocument)):
+        return
 
-            if key not in userConfig:
-                userConfig[key] = defaultConfig[key]
-                continue
+    for key in defaultConfig.keys():
+        fullPath = Path(path, key) if path else key
 
-            currentValue = userConfig[key]
-            defaultValue = defaultConfig[key]
+        if key not in userConfig:
+            userConfig[key] = defaultConfig[key]
+            continue
 
-            if isinstance(defaultValue, (Table, TOMLDocument)):
-                validateConfigSettings(currentValue, defaultValue, fullPath)
-            elif isinstance(defaultValue, Item):
-                if type(currentValue.unwrap()) is not type(defaultValue.unwrap()):
-                    try:
-                        commentText = currentValue.comment
-                        userConfig[key] = defaultValue
-                        if commentText:
-                            userConfig[key].comment(commentText)
-                    except AttributeError:
-                        userConfig[key] = defaultValue
+        currentValue = userConfig[key]
+        defaultValue = defaultConfig[key]
+
+        if isinstance(defaultValue, (Table, TOMLDocument)):
+            validateConfigSettings(currentValue, defaultValue, fullPath)
+        elif isinstance(defaultValue, Item):
+            if type(currentValue.unwrap()) is not type(defaultValue.unwrap()):
+                try:
+                    commentText = currentValue.comment
+                    userConfig[key] = defaultValue
+                    if commentText:
+                        userConfig[key].comment(commentText)
+                except AttributeError:
+                    userConfig[key] = defaultValue
 
 def defaultConfigLoaderSettings() -> TOMLDocument:
     configLoader = document()
@@ -5833,19 +5885,26 @@ def loadConfigLoader() -> None:
     
     try:
         configLoader = loads(open(loaderPath, 'r', encoding='utf-8').read())
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Checking_Integrity_Config_Loader}... :3{S}\r')
+        logger.info(f'< [LOAD_CONFIG_LOADER] > {MT_Checking_Integrity_Config_Loader}...', force=True)
         validateConfigSettings(configLoader, defaultConfigLoaderSettings())
     except Exception as e:
-        logger.exception(f'< [LOAD_CONFIG_LOADER] > {MT_Critical_Error}: {e}... :<', force=True)
+        configsBackups = configsPath / '.backups' / currentDate('%d.%m.%Y - %H.%M.%S')
+        configsBackups.mkdir(parents=True, exist_ok=True)
+        logger.exception(f'< [LOAD_CONFIG_LOADER] > {MT_Critical_Error}: {e}', force=True)
+        logger.info(f'< [LOAD_CONFIG_LOADER] > {MT_Saving_A_Backup_Copy_Of_Loader}...', force=True)
+        shutil.copyfile(
+            Path(configsPath, '.Loader.toml'),
+            Path(configsBackups, '.Loader.toml')
+        )
+        logger.info(f'< [LOAD_CONFIG_LOADER] > {MT_Successfully_Saved_A_Backup_Copy_Of_Loader}', force=True)
         configLoader = defaultConfigLoaderSettings()
-        autoSaveConfigLoader()
 
 def getConfigOnLoad() -> str:
     try:
         configName = str(configLoader['Loader']['Load_Config'])
         return configName if configName in configFiles() else 'default'
     except Exception as e:
-        logger.exception(f'< [GET_CONFIG_ON_LOAD] > {MT_Critical_Error}: {e}... :<', force=True)
+        logger.exception(f'< [GET_CONFIG_ON_LOAD] > {MT_Critical_Error}: {e}', force=True)
         return 'default'
 
 def defaultConfigSettings() -> TOMLDocument:
@@ -6056,21 +6115,32 @@ def loadConfig(configName: str) -> None:
     configsPath = Path('Settings', 'Configs')
     configsPath.mkdir(parents=True, exist_ok=True)
     configPath = configsPath / f'{configName}.toml'
-    if configPath.exists():
-        config = loads(open(configPath, 'r', encoding='utf-8').read())
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Checking_Integrity_Config}... :3{S}\r')
-        cmdFlusher()
-        validateConfigSettings(config, defaultConfigSettings())
-    else:
-        configPath = configsPath / f'{configLoader['Loader']['Current_Config']}.toml'
+    try:
         if configPath.exists():
             config = loads(open(configPath, 'r', encoding='utf-8').read())
+            logger.info(f'< [LOAD_CONFIG] > {MT_Checking_Integrity_Config}...', force=True)
+            validateConfigSettings(config, defaultConfigSettings())
         else:
-            config = defaultConfigSettings()
+            configPath = configsPath / f'{configLoader['Loader']['Current_Config']}.toml'
+            if configPath.exists():
+                config = loads(open(configPath, 'r', encoding='utf-8').read())
+            else:
+                config = defaultConfigSettings()
 
-    configLoader['Loader']['Current_Config'] = configName
-    open(configsPath / '.Loader.toml', 'w', encoding='utf-8').write(dumps(configLoader))
-    open(configsPath / f'{configName}.toml', 'w', encoding='utf-8').write(dumps(config))
+        configLoader['Loader']['Current_Config'] = configName
+        open(configsPath / '.Loader.toml', 'w', encoding='utf-8').write(dumps(configLoader))
+        open(configsPath / f'{configName}.toml', 'w', encoding='utf-8').write(dumps(config))
+    except Exception as e:
+        configsBackups = configsPath / '.backups' / currentDate('%d.%m.%Y - %H.%M.%S')
+        configsBackups.mkdir(parents=True, exist_ok=True)
+        logger.exception(f'< [LOAD_CONFIG] > {MT_Critical_Error}: {e}', force=True)
+        logger.info(f'< [LOAD_CONFIG] > {MT_Saving_A_Backup_Copy_Of_Config}...', force=True)
+        shutil.copyfile(
+            Path(configsPath, f'{configName}.toml'),
+            Path(configsBackups, f'{configName}.toml')
+        )
+        logger.info(f'< [LOAD_CONFIG] > {MT_Successfully_Saved_A_Backup_Copy_Of_Config}', force=True)
+        config = defaultConfigSettings()
 
 def configFiles(*, loweredFilenames: bool = False) -> list[str]:
     configs = []
@@ -6149,6 +6219,7 @@ def configContextMenu(chosenConfig: str) -> None:
                 configPath.mkdir(parents=True, exist_ok=True)
                 openFile(configPath, highlightFile=True, filename=f'{chosenConfig}.toml')
             case 'R' | 'К':
+                isResetted = None
                 if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
                     removeLines(13)
                     whileTrueStage4 = True
@@ -6157,17 +6228,22 @@ def configContextMenu(chosenConfig: str) -> None:
                         confirmTheAction = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                         match confirmTheAction:
                             case 'Y' | 'Н':
+                                isResetted = True
                                 with open(configPath / f'{chosenConfig}.toml', 'w', encoding='utf-8') as file:
                                     file.write(dumps(defaultConfigSettings()))
                                 whileTrueStage4 = False
                             case 'N' | 'Т':
                                 whileTrueStage4 = False
-
                         removeLines(8)
                 else:
+                    isResetted = True
                     with open(configPath / f'{chosenConfig}.toml', 'w', encoding='utf-8') as file:
                         file.write(dumps(defaultConfigSettings()))
                     removeLines(13)
+
+                currentConfig = configLoader['Loader']['Current_Config']
+                if isResetted and chosenConfig == currentConfig:
+                    loadConfig(currentConfig)
             case 'D' | 'В':
                 if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
                     removeLines(13)
@@ -6187,7 +6263,6 @@ def configContextMenu(chosenConfig: str) -> None:
                                 whileTrueStage4 = False
                             case 'N' | 'Т':
                                 whileTrueStage4 = False
-
                         removeLines(8)
                 else:
                     whileTrueStage3 = False
@@ -6234,7 +6309,7 @@ class Logger:
             fileHandler.setLevel(logging.DEBUG)
             self._logger.addHandler(fileHandler)
             
-        self._logger.info(f'{MT_Eared_Assistant_Is_Watching}... :3')
+        self._logger.info(f'{MT_Eared_Assistant_Is_Watching}...')
     
     def debug(self, message: str = '', *, force: bool = False):
         if force or configLoader['Debugger']['Debug']:
@@ -6488,7 +6563,7 @@ async def mainMenu() -> None:
                         case '5':
                             removeLines(11)
                             columnarHeaders = [MT_Id, MT_Name, MT_Link]
-                            info = {
+                            infoMisc = {
                                 '1': {
                                     'category'    : 'Gamepasses',
                                     'categoryUrl' : 'game-pass',
@@ -6516,24 +6591,25 @@ async def mainMenu() -> None:
                                     # Парсер геймпассов, Парсер бейджей
                                     case '1' | '2':
                                         removeLines(9)
-                                        chosenInfo = info[robloxMiscTab]
+                                        chosenInfo = infoMisc[robloxMiscTab]
                                         miscParsePlaceGamepassesOrBadgesTab = input(f' {chosenInfo['visualPath']}\n\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] {MT_Cancel}\n\n [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_The_Place_ID}: ').strip()
                                         await parsePlaceGamepassesOrBadgesRoblox(chosenInfo, miscParsePlaceGamepassesOrBadgesTab, columnarHeaders)
                                         cls()
                                         lableASCII()
                                     # Выгрузка геймпассов и бейджей используемые программой
                                     case '3':
-                                        allThingsPath = Path('Roblox', 'Misc', 'All gamepasses and badges from program')
-                                        (allThingsPath / 'Gamepasses').mkdir(parents=True, exist_ok=True)
-                                        (allThingsPath / 'Badges').mkdir(parents=True, exist_ok=True)
+                                        allItemsPath = Path('Roblox', 'Misc', 'All gamepasses and badges from program')
+                                        (allItemsPath / 'Gamepasses').mkdir(parents=True, exist_ok=True)
+                                        (allItemsPath / 'Badges').mkdir(parents=True, exist_ok=True)
                                         for place in listOfPlaces:
+                                            placeName = rmPatternFromString(SPECIAL_CHARS, place.placeNames[0])
                                             if hasattr(place, 'Gamepasses'):
                                                 allGamepasses = [[gamepass[1], gamepass[0], f'https://www.roblox.com/game-pass/{gamepass[1]}'] for gamepass in place.Gamepasses.listOfGamepasses]
-                                                with open(allThingsPath / 'Gamepasses' / f'{place.placeNames[3]} ({re.sub(r'[\/:*?"<>|]', '', place.placeNames[0])}).txt', 'w', encoding='utf-8') as file:
+                                                with open(allItemsPath / 'Gamepasses' / f'{place.placeNames[3]} ({placeName}).txt', 'w', encoding='utf-8') as file:
                                                     file.write(f'\n  Meow :3\n\n  {MT_Place_ID}: {place.placeNames[3]}\n  {MT_Place_Name}: {place.placeNames[0]}\n  {MT_Place_Link}: https://www.roblox.com/games/{place.placeNames[3]}\n\n  [*] {MT_Gamepasses}\n{columnar(allGamepasses, columnarHeaders, no_borders=True)}')
                                             if hasattr(place, 'Badges'):
                                                 allBadges = [[badge[1], badge[0], f'https://www.roblox.com/badges/{badge[1]}'] for badge in place.Badges.listOfBadges]
-                                                with open(allThingsPath / 'Badges' / f'{place.placeNames[3]} ({re.sub(r'[\/:*?"<>|]', '', place.placeNames[0])}).txt', 'w', encoding='utf-8') as file:
+                                                with open(allItemsPath / 'Badges' / f'{place.placeNames[3]} ({placeName}).txt', 'w', encoding='utf-8') as file:
                                                     file.write(f'\n  Meow :3\n\n  {MT_Place_ID}: {place.placeNames[3]}\n  {MT_Place_Name}: {place.placeNames[0]}\n  {MT_Place_Link}: https://www.roblox.com/games/{place.placeNames[3]}\n\n  [*] {MT_Badges}\n{columnar(allBadges, columnarHeaders, no_borders=True)}')    
                                         errorOrCorrectHandler(False, 9, f'{MT_Successfully_Uploaded_In} \'Roblox{osSep}Misc{osSep}All gamepasses and badges from program\'', generateVisualPath(MT_Roblox, MT_Misc))
                                     case 'F' | 'А':
@@ -6890,7 +6966,7 @@ async def mainMenu() -> None:
                                                     removeLines(11)
                                                     whileTrueStage4 = True
                                                     while whileTrueStage4:
-                                                        cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_General)}\n\n [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['General']['First_Check_All_Cookies_For_Valid'])} {MT_First_Check_All_Cookies_For_Valid}\n [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] ┃ {MT_Number_Of_Threads_For_Valid_Checker}: {int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker']) if str(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker']).isdigit() and (0 < int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker']) <= 1000) else 10}\n [{ANSI.FG.PINK}3{ANSI.FG.WHITE}] ┃ {MT_Number_Of_Threads_For_Main_Checker}: {config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker'] if (0 < config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker'] <= 200) else 10}\n [{ANSI.FG.PINK}4{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['General']['Name_Output_File_The_Same_As_Input_File'])} {MT_Name_Output_File_The_Same_As_Input_File}\n [{ANSI.FG.PINK}5{ANSI.FG.WHITE}] ┃ {MT_Output_Filename}: {config['Roblox']['CookieChecker']['General']['Output_Filename'] if not any(char in config['Roblox']['CookieChecker']['General']['Output_Filename'] for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|']) and len(config['Roblox']['CookieChecker']['General']['Output_Filename']) <= 50 else 'output'}\n [{ANSI.FG.PINK}6{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['General']['Move_Cookie_To_The_Next_Line'])} {MT_Move_Cookie_To_The_Next_Line}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
+                                                        cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_General)}\n\n [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['General']['First_Check_All_Cookies_For_Valid'])} {MT_First_Check_All_Cookies_For_Valid}\n [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] ┃ {MT_Number_Of_Threads_For_Valid_Checker}: {int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker']) if str(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker']).isdigit() and (0 < int(config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Valid_Checker']) <= 1000) else 10}\n [{ANSI.FG.PINK}3{ANSI.FG.WHITE}] ┃ {MT_Number_Of_Threads_For_Main_Checker}: {config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker'] if (0 < config['Roblox']['CookieChecker']['General']['Number_Of_Threads_For_Main_Checker'] <= 100) else 10}\n [{ANSI.FG.PINK}4{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['General']['Name_Output_File_The_Same_As_Input_File'])} {MT_Name_Output_File_The_Same_As_Input_File}\n [{ANSI.FG.PINK}5{ANSI.FG.WHITE}] ┃ {MT_Output_Filename}: {config['Roblox']['CookieChecker']['General']['Output_Filename'] if not any(char in config['Roblox']['CookieChecker']['General']['Output_Filename'] for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|']) and len(config['Roblox']['CookieChecker']['General']['Output_Filename']) <= 50 else 'output'}\n [{ANSI.FG.PINK}6{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['General']['Move_Cookie_To_The_Next_Line'])} {MT_Move_Cookie_To_The_Next_Line}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                                         settingsRCCGeneralTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                                         match settingsRCCGeneralTab:
                                                             case '0':
@@ -6902,7 +6978,7 @@ async def mainMenu() -> None:
                                                                 settingsRCCGeneralThreadsEnter = input(f'\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Number_Of_Threads}: ').strip()
                                                                 match settingsRCCGeneralTab:
                                                                     case '2': changeNumberOfThreads('CookieChecker', 'Number_Of_Threads_For_Valid_Checker', settingsRCCGeneralThreadsEnter, 1000)
-                                                                    case '3': changeNumberOfThreads('CookieChecker', 'Number_Of_Threads_For_Main_Checker',  settingsRCCGeneralThreadsEnter, 200)
+                                                                    case '3': changeNumberOfThreads('CookieChecker', 'Number_Of_Threads_For_Main_Checker',  settingsRCCGeneralThreadsEnter, 100)
                                                             case '4':
                                                                 config['Roblox']['CookieChecker']['General']['Name_Output_File_The_Same_As_Input_File'] ^= True
                                                             case '5':
@@ -7172,7 +7248,7 @@ async def mainMenu() -> None:
                                                                                                             removeLines(7)
                                                                                                             whileTrueStage8 = True
                                                                                                             while whileTrueStage8:
-                                                                                                                cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName, sortValues[choice])}\n\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃ {MT_Do_You_Sure}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.FG.WHITE}] ┃ {MT_I_Am_Sure}\n [{ANSI.FG.RED}N{ANSI.FG.WHITE}] ┃ {MT_Not_Yet}\n\n')
+                                                                                                                cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName, str(sortValues[choice][0]))}\n\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃ {MT_Do_You_Sure}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.FG.WHITE}] ┃ {MT_I_Am_Sure}\n [{ANSI.FG.RED}N{ANSI.FG.WHITE}] ┃ {MT_Not_Yet}\n\n')
                                                                                                                 confirmTheAction = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                                                                                                 match confirmTheAction:
                                                                                                                     case 'Y' | 'Н':
@@ -7428,7 +7504,7 @@ async def mainMenu() -> None:
                                                     removeLines(8)
                                                     whileTrueStage4 = True
                                                     while whileTrueStage4:
-                                                        cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_General)}\n\n [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['TransactionAnalysis']['General']['First_Check_All_Cookies_For_Valid'])} {MT_First_Check_All_Cookies_For_Valid}\n [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] ┃ {MT_Number_Of_Threads_For_Valid_Checker}: {int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Valid_Checker']) if str(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Valid_Checker']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Valid_Checker']) <= 1000) else 10}\n [{ANSI.FG.PINK}3{ANSI.FG.WHITE}] ┃ {MT_Number_Of_Threads_For_Transaction_Analysis}: {int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) if str(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) <= 200) else 10}\n [{ANSI.FG.PINK}4{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['TransactionAnalysis']['General']['Indentation_By_The_Longest_Name'])} {MT_Indentation_By_The_Longest_Place_Name}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
+                                                        cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_General)}\n\n [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['TransactionAnalysis']['General']['First_Check_All_Cookies_For_Valid'])} {MT_First_Check_All_Cookies_For_Valid}\n [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] ┃ {MT_Number_Of_Threads_For_Valid_Checker}: {int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Valid_Checker']) if str(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Valid_Checker']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Valid_Checker']) <= 1000) else 10}\n [{ANSI.FG.PINK}3{ANSI.FG.WHITE}] ┃ {MT_Number_Of_Threads_For_Transaction_Analysis}: {int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) if str(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) <= 100) else 10}\n [{ANSI.FG.PINK}4{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['TransactionAnalysis']['General']['Indentation_By_The_Longest_Name'])} {MT_Indentation_By_The_Longest_Place_Name}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                                         settingsTransactionAnalysisGeneralTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                                         match settingsTransactionAnalysisGeneralTab:
                                                             case '0':
@@ -7441,7 +7517,7 @@ async def mainMenu() -> None:
                                                                 settingsRTAGeneralThreadsEnter = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Number_Of_Threads}: ').strip()
                                                                 match settingsTransactionAnalysisGeneralTab:
                                                                     case '2': changeNumberOfThreads('TransactionAnalysis', 'Number_Of_Threads_For_Valid_Checker',        settingsRTAGeneralThreadsEnter, 1000)
-                                                                    case '3': changeNumberOfThreads('TransactionAnalysis', 'Number_Of_Threads_For_Transaction_Analysis', settingsRTAGeneralThreadsEnter, 200)
+                                                                    case '3': changeNumberOfThreads('TransactionAnalysis', 'Number_Of_Threads_For_Transaction_Analysis', settingsRTAGeneralThreadsEnter, 100)
                                                             case '4':
                                                                 config['Roblox']['TransactionAnalysis']['General']['Indentation_By_The_Longest_Name'] ^= True
                                                             case 'F' | 'А':
@@ -7645,7 +7721,7 @@ async def mainMenu() -> None:
                     removeLines(mainDecorators[0])
                     whileTrueStage1 = True
                     while whileTrueStage1:
-                        cmdWriter(f' \n\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃ {MT_Do_You_Sure}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.FG.WHITE}] ┃ {MT_I_Am_Sure}\n [{ANSI.FG.RED}N{ANSI.FG.WHITE}] ┃ {MT_Not_Yet}\n\n')
+                        cmdWriter(f' {generateVisualPath()} \n\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃ {MT_Do_You_Sure}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.FG.WHITE}] ┃ {MT_I_Am_Sure}\n [{ANSI.FG.RED}N{ANSI.FG.WHITE}] ┃ {MT_Not_Yet}\n\n')
                         confirmTheAction = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                         match confirmTheAction:
                             case 'Y' | 'Н':
