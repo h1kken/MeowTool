@@ -116,8 +116,9 @@ class ANSI:
 ### Переводы
 
 def translateLoad(language: str) -> None:
-    global MT_Successfully_Saved_A_Backup_Copy_Of_Loader, MT_Successfully_Saved_A_Backup_Copy_Of_Config, MT_Saving_A_Backup_Copy_Of_Loader, MT_Saving_A_Backup_Copy_Of_Config, MT_Error, MT_Critical_Error, MT_Unknown_Error, MT_Waking_Up_Our_Eared_Helper, MT_Tidying_Folders_Onto_Their_Little_Shelves, MT_Eared_Assistant_Is_Watching, MT_Checking_Integrity_Config_Loader, MT_Checking_Integrity_Config, MT_We_Will_Find_Out_Name_Your_Config_From_Loader, MT_Asking_The_Config_Pretty_Please_For_Settings, MT_Crossing_Paws_For_Honest_Translations, MT_Cozying_Up_For_Comfort_And_Snugness, MT_Fantasizing_About_The_Name, MT_Almost_There_Just_A_Little_Couple_Of_Hours, MT_Checking_Your_Trendiness_Level, MT_Wow_New_Update_Available_Shall_We_Fetch_It, MT_Hooray_Youre_On_The_Latest_And_Greatest, MT_Current_Version, MT_Latest_Version, MT_Yes_I_Want_The_Version, MT_No_Maybe_Later, MT_Gathering_Update_Goodies, MT_Aww_Couldnt_Check_Maybe_The_Internets_Napping, MT_What_Now, MT_Lets_Check_It_Again, MT_Checking_Again, MT_Continue_Launching, MT_Oh_Noo_My_Home_It_Is_Over, MT_Enter_Something
+    global MT_Config_Loader_Not_Found_Creating, MT_Successfully_Saved_A_Backup_Copy_Of_Loader, MT_Successfully_Saved_A_Backup_Copy_Of_Config, MT_Saving_A_Backup_Copy_Of_Loader, MT_Saving_A_Backup_Copy_Of_Config, MT_Error, MT_Critical_Error, MT_Unknown_Error, MT_Waking_Up_Our_Eared_Helper, MT_Tidying_Folders_Onto_Their_Little_Shelves, MT_Eared_Assistant_Is_Watching, MT_Checking_Integrity_Config_Loader, MT_Checking_Integrity_Config, MT_We_Will_Find_Out_Name_Your_Config_From_Loader, MT_Asking_The_Config_Pretty_Please_For_Settings, MT_Crossing_Paws_For_Honest_Translations, MT_Cozying_Up_For_Comfort_And_Snugness, MT_Fantasizing_About_The_Name, MT_Almost_There_Just_A_Little_Couple_Of_Hours, MT_Checking_Your_Trendiness_Level, MT_Wow_New_Update_Available_Shall_We_Fetch_It, MT_Hooray_Youre_On_The_Latest_And_Greatest, MT_Current_Version, MT_Latest_Version, MT_Yes_I_Want_The_Version, MT_No_Maybe_Later, MT_Gathering_Update_Goodies, MT_Aww_Couldnt_Check_Maybe_The_Internets_Napping, MT_What_Now, MT_Lets_Check_It_Again, MT_Checking_Again, MT_Continue_Launching, MT_Oh_Noo_My_Home_It_Is_Over, MT_Enter_Something
     if 'russia' not in language:
+        MT_Config_Loader_Not_Found_Creating = 'Config loader not found. Creating'
         MT_Successfully_Saved_A_Backup_Copy_Of_Loader = 'Successfully saved a backup copy of loader'
         MT_Successfully_Saved_A_Backup_Copy_Of_Config = 'Successfully saved a backup copy of config'
         MT_Saving_A_Backup_Copy_Of_Loader = 'Saving a backup copy of loader'
@@ -152,6 +153,7 @@ def translateLoad(language: str) -> None:
         MT_Oh_Noo_My_Home_It_Is_Over = 'Oh noo, my home, it\'s over'
         MT_Enter_Something = 'Enter something'
     else:
+        MT_Config_Loader_Not_Found_Creating = 'Загрузчик не найден. Создаём'
         MT_Successfully_Saved_A_Backup_Copy_Of_Loader = 'Успешно сохранили резервную копию загрузчика'
         MT_Successfully_Saved_A_Backup_Copy_Of_Config = 'Успешно сохранили резервную копию конфига'
         MT_Saving_A_Backup_Copy_Of_Loader = 'Сохраняем резервную копию твоего загрузчика'
@@ -958,13 +960,17 @@ def errorOrCorrectHandler(isError: bool, amountOfLinesToRemove: int, message: st
     waitingInput()
 
 def autoSaveConfigLoader() -> None:
+    loaderPath = Path('Settings', 'Configs', '.Loader.toml')
+    loaderPath.parent.mkdir(parents=True, exist_ok=True)
     open(Path('Settings', 'Configs', '.Loader.toml'), 'w', encoding='utf-8', errors='ignore').write(dumps(configLoader))
 
 def autoSaveConfig(force: bool = False) -> None:
     if not (configLoader['Saver']['Auto_Save_Changes'] or force):
         return
 
-    with open(Path('Settings', 'Configs', f'{configLoader['Loader']['Current_Config']}.toml'), 'w', encoding='utf-8', errors='ignore') as file:
+    configPath = Path('Settings', 'Configs', f'{configLoader['Loader']['Current_Config']}.toml')
+    configPath.parent.mkdir(parents=True, exist_ok=True)
+    with open(configPath, 'w', encoding='utf-8', errors='ignore') as file:
         file.write(dumps(config))
 
 def autoSaveConfigAndRemoveLinesInSettings(caseValue: str, autoSaveConfigKeys: tuple[str], removeLinesKeys: tuple[str], numberOfLines: int) -> None:
@@ -5923,17 +5929,22 @@ def loadConfigLoader() -> None:
         configLoader = loads(open(loaderPath, 'r', encoding='utf-8').read())
         logger.info(f'< [LOAD_CONFIG_LOADER] > {MT_Checking_Integrity_Config_Loader}...', force=True)
         validateConfigSettings(configLoader, defaultConfigLoaderSettings())
-    except Exception as e:
-        configsBackups = configsPath / '.backups' / currentDate('%d.%m.%Y - %H.%M.%S')
-        configsBackups.mkdir(parents=True, exist_ok=True)
-        logger.exception(f'< [LOAD_CONFIG_LOADER] > {MT_Critical_Error}: {e}', force=True)
-        logger.info(f'< [LOAD_CONFIG_LOADER] > {MT_Saving_A_Backup_Copy_Of_Loader}...', force=True)
-        shutil.copyfile(
-            Path(configsPath, '.Loader.toml'),
-            Path(configsBackups, '.Loader.toml')
-        )
-        logger.info(f'< [LOAD_CONFIG_LOADER] > {MT_Successfully_Saved_A_Backup_Copy_Of_Loader}', force=True)
+    except FileNotFoundError:
+        logger.info(f'< [LOAD_CONFIG_LOADER] > {MT_Config_Loader_Not_Found_Creating}...', force=True)
         configLoader = defaultConfigLoaderSettings()
+        autoSaveConfigLoader()
+    except Exception as e:
+        logger.exception(f'< [LOAD_CONFIG_LOADER] > {MT_Critical_Error}: {e}', force=True)
+        configLoader = defaultConfigLoaderSettings()
+        if loaderPath.exists():
+            configsBackups = configsPath / '.backups' / currentDate('%d.%m.%Y - %H.%M.%S')
+            configsBackups.mkdir(parents=True, exist_ok=True)
+            logger.info(f'< [LOAD_CONFIG_LOADER] > {MT_Saving_A_Backup_Copy_Of_Loader}...', force=True)
+            shutil.copyfile(
+                Path(configsPath, '.Loader.toml'),
+                Path(configsBackups, '.Loader.toml')
+            )
+            logger.info(f'< [LOAD_CONFIG_LOADER] > {MT_Successfully_Saved_A_Backup_Copy_Of_Loader}', force=True)
 
 def getConfigOnLoad() -> str:
     try:
@@ -6141,6 +6152,7 @@ def loadConfig(configName: str) -> None:
     configsPath = Path('Settings', 'Configs')
     configsPath.mkdir(parents=True, exist_ok=True)
     configPath = configsPath / f'{configName}.toml'
+
     try:
         if configPath.exists():
             config = loads(open(configPath, 'r', encoding='utf-8').read())
@@ -6157,16 +6169,17 @@ def loadConfig(configName: str) -> None:
         open(configsPath / '.Loader.toml', 'w', encoding='utf-8').write(dumps(configLoader))
         open(configsPath / f'{configName}.toml', 'w', encoding='utf-8').write(dumps(config))
     except Exception as e:
-        configsBackups = configsPath / '.backups' / currentDate('%d.%m.%Y - %H.%M.%S')
-        configsBackups.mkdir(parents=True, exist_ok=True)
         logger.exception(f'< [LOAD_CONFIG] > {MT_Critical_Error}: {e}', force=True)
-        logger.info(f'< [LOAD_CONFIG] > {MT_Saving_A_Backup_Copy_Of_Config}...', force=True)
-        shutil.copyfile(
-            Path(configsPath, f'{configName}.toml'),
-            Path(configsBackups, f'{configName}.toml')
-        )
-        logger.info(f'< [LOAD_CONFIG] > {MT_Successfully_Saved_A_Backup_Copy_Of_Config}', force=True)
         config = defaultConfigSettings()
+        if configPath.exists():
+            configsBackups = configsPath / '.backups' / currentDate('%d.%m.%Y - %H.%M.%S')
+            configsBackups.mkdir(parents=True, exist_ok=True)
+            logger.info(f'< [LOAD_CONFIG] > {MT_Saving_A_Backup_Copy_Of_Config}...', force=True)
+            shutil.copyfile(
+                Path(configsPath, f'{configName}.toml'),
+                Path(configsBackups, f'{configName}.toml')
+            )
+            logger.info(f'< [LOAD_CONFIG] > {MT_Successfully_Saved_A_Backup_Copy_Of_Config}', force=True)
 
 def configFiles(*, loweredFilenames: bool = False) -> list[str]:
     configs = []
