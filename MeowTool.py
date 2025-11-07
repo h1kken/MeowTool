@@ -5,6 +5,7 @@ cmdWriter = sys.stdout.write
 cmdFlusher = sys.stdout.flush
 import time
 import subprocess
+import traceback
 import asyncio
 import shutil
 import itertools
@@ -34,56 +35,33 @@ IMPORTS = {
 }
 
 def cls() -> None:
-    if os.name == 'nt': os.system('cls')
-    else: os.system('clear')
+    os.system('cls' if os.name == 'nt' else 'clear')
 
-installingTries = 0
-while True:
-    if installingTries > len(IMPORTS):
-        while True:
-            cls()
-            cmdWriter(f'\n  [!] We can\'t install the dependencies, try installing them via requirements.txt\n  [?] Link: https://github.com/h1kken/MeowTool/blob/meow/requirements.txt\n\n  [1] Open link in browser and close the program\n  [0] Close the program\n\n')
-            importsError = input('  [<] Enter a value: ').strip()
-            match importsError:
-                case '1':
-                    webbrowser.open('https://github.com/h1kken/MeowTool/blob/meow/requirements.txt')
-                    sys.exit()
-                case '0':
-                    sys.exit()
-    try:
-        import colorama; colorama.init()
-        cls()
-        cmdWriter('\n  \x1b[1m[\x1b[95m<3\x1b[37m] Заботимся о зависимостях... :3\r')
-        from tomlkit import TOMLDocument, table, document, nl, comment, loads, dumps
-        from tomlkit.items import Table, Item, Array
-        from aiohttp import TCPConnector, ClientSession, ClientResponse, ClientTimeout, ClientOSError, ServerDisconnectedError
-        from aiohttp.http_exceptions import TransferEncodingError
-        from aiohttp.client_exceptions import ClientPayloadError, SocketTimeoutError
-        from aiohttp_socks import ProxyConnector, ProxyError
-        from requests.exceptions import InvalidURL, InvalidSchema, MissingSchema
-        import aiofiles
-        from aiogram import Bot
-        from aiogram.types import FSInputFile
-        from aiogram.enums import ParseMode
-        from aiogram.exceptions import TelegramBadRequest, TelegramNetworkError, TelegramUnauthorizedError
-        from aiogram.utils.token import TokenValidationError
-        from discord_webhook import DiscordWebhook, DiscordEmbed
-        import emoji
-        from columnar import columnar
-        break
-    except ModuleNotFoundError as me:
-        installingTries += 1
-        subprocess.run([sys.executable, '-m', 'pip', 'install', IMPORTS[str(me)[17:-1]]])
-    except Exception as e:
-        logsPath = Path('Logs')
-        logsPath.mkdir(exist_ok=True)
-        logging.basicConfig(
-            filename=logsPath / f'log {datetime.now().strftime('%d.%m.%Y - %H.%M.%S')}.log',
-            level=logging.ERROR,
-            encoding='utf-8'
-        )
-        logging.exception(' [!] Oh noo... :<')
-        sys.exit()
+try:
+    import colorama; colorama.init()
+    from tomlkit import TOMLDocument, table, document, nl, comment, loads, dumps
+    from tomlkit.items import Table, Item, Array
+    from aiohttp import TCPConnector, ClientSession, ClientResponse, ClientTimeout, ClientOSError, ServerDisconnectedError
+    from aiohttp.http_exceptions import TransferEncodingError
+    from aiohttp.client_exceptions import ClientPayloadError, SocketTimeoutError
+    from aiohttp_socks import ProxyConnector, ProxyError
+    from requests.exceptions import InvalidURL, InvalidSchema, MissingSchema
+    import aiofiles
+    from aiogram import Bot
+    from aiogram.types import FSInputFile
+    from aiogram.enums import ParseMode
+    from aiogram.exceptions import TelegramBadRequest, TelegramNetworkError, TelegramUnauthorizedError
+    from aiogram.utils.token import TokenValidationError
+    from discord_webhook import DiscordWebhook, DiscordEmbed
+    import emoji
+    from columnar import columnar
+except Exception as e:
+    cls()
+    traceback.print_exc()
+    if type(e) == ModuleNotFoundError:
+        print(f'\n  [?] Try to install module: pip install {IMPORTS[str(e)[17:-1]]}')
+    input('\n  [<] Press Enter to close the program...')
+    sys.exit()
 
 # MeowTool :3
 
@@ -114,7 +92,7 @@ class ANSI:
 ### Переводы
 
 def translateLoad(language: str) -> None:
-    global MT_Config_Loader_Not_Found_Creating, MT_Successfully_Saved_A_Backup_Copy_Of_Loader, MT_Successfully_Saved_A_Backup_Copy_Of_Config, MT_Saving_A_Backup_Copy_Of_Loader, MT_Saving_A_Backup_Copy_Of_Config, MT_Error, MT_Critical_Error, MT_Unknown_Error, MT_Waking_Up_Our_Eared_Helper, MT_Tidying_Folders_Onto_Their_Little_Shelves, MT_Eared_Assistant_Is_Watching, MT_Checking_Integrity_Config_Loader, MT_Checking_Integrity_Config, MT_We_Will_Find_Out_Name_Your_Config_From_Loader, MT_Asking_The_Config_Pretty_Please_For_Settings, MT_Crossing_Paws_For_Honest_Translations, MT_Cozying_Up_For_Comfort_And_Snugness, MT_Fantasizing_About_The_Name, MT_Almost_There_Just_A_Little_Couple_Of_Hours, MT_Checking_Your_Trendiness_Level, MT_Wow_New_Update_Available_Shall_We_Fetch_It, MT_Hooray_Youre_On_The_Latest_And_Greatest, MT_Current_Version, MT_Latest_Version, MT_Yes_I_Want_The_Version, MT_No_Maybe_Later, MT_Gathering_Update_Goodies, MT_Aww_Couldnt_Check_Maybe_The_Internets_Napping, MT_What_Now, MT_Lets_Check_It_Again, MT_Checking_Again, MT_Continue_Launching, MT_Oh_Noo_My_Home_It_Is_Over, MT_Enter_Something
+    global MT_Config_Loader_Not_Found_Creating, MT_Successfully_Saved_A_Backup_Copy_Of_Loader, MT_Successfully_Saved_A_Backup_Copy_Of_Config, MT_Saving_A_Backup_Copy_Of_Loader, MT_Saving_A_Backup_Copy_Of_Config, MT_Error, MT_Critical_Error, MT_Unknown_Error, MT_Waking_Up_Our_Eared_Helper, MT_Tidying_Folders_Onto_Their_Little_Shelves, MT_Eared_Assistant_Is_Watching, MT_Checking_Integrity_Config_Loader, MT_Checking_Integrity_Config, MT_We_Will_Find_Out_Name_Your_Config_From_Loader, MT_Asking_The_Config_Pretty_Please_For_Settings, MT_Crossing_Paws_For_Honest_Translations, MT_Cozying_Up_For_Comfort_And_Snugness, MT_Fantasizing_About_The_Name, MT_Almost_There_Just_A_Little_Couple_Of_Hours, MT_Checking_Your_Trendiness_Level, MT_Wow_New_Update_Available_Shall_We_Fetch_It, MT_Hooray_You_Are_On_The_Latest_And_Greatest, MT_Current_Version, MT_Latest_Version, MT_Yes_I_Want_The_Version, MT_No_Maybe_Later, MT_Gathering_Update_Goodies, MT_Aww_Couldnt_Check_Maybe_The_Internets_Napping, MT_What_Now, MT_Lets_Check_It_Again, MT_Checking_Again, MT_Continue_Launching, MT_Oh_Noo_My_Home_It_Is_Over, MT_Enter_Something
     if 'russia' not in language:
         MT_Config_Loader_Not_Found_Creating = 'Config loader not found. Creating'
         MT_Successfully_Saved_A_Backup_Copy_Of_Loader = 'Successfully saved a backup copy of loader'
@@ -137,7 +115,7 @@ def translateLoad(language: str) -> None:
         MT_Almost_There_Just_A_Little_Couple_Of_Hours = 'Almost there, just a little couple of hours'
         MT_Checking_Your_Trendiness_Level = 'Checking your trendiness level'
         MT_Wow_New_Update_Available_Shall_We_Fetch_It = 'Wow! New update available, shall we fetch it?'
-        MT_Hooray_Youre_On_The_Latest_And_Greatest = 'Hooray! You\'re on the latest and greatest'
+        MT_Hooray_You_Are_On_The_Latest_And_Greatest = 'Hooray! You\'re on the latest and greatest'
         MT_Current_Version = 'Current version'
         MT_Latest_Version = 'Latest version'
         MT_Yes_I_Want_The_Version = 'Yes, I want the \'{}\' version'
@@ -172,7 +150,7 @@ def translateLoad(language: str) -> None:
         MT_Almost_There_Just_A_Little_Couple_Of_Hours = 'Почти готово, ещё парочку часов'
         MT_Checking_Your_Trendiness_Level = 'Проверяем твою трендовость'
         MT_Wow_New_Update_Available_Shall_We_Fetch_It = 'Ух-ты! Доступна новая версия, будем качать?'
-        MT_Hooray_Youre_On_The_Latest_And_Greatest = 'Ура! У тебя последняя версия'
+        MT_Hooray_You_Are_On_The_Latest_And_Greatest = 'Ура! У тебя последняя версия'
         MT_Current_Version = 'Текущая версия'
         MT_Latest_Version = 'Последняя версия'
         MT_Yes_I_Want_The_Version = 'Да, я хочу \'{}\' версию'
@@ -815,12 +793,12 @@ ETHERNET_ERRORS = [
 
 ### Константы
 
-# General
+# Общие
 
 CONSOLE_NAME_SPECIAL_CHARS = ['<', '>', '|', '^', '&']
 FILENAME_SPECIAL_CHARS = ['\\', '/', ':', '*', '?', '"', '<', '>', '|']
 
-# Roblox
+# Роблокс
 
 COOKIE_START = '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_'
 
@@ -834,17 +812,17 @@ STRING_MINIMUM_100_SYMBOLS_PATTERN = re.compile(
     r'\S{100,}'
 )
 
-# Roblox
+# Роблокс
 
 COOKIE_PATTERN = re.compile(
-    r'_\|(?:_|[^\s\r\n]*?\|_)\S{100,}' # :3
+    r'_\|(?:_\|[^\s\r\n]*?\|_)\S{100,}' # :3
 )
 
 AGE_GROUP_PATTERN = re.compile(
     r'(?i)(Over|Under)(\d+)(Checked)?'
 )
 
-# Proxy
+# Прокси
 
 PROXY_PROTOCOL_IN_START_OF_STRING_PATTERN = re.compile(
     r'(?i)^(https?|socks[45])'
@@ -1121,23 +1099,23 @@ def downloadExecutableVersion(version: str) -> None:
     sys.exit()
 
 async def checkUpdates() -> None:
-    spaces = ' '*20
+    S = ' '*20
     while True:
         try:
-            cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Checking_Your_Trendiness_Level}... :3{spaces}\r')
+            cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Checking_Your_Trendiness_Level}... :3{S}\r')
             latestVersion = (await sendGetRequest('https://raw.githubusercontent.com/h1kken/MeowTool/refs/heads/meow/version.txt', 'TEXT')).strip()
             if latestVersion == VERSION:
-                cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Hooray_Youre_On_The_Latest_And_Greatest}... :3{spaces}\r')
+                cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Hooray_You_Are_On_The_Latest_And_Greatest}... :3{S}\r')
                 return
             else:
                 while True:
-                    cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Wow_New_Update_Available_Shall_We_Fetch_It} :3{spaces}\n\n  [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] {MT_Current_Version}: {VERSION}\n  [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] {MT_Latest_Version}: {latestVersion}\n\n  [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] {MT_Yes_I_Want_The_Version.format('.py')}\n  [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] {MT_Yes_I_Want_The_Version.format('.exe')}\n  [{ANSI.FG.PINK}3{ANSI.FG.WHITE}] {MT_No_Maybe_Later}\n\n')
+                    cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Wow_New_Update_Available_Shall_We_Fetch_It} :3{S}\n\n  [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] {MT_Current_Version}: {VERSION}\n  [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] {MT_Latest_Version}: {latestVersion}\n\n  [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] {MT_Yes_I_Want_The_Version.format('.py')}\n  [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] {MT_Yes_I_Want_The_Version.format('.exe')}\n  [{ANSI.FG.PINK}3{ANSI.FG.WHITE}] {MT_No_Maybe_Later}\n\n')
                     newUpdateAvailable = input(f'  [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ')
                     match newUpdateAvailable:
                         case '1':
                             removeLines(10)
                             while True:
-                                cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Gathering_Update_Goodies}... :3{spaces}\r')
+                                cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Gathering_Update_Goodies}... :3{S}\r')
                                 await downloadPythonVersion()
                         case '2':
                             saveOldVersionOfProgram(latestVersion)
@@ -1149,7 +1127,7 @@ async def checkUpdates() -> None:
         except Exception as e:
             logger.exception(f'< [CHECK_UPDATES] > {MT_Unknown_Error}: {e}', force=True)
             while True:
-                cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Aww_Couldnt_Check_Maybe_The_Internets_Napping}. {MT_What_Now} :3{spaces}\n\n  [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] {MT_Lets_Check_It_Again}\n  [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] {MT_Continue_Launching}\n\n')
+                cmdWriter(f'  [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Aww_Couldnt_Check_Maybe_The_Internets_Napping}. {MT_What_Now} :3{S}\n\n  [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] {MT_Lets_Check_It_Again}\n  [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] {MT_Continue_Launching}\n\n')
                 couldNotCheckUpdate = input(f'  [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ')
                 match couldNotCheckUpdate:
                     case '1':
@@ -7721,7 +7699,7 @@ if __name__ == '__main__':
         systemLocale = str(locale.getlocale()[0]).lower()
         translateLoad(systemLocale)
         # Инициализация логгера
-        cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Waking_Up_Our_Eared_Helper}... :3{S}\r')
+        cmdWriter(f'\n  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Waking_Up_Our_Eared_Helper}... :3{S}\r')
         logger = Logger('MeowTool')
         # Проверка папок
         cmdWriter(f'  {ANSI.DECOR.BOLD}[{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Tidying_Folders_Onto_Their_Little_Shelves}... :3{S}\r')
@@ -7766,5 +7744,7 @@ if __name__ == '__main__':
         asyncio.run(mainMenu())
     except (SystemExit, KeyboardInterrupt, EOFError):
         raise
-    except:
+    except Exception:
+        traceback.print_exc()
         logger.exception(f'{MT_Oh_Noo_My_Home_It_Is_Over}... :<', force=True)
+        input(f'\n  [?] Traceback saved to: {ANSI.DECOR.UNDERLINEON}{logger._path}{ANSI.DECOR.UNDERLINEOFF}\n\n  [<] Press Enter to close the program...')
