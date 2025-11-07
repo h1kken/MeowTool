@@ -65,7 +65,7 @@ except Exception as e:
 
 # MeowTool :3
 
-VERSION = 'v2.3.0'
+VERSION = 'v2.3.1'
 
 ### ANSI коды
 
