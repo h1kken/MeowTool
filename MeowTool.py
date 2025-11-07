@@ -1,5 +1,5 @@
 import os
-osSep = os.sep
+OS_SEP = os.sep
 import sys
 cmdWriter = sys.stdout.write
 cmdFlusher = sys.stdout.flush
@@ -16,14 +16,12 @@ import logging
 import logging.handlers
 import webbrowser
 import locale
-import msvcrt
 from pathlib import Path
-from typing import Literal
+from typing import Optional, Literal
 from datetime import datetime
 
 IMPORTS = {
     'colorama': 'colorama==0.4.6',
-    'psutil': 'psutil==7.1.0',
     'tomlkit': 'tomlkit==0.13.3',
     'aiohttp': 'aiohttp==3.12.15',
     'aiohttp_socks': 'aiohttp_socks==0.10.1',
@@ -189,7 +187,7 @@ def translateLoad(language: str) -> None:
         MT_Enter_Something = 'Введи что-то'
 
 def translateMT(language: str) -> None:
-    global MT_Timestamps, MT_Can_Break_USA_Cookie, MT_Symbols, MT_Add_Symbols_Between_Warning_And_Cookie, MT_Try, MT_Tickets, MT_Output_Total, MT_Available_Formats, MT_Move_Cookie_To_The_Next_Line, MT_First_Number_Must_Be_Less_Than_Second_One, MT_Specify_Two_Numbers_Separated_By_A_Space, MT_Both_Parameters_Must_Be_Numbers, MT_From, MT_To, MT_Sort_By_Zero, MT_Sort_Numbers_From_To, MT_Sort_Numbers_From, MT_Sort_By_Group_Name, MT_Sort_By_Bundle_Name, MT_Sort_By_Place_Name, MT_Sort_By_Badge_Name, MT_Sort_By_Gamepass_Name, MT_Sort_By_Number, MT_Enter_Something, MT_Eep, MT_Number, MT_Names, MT_Place_Number, MT_Place_Names, MT_Name_Number, MT_Output_Mode, MT_Non_Empty, MT_Duplicates, MT_On, MT_Account_Duplicate, MT_Automatically_Find_The_Chat_ID, MT_Manually_Find_The_Chat_ID, MT_Bye, MT_Conversion_Error, MT_We_Out_Now, MT_Oh_Noo_My_Home_It_Is_Over, MT_Response_Code, MT_Server_Could_Not_Process_The_Request, MT_Rate_Limit_Has_Been_Reached, MT_Proxy_Error, MT_Waiting_Time_Exceeded, MT_Do_Not_Exceed_The_Thread_Limit, MT_File_Is_Too_Big, MT_Break_Old_Cookies, MT_Banned, MT_Account_Banned, MT_Invalid_Token_Format, MT_Invalid_URL_Format, MT_Send_Any_Message_To_The_Bot_And_Try_Again, MT_Specify_The_Bot_Token, MT_Specify_The_Chat_ID, MT_Specify_The_Webhook_URL, MT_Following_The_Link, MT_Message_Was_Sent, MT_Enter_A_Bot_Token, MT_Enter_A_Chat_ID, MT_Enter_A_Webhook_URL, MT_Send, MT_You, MT_Results_To_Telegram, MT_Results_To_Discord, MT_Create_A_Bot, MT_Search_Chat_ID, MT_Telegram, MT_Discord, MT_Specify, MT_Value_Must_Consist_Of_Digits, MT_Value_Cannot_Be_Empty, MT_Successfully, MT_Unsuccessfully, MT_Possibly_The_Internet_Is_Unstable, MT_Possibly_A_Typo_In_The_Bot_Token, MT_Possibly_A_Typo_In_The_Chat_ID, MT_Unknown_Error, MT_Possibly_A_Typo_In_The_Webhook_URL, MT_Unknown_Server_Response_Code, MT_Bot_Token, MT_Chat_ID, MT_Telegram_Bot, MT_Webhook_URL, MT_Discord_Webhook, MT_Outputs, MT_Spent, MT_Transactions, MT_Status, MT_Play_The_Sound_At_The_End_Of_The_Work, MT_Show_Amount_Of_Lines_In_Files, MT_Count_Robux_In_Total, MT_Cookie, MT_Format, MT_Enable_At_Least_One_Place_To_Start_Analysis, MT_Number_Of_Threads_For_Transaction_Analysis, MT_Output_Filename, MT_Name_Output_File_The_Same_As_Input_File, MT_Transaction_With_This_Name_Already_Exists, MT_Enter_A_Transaction_Name, MT_Add_A_Transaction, MT_Ignore, MT_Ignore_All, MT_Do_Not_Ignore_All, MT_Important, MT_Ignore_List, MT_Discover_New_Names_For_Ignore_List, MT_Save_Old_Versions, MT_Updates, MT_Yes, MT_No, MT_Max_Indentation, MT_No_Indentation, MT_Transaction_Analysis, MT_Save_All_Places_In_One_File, MT_Save_Places_To_Different_Files, MT_Add_Nick_After_Cookie_In_Folder_Names, MT_Add_Robux_After_Place_In_File_Names, MT_Indentation_By_The_Longest_Place_Name , MT_Item, MT_Price, MT_Date, MT_Open_MeowTool_On_GitHub, MT_You_Are_Using_Version_Of_Program, MT_Open_The_Showcase_On_YouTube, MT_Open_PM_With_Developer_In_Telegram, MT_Open_Latest_Changes, MT_About_The_Program, MT_Check_For_Updates, MT_No_Cookies_Found, MT_All_Cookies_Were_Invalid, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Cookie_Was_Found, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Was_Not_Created, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_This_Characters, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_Warnings_For_Links, MT_Disable_Warnings_For_Dangerous_Actions, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_Save_Cookies_Checked_By_Checker, MT_Start_Refresher, MT_Wait, MT_Can_Run, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_Parameter_Must_Be_A_Number, MT_Add_A_Parameter, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Nickname, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_In, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_String, MT_Incorrect_Length_Of_ID, MT_Incorrect_Length_Of_Parameter, MT_Incorrect_Length_Of_Name, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Sorting, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_A_Bundle_By_ID, MT_Add_A_Place_By_ID, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_Enter_New_Filename, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Such_A_Parameter_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_Filename, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time_60, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Checking_Complete, MT_Sorting_File, MT_Sorting_Complete, MT_Press_Any_Key_To_Continue, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Sorter, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta, MT_Only_Goodness, MT_Hi
+    global MT_Timestamps, MT_Can_Break_USA_Cookie, MT_Symbols, MT_Add_Symbols_Between_Warning_And_Cookie, MT_Try, MT_Tickets, MT_Output_Total, MT_Available_Formats, MT_Move_Cookie_To_The_Next_Line, MT_First_Number_Must_Be_Less_Than_Second_One, MT_Specify_Two_Numbers_Separated_By_A_Space, MT_Both_Parameters_Must_Be_Numbers, MT_From, MT_To, MT_Sort_By_Zero, MT_Sort_Numbers_From_To, MT_Sort_Numbers_From, MT_Sort_By_Group_Name, MT_Sort_By_Bundle_Name, MT_Sort_By_Place_Name, MT_Sort_By_Badge_Name, MT_Sort_By_Gamepass_Name, MT_Sort_By_Number, MT_Enter_Something, MT_Eep, MT_Number, MT_Names, MT_Place_Number, MT_Place_Names, MT_Name_Number, MT_Output_Mode, MT_Non_Empty, MT_Duplicates, MT_On, MT_Account_Duplicate, MT_Automatically_Find_The_Chat_ID, MT_Manually_Find_The_Chat_ID, MT_Bye, MT_Conversion_Error, MT_We_Out_Now, MT_Oh_Noo_My_Home_It_Is_Over, MT_Response_Code, MT_Server_Could_Not_Process_The_Request, MT_Rate_Limit_Has_Been_Reached, MT_Proxy_Error, MT_Waiting_Time_Exceeded, MT_Do_Not_Exceed_The_Thread_Limit, MT_File_Is_Too_Big, MT_Break_Old_Cookies, MT_Banned, MT_Account_Banned, MT_Invalid_Token_Format, MT_Invalid_URL_Format, MT_Send_Any_Message_To_The_Bot_And_Try_Again, MT_Specify_The_Bot_Token, MT_Specify_The_Chat_ID, MT_Specify_The_Webhook_URL, MT_Following_The_Link, MT_Message_Was_Sent, MT_Enter_A_Bot_Token, MT_Enter_A_Chat_ID, MT_Enter_A_Webhook_URL, MT_Send, MT_You, MT_Results_To_Telegram, MT_Results_To_Discord, MT_Create_A_Bot, MT_Search_Chat_ID, MT_Telegram, MT_Discord, MT_Specify, MT_Value_Must_Consist_Of_Digits, MT_Value_Cannot_Be_Empty, MT_Successfully, MT_Unsuccessfully, MT_Possibly_The_Internet_Is_Unstable, MT_Possibly_A_Typo_In_The_Bot_Token, MT_Possibly_A_Typo_In_The_Chat_ID, MT_Unknown_Error, MT_Possibly_A_Typo_In_The_Webhook_URL, MT_Unknown_Server_Response_Code, MT_Bot_Token, MT_Chat_ID, MT_Telegram_Bot, MT_Webhook_URL, MT_Discord_Webhook, MT_Outputs, MT_Spent, MT_Transactions, MT_Status, MT_Play_The_Sound_At_The_End_Of_The_Work, MT_Show_Amount_Of_Lines_In_Files, MT_Count_Robux_In_Total, MT_Cookie, MT_Format, MT_Enable_At_Least_One_Place_To_Start_Analysis, MT_Number_Of_Threads_For_Transaction_Analysis, MT_Output_Filename, MT_Name_Output_File_The_Same_As_Input_File, MT_Transaction_With_This_Name_Already_Exists, MT_Enter_A_Transaction_Name, MT_Add_A_Transaction, MT_Ignore, MT_Ignore_All, MT_Do_Not_Ignore_All, MT_Important, MT_Ignore_List, MT_Discover_New_Names_For_Ignore_List, MT_Save_Old_Versions, MT_Updates, MT_Yes, MT_No, MT_Max_Indentation, MT_No_Indentation, MT_Transaction_Analysis, MT_Save_All_Places_In_One_File, MT_Save_Places_To_Different_Files, MT_Add_Nick_After_Cookie_In_Folder_Names, MT_Add_Robux_After_Place_In_File_Names, MT_Indentation_By_The_Longest_Place_Name , MT_Item, MT_Price, MT_Date, MT_Open_MeowTool_On_GitHub, MT_You_Are_Using_Version_Of_Program, MT_Open_The_Showcase_On_YouTube, MT_Open_PM_With_Developer_In_Telegram, MT_Open_Latest_Changes, MT_About_The_Program, MT_Check_For_Updates, MT_No_Cookies_Found, MT_All_Cookies_Were_Invalid, MT_Number_Of_Threads_For_Valid_Checker, MT_Number_Of_Threads_For_Main_Checker, MT_Enter_Number_Of_Threads, MT_First_We_Check_For_Valid, MT_Valid, MT_Invalid, MT_First_Check_All_Cookies_For_Valid, MT_No_Cookie_Was_Found, MT_No_Proxy_Was_Found, MT_Auto_Protocol, MT_Use_Proxy, MT_Auto_Protocol_If_Not_Specified, MT_Any, MT_Key_To_Continue, MT_File_Was_Not_Created, MT_File_Is_Missing, MT_Incorrect_Cookies_Removed, MT_Rate_Limit_Has_Been_Reached, MT_Checker, MT_Proxy, MT_The_Name_Cannot_Be_Empty, MT_Do_Not_Use_This_Characters, MT_Enter_A_New_Title, MT_Console_Title, MT_Show_Place_ID_Next_To_The_Name, MT_Disable_Warnings_For_Links, MT_Disable_Warnings_For_Dangerous_Actions, MT_Show_Cookie, MT_Data, MT_Find, MT_Save_Invalid_Cookies, MT_Save_Cookies_Added_Manually, MT_Save_Cookies_Checked_By_Checker, MT_Start_Refresher, MT_Wait, MT_Can_Run, MT_Do_You_Sure, MT_I_Am_Sure, MT_Not_Yet, MT_Reset_To_Default_Settings, MT_Reload_Config, MT_New_Cookie, MT_In, MT_Enter_A_Cookie, MT_Incorrect_Cookie, MT_Invalid_Cookie, MT_Single_Mode, MT_Mass_Mode, MT_Could_Not_Connect_To_The_API, MT_Trying_To_Connect_Again, MT_Bind, MT_Show_Lable_MeowTool, MT_Show_Lable_by_h1kken, MT_Parameter_Must_Be_A_Number, MT_Add_A_Parameter, MT_Sort, MT_Sorting, MT_The_Place_Has_No_Gamepasses_And_Badges, MT_Custom_Places, MT_Enable_All, MT_Disable_All, MT_Id, MT_Nickname, MT_Name, MT_Link, MT_Duplicated_Cookies_Removed, MT_Unique_Cookies_Found, MT_Successfully_Uploaded_In, MT_Place_ID, MT_Place_Name, MT_Place_Link, MT_Gamepasses, MT_Badges, MT_Remove_Emojies, MT_Remove_Round_Brackets, MT_Remove_Square_Brackets, MT_Upload_All_Info_Gamepasses_And_Badges, MT_Enable_Something_In, MT_Save_Without_Protocol, MT_Save_In, MT_The_Data_Is_Saved_In, MT_Incorrect_Length_Of_String, MT_Incorrect_Length_Of_ID, MT_Incorrect_Length_Of_Parameter, MT_Incorrect_Length_Of_Name, MT_Gamepass_With_This_Name_Already_Exists, MT_Add_A_Gamepass_Name, MT_Found_Data_On, MT_The_Place_Has_No_Gamepasses, MT_The_Place_Has_No_Badges, MT_Gamepasses_Parser_From_The_Place, MT_Badges_Parser_From_The_Place, MT_Misc, MT_Seconds, MT_Waiting_Time, MT_Output_Total, MT_Found, MT_Lines, MT_Start_Sorting, MT_Enter_The_Parameter_Value, MT_Enter_The_Waiting_Time, MT_Enter_The_Gamepass_Name, MT_Enter_The_Place_ID, MT_Enter_The_Bundle_ID, MT_Gamepasses, MT_Badges, MT_Fix_Console, MT_Settings, MT_General, MT_Main, MT_Places, MT_Language, MT_Configs, MT_Check, MT_Save, MT_Auto_Save_Changes, MT_Update_List, MT_Back, MT_Close_Program, MT_Add_A_Bundle_By_ID, MT_Add_A_Place_By_ID, MT_Create_Config, MT_Cancel, MT_Load_On_Launch, MT_Load, MT_File_Location, MT_Rename, MT_Delete, MT_Enter_Name_For_New_Config, MT_Enter_New_Name_For_Config, MT_Enter_New_Filename, MT_User_Agreement, MT_User_Agreement_1, MT_User_Agreement_2, MT_User_Agreement_3, MT_User_Agreement_4, MT_Such_A_Parameter_Already_Exists, MT_Bundle_With_This_ID_Already_Exists, MT_Place_With_This_ID_Already_Exists, MT_Incorrent_Bundle_ID, MT_Incorrent_Place_ID, MT_Incorrect_Filename, MT_File_With_This_Name_Already_Exists, MT_Incorrect_Waiting_Time_60, MT_Incorrect_Value, MT_Of, MT_Start_Checking_File, MT_Checking_Complete, MT_Sorting_File, MT_Sorting_Complete, MT_Press_Enter_To_Continue, MT_Request, MT_Everything_Or_Something_Is_On, MT_Everything_Is_On_Or_Off, MT_Total, MT_Roblox, MT_Checker, MT_Cookie_Sorter, MT_Cookie_Checker, MT_Cookie_Refresher, MT_Beta, MT_Only_Goodness, MT_Hi
     match str(language).upper():
         case 'EN':
             MT_Timestamps = {'d':'d', 'h':'h', 'm':'m', 's':'s', 'ms':'ms'}
@@ -467,7 +465,6 @@ def translateMT(language: str) -> None:
             MT_Checking_Complete = 'Checking complete'
             MT_Sorting_File = 'Sorting file'
             MT_Sorting_Complete = 'Sorting complete'
-            MT_Press_Any_Key_To_Continue = 'Press any key to continue'
             MT_Press_Enter_To_Continue = 'Press Enter to continue'
             MT_Request = 'Request'
             MT_Everything_Or_Something_Is_On = 'everything or something is on, always'
@@ -756,7 +753,6 @@ def translateMT(language: str) -> None:
             MT_Checking_Complete = 'Проверка завершена'
             MT_Sorting_File = 'Сортируем файл'
             MT_Sorting_Complete = 'Сортировка завершена'
-            MT_Press_Any_Key_To_Continue = 'Нажми любую клавишу чтобы продолжить'
             MT_Press_Enter_To_Continue = 'Нажми Enter чтобы продолжить'
             MT_Request = 'Запрос'
             MT_Everything_Or_Something_Is_On = 'всё или что-то включено, всегда'
@@ -878,14 +874,14 @@ PROXY_PROTOCOL_IP_PORT_PATTERN = re.compile(
 
 ### Основные функции
 
-def timer(command: Literal['start', 'stop'], *, start: int | None = None) -> int:
+def timer(command: Literal['start', 'stop'], *, start: Optional[int] = None) -> int:
     match command:
         case 'start': return time.perf_counter()
         case 'stop':  return time.perf_counter() - start
 
 def generateVisualPath(*pathArgs: str) -> str:
-    visualPath = osSep.join(pathArgs) if pathArgs else ''
-    return f'[{ANSI.FG.CYAN}P{ANSI.FG.WHITE}] {ANSI.FG.CYAN}M:{osSep}{visualPath}{ANSI.FG.WHITE}'
+    visualPath = OS_SEP.join(pathArgs) if pathArgs else ''
+    return f'[{ANSI.FG.CYAN}P{ANSI.FG.WHITE}] {ANSI.FG.CYAN}M:{OS_SEP}{visualPath}{ANSI.FG.WHITE}'
 
 def lableASCII() -> None:
     cmdWriter(ANSI.DECOR.BOLD)
@@ -947,10 +943,9 @@ def amountOfLines(*pathArgs: str) -> str:
         return 'error'
 
 def waitingInput() -> None:
-    message, waiter = [MT_Press_Any_Key_To_Continue, msvcrt.getch] if config['General']['Press_Any_Key_To_Continue'] else [MT_Press_Enter_To_Continue, input]
-    cmdWriter(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {ANSI.DECOR.FLASHING}{message}...{ANSI.DECOR.FLASHINGOFF}')
+    cmdWriter(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {ANSI.DECOR.FLASHING}{MT_Press_Enter_To_Continue}...{ANSI.DECOR.FLASHINGOFF}')
     cmdFlusher()
-    waiter()
+    input()
     cls()
     lableASCII()
 
@@ -1303,7 +1298,7 @@ def sendMessageDiscordWebhook(text: str = None, filename: str = None, *pathArgs:
     finally:
         cmdFlusher()
 
-def findProxyPatternInString(string: str) -> dict[str, str | None] | None:
+def findProxyPatternInString(string: str) -> Optional[dict[str, Optional[str]]]:
     patterns = [
         PROXY_PROTOCOL_USER_PASS_IP_PORT_PATTERN,
         PROXY_PROTOCOL_IP_PORT_USER_PASS_PATTERN,
@@ -1500,7 +1495,7 @@ async def proxyChecker(file: str) -> None:
 
 ### Roblox Cookie Checker
 
-def getProxiesFromFileRoblox(isUseProxy: bool, proxiesPath: Path, amountOfRemoveLines: int, visualPathArgs: tuple[str, ...]) -> list[str] | None:
+def getProxiesFromFileRoblox(isUseProxy: bool, proxiesPath: Path, amountOfRemoveLines: int, visualPath: str) -> Optional[list[str]]:
     if not isUseProxy:
         return
 
@@ -1525,11 +1520,11 @@ def getProxiesFromFileRoblox(isUseProxy: bool, proxiesPath: Path, amountOfRemove
             
         return list(proxies)
     except FileNotFoundError:
-        return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Proxy_Was_Found, generateVisualPath(*visualPathArgs))
+        return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Proxy_Was_Found, visualPath)
     except Exception as e:
         logger.exception(f'< [GET_PROXIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}', force=True)
 
-def getCookiesFromFileRoblox(cookiesPath: Path, amountOfRemoveLines: int, visualPath: str) -> set[str] | None:
+def getCookiesFromFileRoblox(cookiesPath: Path, amountOfRemoveLines: int, visualPath: str) -> Optional[set[str]]:
     symbolsBetweenWarningAndCookie = str(config['Roblox']['General']['Symbols_Between_Warning_And_Cookie']).strip() if config['Roblox']['General']['Add_Symbols_Between_Warning_And_Cookie'] else ''
     cookiesSet = set()
     try:
@@ -1557,7 +1552,7 @@ def getCookiesFromFileRoblox(cookiesPath: Path, amountOfRemoveLines: int, visual
     except Exception as e:
         logger.exception(f'< [GET_COOKIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}', force=True)
 
-def getConnectorRoblox(proxies: list[str] | None = None) -> TCPConnector | ProxyConnector:
+def getConnectorRoblox(proxies: Optional[list[str]]) -> TCPConnector | ProxyConnector:
     if not (config['Roblox']['General']['Proxy']['Use_Proxy'] and proxies):
         return TCPConnector(
             limit=0,
@@ -3026,13 +3021,13 @@ class cookieData: #          Normal Name                    Config Name         
 async def sendGetRequestRoblox(
     url: str,
     *,
-    params: dict | None = None,
-    headers: dict | None = None,
-    cookies: dict | None = None,
-    proxies: list[str] | None = None,
+    params: Optional[dict] = None,
+    headers: Optional[dict] = None,
+    cookies: Optional[dict] = None,
+    proxies: Optional[list[str]] = None,
     allow_redirects: bool = False,
     timeout: int = 5
-) -> dict | None:
+) -> Optional[dict]:
     internalServerErrorTry = 0
     while True:
         try:
@@ -3068,12 +3063,12 @@ async def sendGetRequestRoblox(
 async def sendPostRequestRoblox(
     url: str,
     *,
-    params: dict | None = None,
-    data: dict | None = None,
-    json: dict | None = None,
-    headers: dict | None = None,
-    cookies: dict | None = None,
-    proxies: list[str] | None = None,
+    params: Optional[dict] = None,
+    data: Optional[dict] = None,
+    json: Optional[dict] = None,
+    headers: Optional[dict] = None,
+    cookies: Optional[dict] = None,
+    proxies: Optional[list[str]] = None,
     timeout: int = 5
 ) -> ClientResponse:
     while True:
@@ -3188,7 +3183,7 @@ async def getProfileInformationRoblox(
         'Clothing',
         'Store'
     ],
-    proxies: list[str] | None
+    proxies: Optional[list[str]]
 ) -> dict:
     json = {
         'components': [{'component': component} for component in components],
@@ -3198,7 +3193,7 @@ async def getProfileInformationRoblox(
     }
     return await (await sendPostRequestRoblox('https://apis.roblox.com/profile-platform-api/v1/profiles/get', json=json, cookies=cookies, proxies=proxies)).json()
 
-async def getMixedInformationRoblox(cookies: dict[str, str], proxies: list[str] | None, userId: str, outputModes: dict[str, str]) -> dict:
+async def getMixedInformationRoblox(cookies: dict[str, str], proxies: Optional[list[str]], userId: str, outputModes: dict[str, str]) -> dict:
     configRCCMain = config['Roblox']['CookieChecker']['Main']
     components = ()
     if configRCCMain['Place_Visits']:
@@ -3222,10 +3217,10 @@ async def getMixedInformationRoblox(cookies: dict[str, str], proxies: list[str] 
         returner.update(value)
     return returner
 
-async def getAccountInformationRoblox(cookies: dict[str, str], proxies: list[str] | None) -> dict:
+async def getAccountInformationRoblox(cookies: dict[str, str], proxies: Optional[list[str]]) -> dict:
     return await sendGetRequestRoblox('https://www.roblox.com/my/settings/json', cookies=cookies, proxies=proxies)
 
-async def getLinkRoblox(userId: str) -> dict[str, dict | None]:
+async def getLinkRoblox(userId: str) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Link']:
         return {'Link': None}
     return {
@@ -3235,7 +3230,7 @@ async def getLinkRoblox(userId: str) -> dict[str, dict | None]:
         }
     }
 
-async def getNameRoblox(accountInformation: dict) -> dict[str, dict | None]:
+async def getNameRoblox(accountInformation: dict) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Name']:
         return {'Name': None}
     name = accountInformation['Name']
@@ -3247,7 +3242,7 @@ async def getNameRoblox(accountInformation: dict) -> dict[str, dict | None]:
         }
     }
 
-async def getDisplayNameRoblox(accountInformation: dict) -> dict[str, dict | None]:
+async def getDisplayNameRoblox(accountInformation: dict) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Display_Name']:
         return {'Display Name': None}
     displayName = accountInformation['DisplayName']
@@ -3259,7 +3254,7 @@ async def getDisplayNameRoblox(accountInformation: dict) -> dict[str, dict | Non
         }
     }
 
-async def getRegistrationDateRoblox(cookies: dict, proxies: list[str] | None, userId: str, accountInformation: dict) -> dict[str, dict | None]:
+async def getRegistrationDateRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, accountInformation: dict) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Registration_Date_DMY']:
         return {'Registration Date': None}
     response: dict = await sendGetRequestRoblox(f'https://users.roblox.com/v1/users/{userId}', cookies=cookies, proxies=proxies)
@@ -3275,7 +3270,7 @@ async def getRegistrationDateRoblox(cookies: dict, proxies: list[str] | None, us
         }
     }
 
-async def getCountryRegistrationRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
+async def getCountryRegistrationRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Country_Registration']:
         return {'Country Registration': None}
     response: dict = await sendGetRequestRoblox('https://users.roblox.com/v1/users/authenticated/country-code', cookies=cookies, proxies=proxies)
@@ -3288,7 +3283,7 @@ async def getCountryRegistrationRoblox(cookies: dict, proxies: list[str] | None)
         }
     }
 
-async def getRobuxRoblox(cookies: dict, proxies: list[str] | None, userId: str) -> dict[str, dict | None]:
+async def getRobuxRoblox(cookies: dict, proxies: Optional[list[str]], userId: str) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Robux']:
         return {'Robux': None}
     response: dict = await sendGetRequestRoblox(f'https://economy.roblox.com/v1/users/{userId}/currency', cookies=cookies, proxies=proxies)
@@ -3301,7 +3296,7 @@ async def getRobuxRoblox(cookies: dict, proxies: list[str] | None, userId: str) 
         }
     }
 
-async def getBillingRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
+async def getBillingRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Billing']:
         return {'Billing': None}
     response: dict = await sendGetRequestRoblox('https://billing.roblox.com/v1/credit', cookies=cookies, proxies=proxies)
@@ -3314,7 +3309,7 @@ async def getBillingRoblox(cookies: dict, proxies: list[str] | None) -> dict[str
         }
     }
 
-async def getTransactionsForYearRoblox(cookies: dict, proxies: list[str] | None, userId: str) -> dict[str, dict | None]:
+async def getTransactionsForYearRoblox(cookies: dict, proxies: Optional[list[str]], userId: str) -> dict[str, Optional[dict]]:
     if not (config['Roblox']['CookieChecker']['Main']['Pending'] or config['Roblox']['CookieChecker']['Main']['Donate_1_Year']):
         return {'Pending': None, 'Donate (1 Year)': None}
     response: dict = await sendGetRequestRoblox(f'https://economy.roblox.com/v2/users/{userId}/transaction-totals?timeFrame=Year&transactionType=Summary', cookies=cookies, proxies=proxies)
@@ -3341,7 +3336,7 @@ async def getTransactionsForYearRoblox(cookies: dict, proxies: list[str] | None,
         
     return returner
 
-async def getDonateAllTimeRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'NameNumber') -> dict[str, dict | None]:
+async def getDonateAllTimeRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, outputMode: str = 'NameNumber') -> dict[str, Optional[dict]]:
     checkDonateAllTime = config['Roblox']['CookieChecker']['Main']['Donate_All_Time']
     checkCustomGamepasses = config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']
     if not (checkDonateAllTime or checkCustomGamepasses):
@@ -3358,7 +3353,7 @@ async def getDonateAllTimeRoblox(cookies: dict, proxies: list[str] | None, userI
     maximumPage = max(donateAllTimeMaxPages, customGamepassesMaxPages)
     currentPage = 0
     while nextCursor is not None and currentPage != maximumPage:
-        response: dict[str, dict[dict[str, str]]] | None = await sendGetRequestRoblox(f'https://economy.roblox.com/v2/users/{userId}/transactions?transactionType=2&limit=100&cursor={nextCursor}', cookies=cookies, proxies=proxies)
+        response: Optional[dict[str, dict[dict[str, str]]]] = await sendGetRequestRoblox(f'https://economy.roblox.com/v2/users/{userId}/transactions?transactionType=2&limit=100&cursor={nextCursor}', cookies=cookies, proxies=proxies)
         if response is None:
             nextCursor = None
             break
@@ -3398,7 +3393,7 @@ async def getDonateAllTimeRoblox(cookies: dict, proxies: list[str] | None, userI
         
     return returner
 
-async def getRapRoblox(cookies: dict, proxies: list[str] | None, userId: str) -> dict[str, dict | None]:
+async def getRapRoblox(cookies: dict, proxies: Optional[list[str]], userId: str) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Rap']:
         return {'Rap': None}
     rap = 0
@@ -3420,7 +3415,7 @@ async def getRapRoblox(cookies: dict, proxies: list[str] | None, userId: str) ->
         }
     }
 
-async def getCardRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
+async def getCardRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Card']:
         return {'Card': None}
     response: dict = await sendGetRequestRoblox(f'https://apis.roblox.com/payments-gateway/v1/payment-profiles', cookies=cookies, proxies=proxies)
@@ -3433,7 +3428,7 @@ async def getCardRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, d
         }
     }
 
-async def getPremiumRoblox(accountInformation: dict) -> dict[str, dict | None]:
+async def getPremiumRoblox(accountInformation: dict) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Premium']:
         return {'Premium': None}
     color, value, intValue = [ANSI.FG.GREEN, 'Yes', 1] if accountInformation['IsPremium'] else [ANSI.FG.RED, 'No', 0]
@@ -3446,7 +3441,7 @@ async def getPremiumRoblox(accountInformation: dict) -> dict[str, dict | None]:
         }
     }
 
-async def getGamepassesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'PlaceNames') -> dict[str, dict | None]:
+async def getGamepassesRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, outputMode: str = 'PlaceNames') -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Gamepasses']:
         return {'Gamepasses': None}
     gamepasses = {gamepass['PlaceName']: [] for gamepass in checkListGamepasses.values()}
@@ -3478,7 +3473,7 @@ async def getGamepassesRoblox(cookies: dict, proxies: list[str] | None, userId: 
         }
     }
 
-async def getBadgesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'PlaceNames') -> dict[str, dict | None]:
+async def getBadgesRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, outputMode: str = 'PlaceNames') -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Badges']:
         return {'Badges': None}
     badges = {badge['PlaceName']: [] for badge in checkListBadges.values()}
@@ -3507,7 +3502,7 @@ async def getBadgesRoblox(cookies: dict, proxies: list[str] | None, userId: str,
         }
     }
 
-async def getFavoritePlacesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'Names') -> dict[str, dict | None]:
+async def getFavoritePlacesRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, outputMode: str = 'Names') -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Favorite_Places']:
         return {'Favorite Places': None}
     favoritePlaces = []
@@ -3536,7 +3531,7 @@ async def getFavoritePlacesRoblox(cookies: dict, proxies: list[str] | None, user
         }
     }
 
-async def getPlacesWeeklyPlaytimeRoblox(cookies: dict, proxies: list[str] | None, outputMode: str = 'Names') -> dict:
+async def getPlacesWeeklyPlaytimeRoblox(cookies: dict, proxies: Optional[list[str]], outputMode: str = 'Names') -> dict:
     if not config['Roblox']['CookieChecker']['Main']['Places_Weekly_Playtime']:
         return {'Places Weekly Playtime': None}
     response: dict = await sendGetRequestRoblox('https://apis.roblox.com/parental-controls-api/v1/parental-controls/get-top-weekly-screentime-by-universe', cookies=cookies, proxies=proxies)
@@ -3567,7 +3562,7 @@ async def getPlacesWeeklyPlaytimeRoblox(cookies: dict, proxies: list[str] | None
         }
     }
 
-async def getBundlesRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'Names') -> dict[str, dict | None]:
+async def getBundlesRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, outputMode: str = 'Names') -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Bundles']:
         return {'Bundles': None, 'Korblox': None, 'Headless': None}
     returner = {}
@@ -3626,7 +3621,7 @@ async def getBundlesRoblox(cookies: dict, proxies: list[str] | None, userId: str
         
     return returner
 
-async def getInventoryPrivacyRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
+async def getInventoryPrivacyRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Inventory_Privacy']:
         return {'Inventory Privacy': None}
     response: dict = await sendGetRequestRoblox('https://apis.roblox.com/user-settings-api/v1/user-settings/settings-and-options', cookies=cookies, proxies=proxies)
@@ -3644,7 +3639,7 @@ async def getInventoryPrivacyRoblox(cookies: dict, proxies: list[str] | None) ->
         }
     }
 
-async def getTradePrivacyRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
+async def getTradePrivacyRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Trade_Privacy']:
         return {'Trade Privacy': None}
     response: dict = await sendGetRequestRoblox('https://accountsettings.roblox.com/v1/trade-privacy', cookies=cookies, proxies=proxies)
@@ -3662,7 +3657,7 @@ async def getTradePrivacyRoblox(cookies: dict, proxies: list[str] | None) -> dic
         }
     }
 
-async def getCanTradeRoblox(accountInformation: dict) -> dict[str, dict | None]:
+async def getCanTradeRoblox(accountInformation: dict) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Can_Trade']:
         return {'Can Trade': None}
     color, value = [ANSI.FG.GREEN, 'Yes'] if accountInformation['CanTrade'] else [ANSI.FG.RED, 'No']
@@ -3674,7 +3669,7 @@ async def getCanTradeRoblox(accountInformation: dict) -> dict[str, dict | None]:
         }
     }
 
-async def getSessionsRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
+async def getSessionsRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Sessions']:
         return {'Sessions': None}
     sessions = 0
@@ -3698,7 +3693,7 @@ async def getSessionsRoblox(cookies: dict, proxies: list[str] | None) -> dict[st
         }
     }
 
-async def getEmailRoblox(accountInformation: dict) -> dict[str, dict | None]:
+async def getEmailRoblox(accountInformation: dict) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Email']:
         return {'Email': None}
     securityModel   = accountInformation['MyAccountSecurityModel']
@@ -3715,7 +3710,7 @@ async def getEmailRoblox(accountInformation: dict) -> dict[str, dict | None]:
         }
     }
 
-async def getPhoneRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
+async def getPhoneRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Phone']:
         return {'Phone': None}
     response: dict = await sendGetRequestRoblox('https://accountinformation.roblox.com/v1/phone', cookies=cookies, proxies=proxies)
@@ -3728,7 +3723,7 @@ async def getPhoneRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, 
         }
     }
 
-async def get2FARoblox(accountInformation: dict) -> dict[str, dict | None]:
+async def get2FARoblox(accountInformation: dict) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['2FA']:
         return {'2FA': None}
     color, value = [ANSI.FG.RED, 'Yes'] if accountInformation['MyAccountSecurityModel']['IsTwoStepEnabled'] else [ANSI.FG.GREEN, 'No']
@@ -3740,7 +3735,7 @@ async def get2FARoblox(accountInformation: dict) -> dict[str, dict | None]:
         }
     }
 
-async def getPinRoblox(accountInformation: dict) -> dict[str, dict | None]:
+async def getPinRoblox(accountInformation: dict) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Pin']:
         return {'Pin': None}
     color, value = [ANSI.FG.RED, 'Yes'] if accountInformation['IsAccountPinEnabled'] else [ANSI.FG.GREEN, 'No']
@@ -3752,7 +3747,7 @@ async def getPinRoblox(accountInformation: dict) -> dict[str, dict | None]:
         }
     }
 
-async def getGroupsInformationRoblox(cookies: dict, proxies: list[str] | None, userId: str, outputMode: str = 'Names') -> dict[str, dict | None]:
+async def getGroupsInformationRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, outputMode: str = 'Names') -> dict[str, Optional[dict]]:
     configRCCMain = config['Roblox']['CookieChecker']['Main']
     if not (configRCCMain['Groups_Owned'] or configRCCMain['Groups_Members'] or configRCCMain['Groups_Pending'] or configRCCMain['Groups_Funds']):
         return {'Groups Owned': None, 'Groups Members': None, 'Groups Pending': None, 'Groups Funds': None}
@@ -3783,7 +3778,7 @@ async def getGroupsInformationRoblox(cookies: dict, proxies: list[str] | None, u
         } if configRCCMain['Groups_Members'] else {'Groups Members': None}
     })
     
-    groupsIds = groupsOwned.values()
+    groupsIds = list(groupsOwned.values())
     groupsPending, groupsFunds = await asyncio.gather(
         getGroupsPendingRoblox(cookies, proxies, groupsIds),
         getGroupsFundsRoblox(  cookies, proxies, groupsIds)
@@ -3793,7 +3788,7 @@ async def getGroupsInformationRoblox(cookies: dict, proxies: list[str] | None, u
     
     return returner
 
-async def getGroupsPendingRoblox(cookies: dict, proxies: list[str] | None, groupsIds: list[int | str]) -> dict[str, dict | None]:
+async def getGroupsPendingRoblox(cookies: dict, proxies: Optional[list[str]], groupsIds: list[str]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Groups_Pending']:
         return {'Groups Pending': None}
     groupsPending = 0
@@ -3811,7 +3806,7 @@ async def getGroupsPendingRoblox(cookies: dict, proxies: list[str] | None, group
         }
     }
 
-async def getGroupsFundsRoblox(cookies: dict, proxies: list[str] | None, groupsIds: list[int | str]) -> dict[str, dict | None]:
+async def getGroupsFundsRoblox(cookies: dict, proxies: Optional[list[str]], groupsIds: list[str]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Groups_Funds']:
         return {'Groups Funds': None}
     groupsFunds = 0
@@ -3829,7 +3824,7 @@ async def getGroupsFundsRoblox(cookies: dict, proxies: list[str] | None, groupsI
         }
     }
 
-async def getPlaceVisitsRoblox(data: dict) -> dict[str, dict | None]:
+async def getPlaceVisitsRoblox(data: dict) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Place_Visits']:
         return {'Place Visits': None}
     placeVisits = data['components']['Statistics']['numberOfVisits']
@@ -3851,7 +3846,7 @@ def convertAgeGroupRoblox(text: str) -> str:
     direction, age, checked = match.groups()
     return f'{age}{'+' if direction.lower() == 'over' else '-'}{' (Checked)' if checked else ''}'
 
-async def getAgeGroupRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
+async def getAgeGroupRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Age_Group']:
         return {'Age Group': None}
     response: dict = await sendGetRequestRoblox('https://apis.roblox.com/user-settings-api/v1/account-insights/age-group', cookies=cookies, proxies=proxies)
@@ -3864,7 +3859,7 @@ async def getAgeGroupRoblox(cookies: dict, proxies: list[str] | None) -> dict[st
         }
     }
 
-async def getVerifiedAgeRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
+async def getVerifiedAgeRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Verified_Age']:
         return {'Verified Age': None}
     response: dict = await sendGetRequestRoblox('https://apis.roblox.com/age-verification-service/v1/age-verification/verified-age', cookies=cookies, proxies=proxies)
@@ -3877,7 +3872,7 @@ async def getVerifiedAgeRoblox(cookies: dict, proxies: list[str] | None) -> dict
         }
     }
 
-async def getVerifiedVoiceRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
+async def getVerifiedVoiceRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Verified_Voice']:
         return {'Verified Voice': None}
     response: dict = await sendGetRequestRoblox('https://voice.roblox.com/v1/settings', cookies=cookies, proxies=proxies)
@@ -3890,7 +3885,7 @@ async def getVerifiedVoiceRoblox(cookies: dict, proxies: list[str] | None) -> di
         }
     }
 
-async def getFriendsRoblox(data: dict) -> dict[str, dict | None]:
+async def getFriendsRoblox(data: dict) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Friends']:
         return {'Friends': None}
     friends = data['components']['UserProfileHeader']['counts']['friendsCount']
@@ -3902,7 +3897,7 @@ async def getFriendsRoblox(data: dict) -> dict[str, dict | None]:
         }
     }
 
-async def getFollowersRoblox(data: dict) -> dict[str, dict | None]:
+async def getFollowersRoblox(data: dict) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Followers']:
         return {'Followers': None}
     followers = data['components']['UserProfileHeader']['counts']['followersCount']
@@ -3914,7 +3909,7 @@ async def getFollowersRoblox(data: dict) -> dict[str, dict | None]:
         }
     }
 
-async def getFollowingsRoblox(data: dict) -> dict[str, dict | None]:
+async def getFollowingsRoblox(data: dict) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Followings']:
         return {'Followings': None}
     followings = data['components']['UserProfileHeader']['counts']['followingsCount']
@@ -3926,7 +3921,7 @@ async def getFollowingsRoblox(data: dict) -> dict[str, dict | None]:
         }
     }
 
-async def getRobloxBadgesRoblox(data: dict, outputMode: str = 'Names') -> dict[str, dict | None]:
+async def getRobloxBadgesRoblox(data: dict, outputMode: str = 'Names') -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Roblox_Badges']:
         return {'Roblox Badges': None}
     robloxBadges = [robloxBadge['type']['value'] for robloxBadge in data['components']['RobloxBadges']['robloxBadgeList']]
@@ -3940,7 +3935,7 @@ async def getRobloxBadgesRoblox(data: dict, outputMode: str = 'Names') -> dict[s
         }
     }
 
-async def getXCSRFTokenRoblox(cookies: dict, proxies: list[str] | None) -> dict[str, dict | None]:
+async def getXCSRFTokenRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['X_CSRF_Token']:
         return {'X-CSRF-Token': None}
     response: ClientResponse = await sendPostRequestRoblox('https://auth.roblox.com/v2/logout', cookies=cookies, proxies=proxies)
@@ -4097,7 +4092,7 @@ async def sortingDataRoblox(locker: asyncio.Lock, path: Path, category: str, sor
             sortListNamesDataRoblox(sortOptions[category]['names'], locker, path, allDataString, complexData)
         )
 
-async def robloxCookieValidChecker(category: str, cookies: set[str], proxies: list[str] | None) -> list[str]:
+async def robloxCookieValidChecker(category: str, cookies: set[str], proxies: Optional[list[str]]) -> list[str]:
     if not config['Roblox'][category]['General']['First_Check_All_Cookies_For_Valid']:
         return list(cookies)
 
@@ -4135,7 +4130,7 @@ async def robloxCookieValidChecker(category: str, cookies: set[str], proxies: li
     removeLines(1)
     return list(cookies)
 
-async def dataFromCookieRoblox(order: list[str], checkedAccounts: set, cookies: dict, proxies: list | None, outputModes: dict[str, str]) -> dict[str, dict]:
+async def dataFromCookieRoblox(order: list[str], checkedAccounts: set[str], cookies: dict[str, str], proxies: Optional[list[str]], outputModes: dict[str, str]) -> dict[str, dict]:
     accountInformation = await getAccountInformationRoblox(cookies, proxies)
     userId = str(accountInformation['UserId'])
     if userId in checkedAccounts:
@@ -4568,7 +4563,7 @@ def removeItemFromCategory(category: list, remove: str | int):
         if remove in item:
             del category[category.index(item)]
 
-def checkExist(bundleId: int | str, category: str) -> bool | None:
+def checkExist(bundleId: str, category: str) -> Optional[bool]:
     if str(bundleId).lower() in {str(id[1]).lower() if category == 'Custom_Gamepasses_List' else str(id[0]).lower() for id in config['Roblox']['CookieChecker']['Main'][f'{category}_List']}:
         return True
 
@@ -4950,7 +4945,7 @@ async def robloxCookieSorter() -> None:
                 counterOfCookies = 0
                 cookiesFromFile = open(root / file, 'r', encoding='utf-8').readlines()
                 amountOfCookiesFromFile = len(cookiesFromFile)
-                visualRoot = f'.{os.sep}' * (len(Path(root).parts) - 1)
+                visualRoot = f'.{OS_SEP}' * (len(Path(root).parts) - 1)
                 cmdWriter(f'\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Sorting_File} \'{ANSI.DECOR.UNDERLINEON}{visualRoot}{file}{ANSI.DECOR.UNDERLINEOFF}\': 0 {MT_Of} {amountOfCookiesFromFile}')
                 for line in cookiesFromFile:
                     cookie = re.search(COOKIE_PATTERN, line)
@@ -5018,10 +5013,10 @@ async def saveCookieRCR(mode: Literal['MassMode', 'SingleMode'], oldCookie: str,
         async with aiofiles.open(savePath / 'refreshed_cookies_mode_3' / f'{oldCookie}.txt', 'a', encoding='utf-8') as file:
             await file.write(f'{newCookie}\n')
 
-async def getXCSRFToken(cookies: dict, proxies: list | None = None) -> str:
+async def getXCSRFToken(cookies: dict[str, str], proxies: Optional[list[str]]) -> str:
     return (await sendPostRequestRoblox('https://auth.roblox.com/v2/logout', cookies=cookies, proxies=proxies)).headers['X-CSRF-Token']
 
-async def getRBXAuthenticationTicket(cookies: dict, proxies: list | None = None) -> tuple[str, str]:
+async def getRBXAuthenticationTicket(cookies: dict[str, str], proxies: Optional[list[str]]) -> tuple[str, str]:
     isXCSRFToken = await getXCSRFToken(cookies, proxies)
     headers = {
         'RBXauthenticationNegotiation': '1',
@@ -5031,7 +5026,7 @@ async def getRBXAuthenticationTicket(cookies: dict, proxies: list | None = None)
     isTicket = (await sendPostRequestRoblox('https://auth.roblox.com/v1/authentication-ticket', cookies=cookies, headers=headers, proxies=proxies)).headers['rbx-authentication-ticket']
     return isXCSRFToken, isTicket
 
-async def createNewCookie(cookies: dict, proxies: list | None = None):
+async def createNewCookie(cookies: dict[str, str], proxies: Optional[list[str]]) -> Optional[str]:
     isXCSRFToken, isTicket = await getRBXAuthenticationTicket(cookies, proxies)
     headers = {
         'RBXauthenticationNegotiation': '1'
@@ -5048,7 +5043,7 @@ async def createNewCookie(cookies: dict, proxies: list | None = None):
         await breakOldCookie(cookies, isXCSRFToken, proxies)
     return isNewCookie.group(0)[:-1]
 
-async def breakOldCookie(cookies: dict, isXCSRFToken: str, proxies: list | None = None) -> None:
+async def breakOldCookie(cookies: dict[str, str], isXCSRFToken: str, proxies: Optional[list[str]]) -> None:
     headers = {
         'Cookie': f'.ROBLOSECURITY: {cookies['.ROBLOSECURITY']}',
         'X-CSRF-Token': isXCSRFToken,
@@ -5056,7 +5051,7 @@ async def breakOldCookie(cookies: dict, isXCSRFToken: str, proxies: list | None 
     }
     await sendPostRequestRoblox('https://auth.roblox.com/v2/logout', cookies=cookies, headers=headers, proxies=proxies)
 
-async def massModeRCR(cookies: dict, savePath: Path, proxies: list | None = None) -> None:
+async def massModeRCR(cookies: dict, savePath: Path, proxies: Optional[list[str]]) -> None:
     cookie = cookies['.ROBLOSECURITY']
     oldCookie = f'{cookie[115:130]}...{cookie[-15:-1]}'
     try:
@@ -5150,12 +5145,12 @@ def printPlacesRTA() -> None:
                 config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places'].remove(place)
         autoSaveConfig()
 
-def printPlaceIgnoreNamesRTA(placeId: int | str) -> None:
+def printPlaceIgnoreNamesRTA(placeId: str) -> None:
     length = len(str(len(config['Roblox']['TransactionAnalysis']['Places'][f'{placeId}_Ignore_List']))) + 12
     for index, ignoreName in enumerate(config['Roblox']['TransactionAnalysis']['Places'][f'{placeId}_Ignore_List']):
         cmdWriter(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {enabledOrDisabledOption(ignoreName[1])} {ignoreName[0]}\n')
 
-def addPlaceIgnoreNameRTA(ignoreName: str, placeId: int | str) -> None:
+def addPlaceIgnoreNameRTA(ignoreName: str, placeId: str) -> None:
     if ignoreName == '0': return
     if len(ignoreName) > 50:
         return errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Name.format('50'), generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places, placeId, MT_Ignore_List))
@@ -5303,7 +5298,7 @@ def placeContextMenuRTA(placeIndex: int) -> None:
 
         autoSaveConfigAndRemoveLinesInSettings(settingsRTAPlacesPlaceTab, ('C', 'С'), ('0', 'C', 'С'), 9)
 
-async def isTransactionsFromCookieFunc(checkedAccount: set, checkListPlaces: dict[str, tuple[str, int, int, tuple[str, int, str]]], cookies: dict, proxies: list[str] | None) -> tuple[str, str, dict]:
+async def isTransactionsFromCookieFunc(checkedAccount: set, checkListPlaces: dict[str, tuple[str, int, int, tuple[str, int, str]]], cookies: dict, proxies: Optional[list[str]]) -> tuple[str, str, dict]:
     accountInformation = await getAccountInformationRoblox(cookies, proxies)
     userId = str(accountInformation['UserId'])
     if userId in checkedAccount:
@@ -5699,7 +5694,7 @@ async def addBundleRoblox(bundleId: str, nameOfCategory: Literal['Bundles']) -> 
         return errorOrCorrectHandler(True, 5, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
 # Настройки > Роблокс > Куки чекер > Сортировка
-def addSortParameterFrom(sortValue: int | str, configRCCSorting: dict[str, dict[str, dict[str, list[list]]]], categoryConfigName: str, categoryMenuName: str) -> None:
+def addSortParameterFrom(sortValue: str, configRCCSorting: dict[str, dict[str, dict[str, list[list]]]], categoryConfigName: str, categoryMenuName: str) -> None:
     if sortValue == '0':
         return
     if len(sortValue) > 25:
@@ -5966,7 +5961,6 @@ def defaultConfigSettings() -> TOMLDocument:
     config['General']['Console_Title'] = 'MeowTool... Meow :3'
     config['General']['Show_Lable_MeowTool'] = True
     config['General']['Show_Lable_by_h1kken'] = False
-    config['General']['Press_Any_Key_To_Continue'] = True
     config['General']['Disable_Warnings_For_Links'] = False
     config['General']['Disable_Warnings_For_Dangerous_Actions'] = False
     config['General']['Show_Amount_Of_Lines_In_Files'] = False
@@ -6144,7 +6138,6 @@ def defaultConfigSettings() -> TOMLDocument:
     config['Roblox']['TransactionAnalysis']['Places']['Show_Game_ID_Next_To_The_Name'] = False
     config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places'] = []
     config['Roblox']['TransactionAnalysis']['Places'].add(comment('Places'))
-
     return config
 
 def loadConfig(configName: str) -> None:
@@ -6654,7 +6647,7 @@ async def mainMenu() -> None:
                                                 allBadges = [[badge[1], badge[0], f'https://www.roblox.com/badges/{badge[1]}'] for badge in place.Badges.listOfBadges]
                                                 with open(allItemsPath / 'Badges' / f'{place.placeNames[3]} ({placeName}).txt', 'w', encoding='utf-8') as file:
                                                     file.write(f'\n  Meow :3\n\n  {MT_Place_ID}: {place.placeNames[3]}\n  {MT_Place_Name}: {place.placeNames[0]}\n  {MT_Place_Link}: https://www.roblox.com/games/{place.placeNames[3]}\n\n  [*] {MT_Badges}\n{columnar(allBadges, columnarHeaders, no_borders=True)}')    
-                                        errorOrCorrectHandler(False, 9, f'{MT_Successfully_Uploaded_In} \'Roblox{osSep}Misc{osSep}All gamepasses and badges from program\'', generateVisualPath(MT_Roblox, MT_Misc))
+                                        errorOrCorrectHandler(False, 9, f'{MT_Successfully_Uploaded_In} \'Roblox{OS_SEP}Misc{OS_SEP}All gamepasses and badges from program\'', generateVisualPath(MT_Roblox, MT_Misc))
                                     case 'F' | 'А':
                                         cls()
                                         lableASCII()
@@ -6688,14 +6681,14 @@ async def mainMenu() -> None:
                             removeLines(11)
                             whileTrueStage2 = True
                             while whileTrueStage2:
-                                cmdWriter(f' {generateVisualPath(MT_Settings, MT_General)}\n\n [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] ┃ {MT_Language}: {'English' if config['General']['Language'] == 'EN' else 'Русский'}\n [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] ┃ {MT_Updates}\n [{ANSI.FG.PINK}3{ANSI.FG.WHITE}] ┃ {MT_Console_Title}: {config['General']['Console_Title'][:50]}\n [{ANSI.FG.PINK}4{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Show_Lable_MeowTool'])} {MT_Show_Lable_MeowTool}\n [{ANSI.FG.PINK}5{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Show_Lable_by_h1kken'])} {MT_Show_Lable_by_h1kken}\n [{ANSI.FG.PINK}6{ANSI.FG.WHITE}] ┃ {MT_Key_To_Continue}: {MT_Any if config['General']['Press_Any_Key_To_Continue'] else 'Enter'}\n [{ANSI.FG.PINK}7{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Disable_Warnings_For_Links'])} {MT_Disable_Warnings_For_Links}\n [{ANSI.FG.PINK}8{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Disable_Warnings_For_Dangerous_Actions'])} {MT_Disable_Warnings_For_Dangerous_Actions}\n [{ANSI.FG.PINK}9{ANSI.FG.WHITE}] ┃ {MT_Fix_Console} ({MT_Bind}: F)\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
+                                cmdWriter(f' {generateVisualPath(MT_Settings, MT_General)}\n\n [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] ┃ {MT_Language}: {'English' if config['General']['Language'] == 'EN' else 'Русский'}\n [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] ┃ {MT_Updates}\n [{ANSI.FG.PINK}3{ANSI.FG.WHITE}] ┃ {MT_Console_Title}: {config['General']['Console_Title'][:50]}\n [{ANSI.FG.PINK}4{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Show_Lable_MeowTool'])} {MT_Show_Lable_MeowTool}\n [{ANSI.FG.PINK}5{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Show_Lable_by_h1kken'])} {MT_Show_Lable_by_h1kken}\n [{ANSI.FG.PINK}6{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Disable_Warnings_For_Links'])} {MT_Disable_Warnings_For_Links}\n [{ANSI.FG.PINK}7{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Disable_Warnings_For_Dangerous_Actions'])} {MT_Disable_Warnings_For_Dangerous_Actions}\n [{ANSI.FG.PINK}8{ANSI.FG.WHITE}] ┃ {MT_Fix_Console} ({MT_Bind}: F)\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                 settingsGeneralTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                 match settingsGeneralTab:
                                     case '0':
                                         whileTrueStage2 = False
                                     # Язык
                                     case '1':
-                                        removeLines(15)
+                                        removeLines(14)
                                         languageOptions = {'1': 'RU', '2': 'EN'}
                                         whileTrueStage3 = True
                                         while whileTrueStage3:
@@ -6718,7 +6711,7 @@ async def mainMenu() -> None:
                                             autoSaveConfigAndRemoveLinesInSettings(settingsLanguageTab, ('1', '2'), ('0', '1', '2', 'R', 'К'), 8)
                                     # Обновления
                                     case '2':
-                                        removeLines(15)
+                                        removeLines(14)
                                         whileTrueStage3 = True
                                         while whileTrueStage3:
                                             cmdWriter(f' {generateVisualPath(MT_Settings, MT_General, MT_Updates)}\n\n [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(configLoader['Updater']['Check_For_Updates'])} {MT_Check_For_Updates}\n [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(configLoader['Updater']['Save_Old_Versions'])} {MT_Save_Old_Versions}\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
@@ -6742,7 +6735,7 @@ async def mainMenu() -> None:
 
                                             autoSaveConfigAndRemoveLinesInSettings(settingsUpdatesTab, ('1', '2'), ('0', '1', '2', 'R', 'К'), 8)
                                     case '3':
-                                        removeLines(13)
+                                        removeLines(12)
                                         cmdWriter(f' [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃ {MT_Do_Not_Use_This_Characters}: >, <, |, ^, &\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                         settingsTitleEnter = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_A_New_Title}: ')
                                         changeConsoleTitle(settingsTitleEnter)
@@ -6755,20 +6748,18 @@ async def mainMenu() -> None:
                                         cls()
                                         lableASCII()
                                     case '6':
-                                        config['General']['Press_Any_Key_To_Continue'] ^= True
-                                    case '7':
                                         config['General']['Disable_Warnings_For_Links'] ^= True
-                                    case '8':
+                                    case '7':
                                         config['General']['Disable_Warnings_For_Dangerous_Actions'] ^= True
-                                    case '9' | 'F' | 'А':
+                                    case '8' | 'F' | 'А':
                                         cls()
                                         lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
                                     case _:
-                                        removeLines(15)
+                                        removeLines(14)
 
-                                autoSaveConfigAndRemoveLinesInSettings(settingsGeneralTab, ('3', '4', '5', '6', '7', '8'), ('6', '7', '8', '0', 'R', 'К'), 15)
+                                autoSaveConfigAndRemoveLinesInSettings(settingsGeneralTab, ('3', '4', '5', '6', '7', '8'), ('6', '7', '8', '0', 'R', 'К'), 14)
                         # Выводы
                         case '2':
                             removeLines(11)
