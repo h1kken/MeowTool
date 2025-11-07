@@ -815,7 +815,7 @@ STRING_MINIMUM_100_SYMBOLS_PATTERN = re.compile(
 # Роблокс
 
 COOKIE_PATTERN = re.compile(
-    r'_\|(?:_\|[^\s\r\n]*?\|_)\S{100,}' # :3
+    r'_\|(?:_|[^\s\r\n]*?\|_)\S{100,}' # :3
 )
 
 AGE_GROUP_PATTERN = re.compile(
