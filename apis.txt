@@ -127,7 +127,6 @@ ____________
          [PGS] &pageSize=    (maximum items per page)
          [PGT] &pageToken=   (next page)
 
-
        [G] [C-]             Universe ID:               https://apis.roblox.com/universes/v1/places/{PlaceId}/universe                       > ['universeId']          in [JSON]
        [G] [C-]       [UIS] Place Information:         https://games.roblox.com/v1/games                                                    > ['name']                in [JSON]['data']
        [G] [C-] [PGS] [PGT] Gamepasses:                https://apis.roblox.com/game-passes/v1/universes/{UniverseId}/game-passes            > ['name'], ['id']        in [JSON]['gamePasses']
