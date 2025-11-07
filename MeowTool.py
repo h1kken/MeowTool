@@ -5717,13 +5717,12 @@ async def addCustomPlaceRoblox(customPlaceId: str):
         if not universeId:
             return errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
 
-        customPlaceGamepassesData = (await sendGetRequest(f'https://games.roblox.com/v1/games/{universeId}/game-passes?limit=100&sortOrder=Asc', 'JSON'))['data']
+        customPlaceGamepassesData = (await sendGetRequest(f'https://apis.roblox.com/game-passes/v1/universes/{universeId}/game-passes?pageSize=101&sortOrder=Asc', 'JSON'))['gamePasses']
         customPlaceBadgesData     = (await sendGetRequest(f'https://badges.roblox.com/v1/universes/{universeId}/badges?limit=100&sortOrder=Asc', 'JSON'))['data']
         if not (customPlaceGamepassesData or customPlaceBadgesData):
             return errorOrCorrectHandler(True, 5, MT_The_Place_Has_No_Gamepasses_And_Badges, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
 
         customPlaceName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
-
         normalPlaceName = rmEmojies(rmBracketsAndIn(customPlaceName, round=True, square=True)).replace('"', '').strip()
         if normalPlaceName:
             abbreviatedPlaceName = ''.join(word[0] for word in normalPlaceName.split())
@@ -5733,22 +5732,27 @@ async def addCustomPlaceRoblox(customPlaceId: str):
 
         config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places'].append(int(customPlaceId))
         config['Roblox']['CookieChecker']['CustomPlaces'][customPlaceId] = [int(customPlaceId), [normalPlaceName, str(customPlaceName).strip(), abbreviatedPlaceName.upper()], False]
+
         if customPlaceGamepassesData:
-            config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlaceId}_Gamepasses'] = [
-                [
-                    gamepass['id'],
-                    rmTwoSpaces(rmBracketsAndIn(rmPatternFromString(SPECIAL_CHARS, rmEmojies(str(gamepass['name']).strip())), round=True, square=True)),
-                    False
-                ] for gamepass in customPlaceGamepassesData
-            ]
+            gamepassesList = []
+            for gamepass in customPlaceGamepassesData:
+                gamepassId = gamepass['id']
+                gamepassName = rmTwoSpaces(rmBracketsAndIn(rmPatternFromString(SPECIAL_CHARS, rmEmojies(str(gamepass['name']).strip())), round=True, square=True))
+                if not gamepassName:
+                    gamepassName = f'id{gamepassId}'
+                gamepassesList.append([gamepassId, gamepassName, False])
+            config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlaceId}_Gamepasses'] = gamepassesList
+
         if customPlaceBadgesData:
-            config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlaceId}_Badges'] = [
-                [
-                    badge['id'],
-                    rmTwoSpaces(rmBracketsAndIn(rmPatternFromString(SPECIAL_CHARS, rmEmojies(str(badge['name']).strip())), round=True, square=True)),
-                    False
-                ] for badge in customPlaceBadgesData
-            ]
+            badgesList = []
+            for badge in customPlaceBadgesData:
+                badgeId = badge['id']
+                badgeName = rmTwoSpaces(rmBracketsAndIn(rmPatternFromString(SPECIAL_CHARS, rmEmojies(str(badge['name']).strip())), round=True, square=True))
+                if not badgeName:
+                    badgeName = f'id{badgeId}'
+                badgesList.append([badgeId, badgeName, False])
+            config['Roblox']['CookieChecker']['CustomPlaces'][f'{customPlaceId}_Badges'] = badgesList
+
         autoSaveConfig()
     except Exception as e:
         logger.exception(f' < [ADD_CUSTOM_PLACE_RCC] > {MT_Unknown_Error}: {e}', force=True)
