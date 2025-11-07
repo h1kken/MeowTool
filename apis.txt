@@ -53,10 +53,8 @@ ____________
        [?] Params:
          [LIM] &limit=            (maximum items per page)
          [CNT] &count=            (maximum items per page)
-         [PGS] &pageSize=         (maximum items per page)
          [CSR] &cursor=           (next page)
          [NSR] &nextCursor=       (next page)
-         [PGT] &pageToken=        (next page)
          [ESI] &exclusiveStartId= (next page, last item's ID)
 
        [G] [C+]             Valid:                     https://users.roblox.com/v1/users/authenticated                                      > [STATUS]
@@ -126,6 +124,9 @@ ____________
        [?] Params:
          [UIS] ?universeIds= (IDs separated by commas)
          [LIM] &limit=       (maximum items per page)
+         [PGS] &pageSize=    (maximum items per page)
+         [PGT] &pageToken=   (next page)
+
 
        [G] [C-]             Universe ID:               https://apis.roblox.com/universes/v1/places/{PlaceId}/universe                       > ['universeId']          in [JSON]
        [G] [C-]       [UIS] Place Information:         https://games.roblox.com/v1/games                                                    > ['name']                in [JSON]['data']
