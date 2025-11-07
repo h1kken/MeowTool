@@ -124,12 +124,14 @@ ____________
        [?] Params:
          [UIS] ?universeIds= (IDs separated by commas)
          [LIM] &limit=       (maximum items per page)
+         [PGS] &pageSize=    (maximum items per page)
+         [PGT] &pageToken=   (next page)
 
-       [G]                  Universe ID:               https://apis.roblox.com/universes/v1/places/{PlaceId}/universe                       > ['universeId']          in [JSON]
-       [G]            [UIS] Place Information:         https://games.roblox.com/v1/games                                                    > ['name']                in [JSON]['data']
-       [G]      [LIM]       Gamepasses:                https://games.roblox.com/v1/games/{UniverseId}/game-passes                           > ['name'], ['id']        in [JSON]['data']
-       [G]      [LIM]       Badges:                    https://badges.roblox.com/v1/universes/{UniverseId}/badges                           > ['name'], ['id']        in [JSON]['data']
-       [G]      [LIM]       Products:                  https://apis.roblox.com/experience-store/v1/universes/{UniverseId}/store             > ['Name'], ['ProductId'] in [JSON]['developerProducts']
+       [G] [C-]             Universe ID:               https://apis.roblox.com/universes/v1/places/{PlaceId}/universe                       > ['universeId']          in [JSON]
+       [G] [C-]       [UIS] Place Information:         https://games.roblox.com/v1/games                                                    > ['name']                in [JSON]['data']
+       [G] [C-] [PGS] [PGT] Gamepasses:                https://apis.roblox.com/game-passes/v1/universes/{UniverseId}/game-passes            > ['name'], ['id']        in [JSON]['gamePasses']
+       [G] [C-] [LIM] [CSR] Badges:                    https://badges.roblox.com/v1/universes/{UniverseId}/badges                           > ['name'], ['id']        in [JSON]['data']
+       [G] [C-] [LIM] [LIM] Products:                  https://apis.roblox.com/experience-store/v1/universes/{UniverseId}/store             > ['Name'], ['ProductId'] in [JSON]['developerProducts']
 
 ______________
  [*] Telegram
