@@ -1463,7 +1463,7 @@ async def proxyChecker(file: str) -> None:
         playSystemSound()
 
     if isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
-        messageText = f'*💜 {MT_Proxy} {MT_Checker.lower()}\n\n🟢 Good: {counters['good']}\n🔴 Bad: {counters['bad']}\n🟡 Response time >{maxResponseTime} sec.: {counters['timeout']}\n\n*'
+        messageText = f'*💜 {MT_Proxy} {MT_Checker.lower()}\n\n🟢 Good: {counters['good']}\n🔴 Bad: {counters['bad']}\n🟡 Response time \\>{maxResponseTime} sec\\.: {counters['timeout']}\n\n*'
         makeArchive(dateOfCheck, 'Proxy', 'Checker', 'outputs')
         await sendMessageTelegramBot(messageText, 'Proxy', 'Checker', 'outputs', 'archives', f'{dateOfCheck}.zip')
         sendMessageDiscordWebhook(messageText.replace('*', '**'), f'{dateOfCheck}.zip', 'Proxy', 'Checker', 'outputs', 'archives')
