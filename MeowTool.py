@@ -5723,7 +5723,7 @@ async def addCustomPlaceRoblox(customPlaceId: str):
         if not universeId:
             return errorOrCorrectHandler(True, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
 
-        customPlaceGamepassesData = (await sendGetRequest(f'https://apis.roblox.com/game-passes/v1/universes/{universeId}/game-passes?pageSize=101&sortOrder=Asc', 'JSON'))['gamePasses']
+        customPlaceGamepassesData = (await sendGetRequest(f'https://apis.roblox.com/game-passes/v1/universes/{universeId}/game-passes?pageSize=101', 'JSON'))['gamePasses']
         customPlaceBadgesData     = (await sendGetRequest(f'https://badges.roblox.com/v1/universes/{universeId}/badges?limit=100&sortOrder=Asc', 'JSON'))['data']
         if not (customPlaceGamepassesData or customPlaceBadgesData):
             return errorOrCorrectHandler(True, MT_The_Place_Has_No_Gamepasses_And_Badges, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
@@ -6593,7 +6593,7 @@ async def mainMenu() -> None:
                                     'categoryUrl' : 'game-pass',
                                     'label'       : MT_Gamepasses,
                                     'errorHasNo'  : MT_The_Place_Has_No_Gamepasses,
-                                    'url'         : 'https://games.roblox.com/v1/games/{}/game-passes?limit=100&sortOrder=Asc',
+                                    'url'         : 'https://apis.roblox.com/game-passes/v1/universes/{}/game-passes?pageSize=101',
                                     'visualPath'  : generateVisualPath(MT_Roblox, MT_Misc, MT_Gamepasses_Parser_From_The_Place)
                                 },
                                 '2': {
