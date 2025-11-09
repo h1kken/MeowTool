@@ -927,8 +927,9 @@ def waitingInput() -> None:
     cls()
     lableASCII()
 
-def errorOrCorrectHandler(isError: bool, amountOfLinesToRemove: int, message: str, visualPath: str) -> None:
-    removeLines(amountOfLinesToRemove)
+def errorOrCorrectHandler(isError: bool, message: str, visualPath: str) -> None:
+    cls()
+    lableASCII()
     cmdWriter(f'\r {visualPath}\n\n {f'[{ANSI.FG.RED if isError else ANSI.FG.GREEN}>{ANSI.FG.WHITE}]'} {message}\n\n')
     waitingInput()
 
@@ -1307,7 +1308,7 @@ def getProxiesFromFile(proxiesPath: Path, amountOfRemoveLines: int, visualPath: 
 
         return list(proxies)
     except FileNotFoundError:
-        return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Proxy_Was_Found, visualPath)
+        return errorOrCorrectHandler(True, MT_No_Proxy_Was_Found, visualPath)
     except Exception as e:
         logger.exception(f'< [GET_PROXIES_FROM_FILE] > {MT_Critical_Error}: {e}', force=True)
 
@@ -1463,7 +1464,7 @@ async def proxyChecker(file: str) -> None:
         playSystemSound()
 
     if isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
-        messageText = f'*💜 {MT_Proxy} {MT_Checker.lower()}\n\n🟢 Good: {counters['good']}\n🔴 Bad: {counters['bad']}\n🟡 Response time \\>{maxResponseTime} sec\\.: {counters['timeout']}\n\n*'
+        messageText = f'*💜 {MT_Proxy} {MT_Checker.lower()}\n\n🟢 Good: {counters['good']}\n🔴 Bad: {counters['bad']}\n🟡 Response time \\>{maxResponseTime} sec\\.: {counters['timeout']}*'
         makeArchive(dateOfCheck, 'Proxy', 'Checker', 'outputs')
         await sendMessageTelegramBot(messageText, 'Proxy', 'Checker', 'outputs', 'archives', f'{dateOfCheck}.zip')
         sendMessageDiscordWebhook(messageText.replace('*', '**'), f'{dateOfCheck}.zip', 'Proxy', 'Checker', 'outputs', 'archives')
@@ -1498,7 +1499,7 @@ def getProxiesFromFileRoblox(isUseProxy: bool, proxiesPath: Path, amountOfRemove
             
         return list(proxies)
     except FileNotFoundError:
-        return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Proxy_Was_Found, visualPath)
+        return errorOrCorrectHandler(True, MT_No_Proxy_Was_Found, visualPath)
     except Exception as e:
         logger.exception(f'< [GET_PROXIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}', force=True)
 
@@ -1526,7 +1527,7 @@ def getCookiesFromFileRoblox(cookiesPath: Path, amountOfRemoveLines: int, visual
 
         return cookiesSet
     except FileNotFoundError:
-        return errorOrCorrectHandler(True, amountOfRemoveLines, MT_No_Cookie_Was_Found, visualPath)
+        return errorOrCorrectHandler(True, MT_No_Cookie_Was_Found, visualPath)
     except Exception as e:
         logger.exception(f'< [GET_COOKIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}', force=True)
 
@@ -4103,7 +4104,7 @@ async def robloxCookieValidChecker(category: str, cookies: set[str], proxies: Op
     )
 
     if not cookies:
-        return errorOrCorrectHandler(True, 4, MT_All_Cookies_Were_Invalid, generateVisualPath(MT_Roblox, MT_Cookie_Checker if category == 'CookieChecker' else MT_Transaction_Analysis))
+        return errorOrCorrectHandler(True, MT_All_Cookies_Were_Invalid, generateVisualPath(MT_Roblox, MT_Cookie_Checker if category == 'CookieChecker' else MT_Transaction_Analysis))
 
     removeLines(1)
     return list(cookies)
@@ -4172,7 +4173,7 @@ async def robloxCookieChecker(file: str) -> None:
     cmdWriter(f' {generateVisualPath(MT_Roblox, MT_Cookie_Checker)}\n\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Wait[0]}...')
 
     if not [data[1] for data in cookieData.listOfCookieData if config['Roblox']['CookieChecker']['Main'][data[1]]]:
-        return errorOrCorrectHandler(True, 2, MT_Enable_Something_In, generateVisualPath(MT_Roblox, MT_Cookie_Checker))
+        return errorOrCorrectHandler(True, MT_Enable_Something_In, generateVisualPath(MT_Roblox, MT_Cookie_Checker))
 
     isUseProxy = config['Roblox']['General']['Proxy']['Use_Proxy']
     proxiesFromFile = getProxiesFromFileRoblox(isUseProxy, Path('Roblox', 'proxies.txt'), 2, generateVisualPath(MT_Roblox, MT_Cookie_Checker))
@@ -4507,7 +4508,7 @@ async def robloxCookieChecker(file: str) -> None:
         playSystemSound()
 
     if isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
-        messageText = f'*💜 {MT_Roblox} {MT_Cookie_Checker.lower()}\n\n🟢 {MT_Valid}: {counters['valid']}\n🟡 {MT_Duplicates}: {counters['duplicates']}\n🔴 {MT_Invalid}: {counters['invalid']}\n🟠 {MT_Banned[1]}: {counters['banned']}\n\n{f'💎 Robux: {totalDataCurrent['Robux'] if type(totalDataCurrent['Robux']) is int else 'Off'}\n'}{f'💵 Billing: {totalDataCurrent['Billing'] if type(totalDataCurrent['Billing']) is int else 'Off'}\n'}{f'⌛ Pending: {totalDataCurrent['Pending'] if type(totalDataCurrent['Pending']) is int else 'Off'}\n'}{f'💰 Donate \\(1 Year\\): {totalDataCurrent['Donate (1 Year)'] if type(totalDataCurrent['Donate (1 Year)']) is int else 'Off'}\n'}{f'💰 Donate \\(All Time\\): {totalDataCurrent['Donate (All Time)'] if type(totalDataCurrent['Donate (All Time)']) is int else 'Off'}\n'}{f'🚀 Rap: {totalDataCurrent['Rap'] if type(totalDataCurrent['Rap']) is int else 'Off'}\n'}{f'💳 Card: {totalDataCurrent['Card'] if type(totalDataCurrent['Card']) is int else 'Off'}\n'}{f'👑 Premium: {totalDataCurrent['Premium'] if type(totalDataCurrent['Premium']) is int else 'Off'}\n'}{f'🎫 Gamepasses: {totalDataCurrent['Gamepasses'] if type(totalDataCurrent['Gamepasses']) is int else 'Off'}\n'}{f'🎫 Custom Gamepasses: {totalDataCurrent['Custom Gamepasses'] if type(totalDataCurrent['Custom Gamepasses']) is int else 'Off'}\n'}{f'🏆 Badges: {totalDataCurrent['Badges'] if type(totalDataCurrent['Badges']) is int else 'Off'}\n'}{f'⭐ Favorite Places: {totalDataCurrent['Favorite Places'] if type(totalDataCurrent['Favorite Places']) is int else 'Off'}\n'}{f'📦 Bundles: {totalDataCurrent['Bundles'] if type(totalDataCurrent['Bundles']) is int else 'Off'}\n'}{f'🌐 Groups Owned: {totalDataCurrent['Groups Owned'] if type(totalDataCurrent['Groups Owned']) is int else 'Off'}\n'}{f'👯‍♀️ Groups Members: {totalDataCurrent['Groups Members'] if type(totalDataCurrent['Groups Members']) is int else 'Off'}\n'}{f'⌛ Groups Pending: {totalDataCurrent['Groups Pending'] if type(totalDataCurrent['Groups Pending']) is int else 'Off'}\n'}{f'💎 Groups Funds: {totalDataCurrent['Groups Funds'] if type(totalDataCurrent['Groups Funds']) is int else 'Off'}\n'}*'
+        messageText = f'*💜 {MT_Roblox} {MT_Cookie_Checker.lower()}\n\n🟢 {MT_Valid}: {counters['valid']}\n🟡 {MT_Duplicates}: {counters['duplicates']}\n🔴 {MT_Invalid}: {counters['invalid']}\n🟠 {MT_Banned[1]}: {counters['banned']}\n\n{f'💎 Robux: {totalDataCurrent['Robux'] if type(totalDataCurrent['Robux']) is int else 'Off'}\n'}{f'💵 Billing: {totalDataCurrent['Billing'] if type(totalDataCurrent['Billing']) is int else 'Off'}\n'}{f'⌛ Pending: {totalDataCurrent['Pending'] if type(totalDataCurrent['Pending']) is int else 'Off'}\n'}{f'💰 Donate \\(1 Year\\): {totalDataCurrent['Donate (1 Year)'] if type(totalDataCurrent['Donate (1 Year)']) is int else 'Off'}\n'}{f'💰 Donate \\(All Time\\): {totalDataCurrent['Donate (All Time)'] if type(totalDataCurrent['Donate (All Time)']) is int else 'Off'}\n'}{f'🚀 Rap: {totalDataCurrent['Rap'] if type(totalDataCurrent['Rap']) is int else 'Off'}\n'}{f'💳 Card: {totalDataCurrent['Card'] if type(totalDataCurrent['Card']) is int else 'Off'}\n'}{f'👑 Premium: {totalDataCurrent['Premium'] if type(totalDataCurrent['Premium']) is int else 'Off'}\n'}{f'🎫 Gamepasses: {totalDataCurrent['Gamepasses'] if type(totalDataCurrent['Gamepasses']) is int else 'Off'}\n'}{f'🎫 Custom Gamepasses: {totalDataCurrent['Custom Gamepasses'] if type(totalDataCurrent['Custom Gamepasses']) is int else 'Off'}\n'}{f'🏆 Badges: {totalDataCurrent['Badges'] if type(totalDataCurrent['Badges']) is int else 'Off'}\n'}{f'⭐ Favorite Places: {totalDataCurrent['Favorite Places'] if type(totalDataCurrent['Favorite Places']) is int else 'Off'}\n'}{f'📦 Bundles: {totalDataCurrent['Bundles'] if type(totalDataCurrent['Bundles']) is int else 'Off'}\n'}{f'🌐 Groups Owned: {totalDataCurrent['Groups Owned'] if type(totalDataCurrent['Groups Owned']) is int else 'Off'}\n'}{f'👯‍♀️ Groups Members: {totalDataCurrent['Groups Members'] if type(totalDataCurrent['Groups Members']) is int else 'Off'}\n'}{f'⌛ Groups Pending: {totalDataCurrent['Groups Pending'] if type(totalDataCurrent['Groups Pending']) is int else 'Off'}\n'}{f'💎 Groups Funds: {totalDataCurrent['Groups Funds'] if type(totalDataCurrent['Groups Funds']) is int else 'Off'}'}*'
         makeArchive(dateOfCheck, 'Roblox', 'Cookie Checker', 'outputs')
         await sendMessageTelegramBot(messageText, 'Roblox', 'Cookie Checker', 'outputs', 'archives', f'{dateOfCheck}.zip')
         sendMessageDiscordWebhook(messageText.replace('*', '**'), f'{dateOfCheck}.zip', 'Roblox', 'Cookie Checker', 'outputs', 'archives')
@@ -4921,7 +4922,7 @@ async def robloxCookieSorter() -> None:
                 
             for file in files:
                 counterOfCookies = 0
-                cookiesFromFile = open(root / file, 'r', encoding='utf-8').readlines()
+                cookiesFromFile = open(root / file, 'r', encoding='utf-8', errors='ignore').readlines()
                 amountOfCookiesFromFile = len(cookiesFromFile)
                 visualRoot = f'.{OS_SEP}' * (len(Path(root).parts) - 1)
                 cmdWriter(f'\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Sorting_File} \'{ANSI.DECOR.UNDERLINEON}{visualRoot}{file}{ANSI.DECOR.UNDERLINEOFF}\': 0 {MT_Of} {amountOfCookiesFromFile}')
@@ -4954,7 +4955,7 @@ async def robloxCookieSorter() -> None:
     stop = timer('stop', start=start)
 
     if not cookieSortingList:
-        return errorOrCorrectHandler(True, 10, MT_No_Cookie_Was_Found, generateVisualPath(MT_Roblox, MT_Cookie_Sorter))
+        return errorOrCorrectHandler(True, MT_No_Cookie_Was_Found, generateVisualPath(MT_Roblox, MT_Cookie_Sorter))
 
     dateOfSorting = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Roblox', 'Cookie Sorter', 'outputs', dateOfSorting)
@@ -5001,7 +5002,12 @@ async def getRBXAuthenticationTicket(cookies: dict[str, str], proxies: Optional[
         'referer': 'https://www.roblox.com/hewhewhew',
         'X-CSRF-Token': isXCSRFToken
     }
-    isTicket = (await sendPostRequestRoblox('https://auth.roblox.com/v1/authentication-ticket', cookies=cookies, headers=headers, proxies=proxies)).headers['rbx-authentication-ticket']
+    isTicket = None
+    while True:
+        responseHeaders = (await sendPostRequestRoblox('https://auth.roblox.com/v1/authentication-ticket', cookies=cookies, headers=headers, proxies=proxies)).headers
+        isTicket = responseHeaders.get('rbx-authentication-ticket')
+        if isTicket:
+            break
     return isXCSRFToken, isTicket
 
 async def createNewCookie(cookies: dict[str, str], proxies: Optional[list[str]]) -> Optional[str]:
@@ -5049,7 +5055,7 @@ async def cookieRefresherSingleMode(string: str):
     if not cookie:
         cookie = re.search(STRING_MINIMUM_100_SYMBOLS_PATTERN, string)
         if not cookie:
-            return errorOrCorrectHandler(True, 2, MT_Incorrect_Cookie, generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Single_Mode))
+            return errorOrCorrectHandler(True, MT_Incorrect_Cookie, generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Single_Mode))
         
         cookie = f'{COOKIE_START}{symbolsBetweenWarningAndCookie}{cookie.group(0)}'
     else:
@@ -5064,7 +5070,7 @@ async def cookieRefresherSingleMode(string: str):
     try:
         isNewCookie = await createNewCookie({'.ROBLOSECURITY': cookie}, proxiesFromFile)
     except InvalidCookie:
-        return errorOrCorrectHandler(True, 3, MT_Invalid_Cookie, generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Single_Mode))
+        return errorOrCorrectHandler(True, MT_Invalid_Cookie, generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Single_Mode))
 
     await saveCookieRCR('SingleMode', f'{cookie[115:130]}...{cookie[-15:-1]}', isNewCookie, Path('Roblox', 'Cookie Refresher', 'Single Mode', 'outputs', currentDate('%d.%m.%Y - %H.%M.%S')))
 
@@ -5131,9 +5137,9 @@ def printPlaceIgnoreNamesRTA(placeId: str) -> None:
 def addPlaceIgnoreNameRTA(ignoreName: str, placeId: str) -> None:
     if ignoreName == '0': return
     if len(ignoreName) > 50:
-        return errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Name.format('50'), generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places, placeId, MT_Ignore_List))
+        return errorOrCorrectHandler(True, MT_Incorrect_Length_Of_Name.format('50'), generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places, placeId, MT_Ignore_List))
     if ignoreName in [name[0] for name in config['Roblox']['TransactionAnalysis']['Places'][f'{placeId}_Ignore_List']]:
-        return errorOrCorrectHandler(True, 5, MT_Transaction_With_This_Name_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places, placeId, MT_Ignore_List))
+        return errorOrCorrectHandler(True, MT_Transaction_With_This_Name_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places, placeId, MT_Ignore_List))
 
     config['Roblox']['TransactionAnalysis']['Places'][f'{placeId}_Ignore_List'].append([ignoreName, False])
     autoSaveConfig()
@@ -5312,7 +5318,7 @@ async def robloxTransactionAnalysis(file: str) -> None:
     checkListPlaces = {str(place): [config['Roblox']['TransactionAnalysis']['Places'][str(place)][1][0], 0, 0, []] for place in config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places']
                        if config['Roblox']['TransactionAnalysis']['Places'][str(place)][2]}
     if not checkListPlaces:
-        return errorOrCorrectHandler(True, 2, MT_Enable_At_Least_One_Place_To_Start_Analysis, generateVisualPath(MT_Roblox, MT_Transaction_Analysis))
+        return errorOrCorrectHandler(True, MT_Enable_At_Least_One_Place_To_Start_Analysis, generateVisualPath(MT_Roblox, MT_Transaction_Analysis))
 
     isUseProxy = config['Roblox']['General']['Proxy']['Use_Proxy']
     proxiesFromFile = getProxiesFromFileRoblox(isUseProxy, Path('Roblox', 'proxies.txt'), 2, generateVisualPath(MT_Roblox, MT_Transaction_Analysis))
@@ -5463,11 +5469,11 @@ def changeConsoleTitle(newName: str) -> None:
     if newName == '0':
         return removeLines(7)
     if not newName.strip():
-        return errorOrCorrectHandler(True, 7, MT_The_Name_Cannot_Be_Empty, (MT_Settings, MT_General))
+        return errorOrCorrectHandler(True, MT_The_Name_Cannot_Be_Empty, (MT_Settings, MT_General))
     if len(newName) > 100:
-        return errorOrCorrectHandler(True, 7, MT_Incorrect_Length_Of_Name.format('50'), (MT_Settings, MT_General))
+        return errorOrCorrectHandler(True, MT_Incorrect_Length_Of_Name.format('50'), (MT_Settings, MT_General))
     if any(char in newName for char in CONSOLE_NAME_SPECIAL_CHARS):
-        return errorOrCorrectHandler(True, 7, f'{MT_Do_Not_Use_This_Characters}: {', '.join(CONSOLE_NAME_SPECIAL_CHARS)}', (MT_Settings, MT_General))
+        return errorOrCorrectHandler(True, f'{MT_Do_Not_Use_This_Characters}: {', '.join(CONSOLE_NAME_SPECIAL_CHARS)}', (MT_Settings, MT_General))
 
     os.system(f'title {newName}')
     config['General']['Console_Title'] = newName
@@ -5479,7 +5485,7 @@ def changeTelegramBotToken(botToken: str) -> None:
     if botToken == '0':
         return removeLines(5)
     if not botToken:
-        return errorOrCorrectHandler(True, 5, MT_Value_Cannot_Be_Empty, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, MT_Value_Cannot_Be_Empty, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
 
     config['Outputs']['TelegramBot']['Telegram_Bot_Token'] = botToken
     autoSaveConfig()
@@ -5489,9 +5495,9 @@ def changeTelegramChatID(chatId: str) -> None:
     if chatId == '0':
         return removeLines(5)
     if not chatId:
-        return errorOrCorrectHandler(True, 5, MT_Value_Cannot_Be_Empty, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, MT_Value_Cannot_Be_Empty, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
     if not chatId.isdigit():
-        return errorOrCorrectHandler(True, 5, MT_Value_Must_Consist_Of_Digits, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, MT_Value_Must_Consist_Of_Digits, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
 
     config['Outputs']['TelegramBot']['Telegram_Bot_Chat_ID'] = chatId
     autoSaveConfig()
@@ -5499,9 +5505,9 @@ def changeTelegramChatID(chatId: str) -> None:
 
 async def autoFindChatID() -> None:
     if not config['Outputs']['TelegramBot']['Telegram_Bot_Token']:
-        return errorOrCorrectHandler(True, 13, f'{MT_Specify_The_Bot_Token}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, f'{MT_Specify_The_Bot_Token}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
     if len(str(config['Outputs']['TelegramBot']['Telegram_Bot_Token']).split(':')) != 2:
-        return errorOrCorrectHandler(True, 13, f'{MT_Possibly_A_Typo_In_The_Bot_Token}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, f'{MT_Possibly_A_Typo_In_The_Bot_Token}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
 
     removeLines(11)
     cmdWriter(f' [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Wait[0]}...')
@@ -5520,24 +5526,24 @@ async def autoFindChatID() -> None:
                     removeLines(8)
                     whileTrueStageChatID = False
                 case 'N' | 'Т':
-                    return errorOrCorrectHandler(True, 8, f'{MT_Send_Any_Message_To_The_Bot_And_Try_Again}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+                    return errorOrCorrectHandler(True, f'{MT_Send_Any_Message_To_The_Bot_And_Try_Again}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
                 case _:
                     removeLines(7)
     except AttributeError:
-        return errorOrCorrectHandler(True, 2, f'{MT_Possibly_A_Typo_In_The_Bot_Token}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, f'{MT_Possibly_A_Typo_In_The_Bot_Token}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
     except IndexError:
-        return errorOrCorrectHandler(True, 2, f'{MT_Send_Any_Message_To_The_Bot_And_Try_Again}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, f'{MT_Send_Any_Message_To_The_Bot_And_Try_Again}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
     except TelegramNetworkError:
-        return errorOrCorrectHandler(True, 2, f'{MT_Possibly_The_Internet_Is_Unstable}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, f'{MT_Possibly_The_Internet_Is_Unstable}...', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
     except Exception as e:
         logger.exception(f' < [TELEGRAM_BOT_AUTO_FIND_CHAT_ID] > {MT_Unknown_Error}: {e}', force=True)
-        return errorOrCorrectHandler(True, 2, f'{MT_Unknown_Error}: {e}', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, f'{MT_Unknown_Error}: {e}', generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
 
 async def testMeowTelegramBot() -> None:
     if not str(config['Outputs']['TelegramBot']['Telegram_Bot_Token']).strip():
-        return errorOrCorrectHandler(True, 13, MT_Specify_The_Bot_Token, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, MT_Specify_The_Bot_Token, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
     if not str(config['Outputs']['TelegramBot']['Telegram_Bot_Chat_ID']).strip():
-        return errorOrCorrectHandler(True, 13, MT_Specify_The_Chat_ID, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, MT_Specify_The_Chat_ID, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
 
     removeLines(11)
     cmdWriter(f' [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Wait[0]}...')
@@ -5550,7 +5556,7 @@ def changeDiscordWebhookURL(webhookUrl: str) -> None:
     if webhookUrl == '0':
         return removeLines(7)
     if not webhookUrl:
-        return errorOrCorrectHandler(True, 7, MT_Value_Cannot_Be_Empty, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
+        return errorOrCorrectHandler(True, MT_Value_Cannot_Be_Empty, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
 
     config['Outputs']['DiscordWebhook']['Discord_Webhook_URL'] = webhookUrl
     autoSaveConfig()
@@ -5559,7 +5565,7 @@ def changeDiscordWebhookURL(webhookUrl: str) -> None:
 
 def testMeowDiscordWebhook() -> None:
     if not str(config['Outputs']['DiscordWebhook']['Discord_Webhook_URL']).strip():
-        return errorOrCorrectHandler(True, 8, MT_Specify_The_Webhook_URL, generateVisualPath(MT_Settings, MT_Outputs, MT_Discord_Webhook))
+        return errorOrCorrectHandler(True, MT_Specify_The_Webhook_URL, generateVisualPath(MT_Settings, MT_Outputs, MT_Discord_Webhook))
 
     removeLines(7)
     cmdWriter(f' [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Wait[0]}...')
@@ -5573,7 +5579,7 @@ def changeSymbols(symbols: str) -> None:
     if symbols == '0':
         return removeLines(5)
     if len(symbols) > 50:
-        return errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_String.format('50'), generateVisualPath(MT_Settings, MT_Roblox, MT_General))
+        return errorOrCorrectHandler(True, MT_Incorrect_Length_Of_String.format('50'), generateVisualPath(MT_Settings, MT_Roblox, MT_General))
 
     config['Roblox']['General']['Symbols_Between_Warning_And_Cookie'] = symbols
     autoSaveConfig()
@@ -5585,9 +5591,9 @@ def changeOutputFilenameRoblox(category: str, newName: str) -> None:
         return removeLines(5)
     visualCategory = MT_Cookie_Checker if category == 'CookieChecker' else MT_Cookie_Sorter
     if not newName.strip() or any(char in newName for char in FILENAME_SPECIAL_CHARS):
-        return errorOrCorrectHandler(True, 5, MT_Incorrect_Filename, generateVisualPath(MT_Settings, MT_Roblox, visualCategory, MT_General))
+        return errorOrCorrectHandler(True, MT_Incorrect_Filename, generateVisualPath(MT_Settings, MT_Roblox, visualCategory, MT_General))
     if len(newName) > 50:
-        return errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Name.format('50'), generateVisualPath(MT_Settings, MT_Roblox, visualCategory, MT_General))
+        return errorOrCorrectHandler(True, MT_Incorrect_Length_Of_Name.format('50'), generateVisualPath(MT_Settings, MT_Roblox, visualCategory, MT_General))
 
     match category:
         case 'CookieChecker': config['Roblox']['CookieChecker']['General']['Output_Filename'] = newName
@@ -5601,9 +5607,9 @@ def changeNumberOfThreads(category: str, option: str, threads: str, limitOfThrea
         return removeLines(5)
     visualCategory = MT_Cookie_Checker if category == 'CookieChecker' else MT_Transaction_Analysis
     if not threads.isdigit():
-        return errorOrCorrectHandler(True, 5, MT_Incorrect_Value, generateVisualPath(MT_Settings, MT_Roblox, visualCategory, MT_General))
+        return errorOrCorrectHandler(True, MT_Incorrect_Value, generateVisualPath(MT_Settings, MT_Roblox, visualCategory, MT_General))
     if int(threads) > limitOfThreads:
-        return errorOrCorrectHandler(True, 5, MT_Do_Not_Exceed_The_Thread_Limit.format(limitOfThreads), generateVisualPath(MT_Settings, MT_Roblox, visualCategory, MT_General))
+        return errorOrCorrectHandler(True, MT_Do_Not_Exceed_The_Thread_Limit.format(limitOfThreads), generateVisualPath(MT_Settings, MT_Roblox, visualCategory, MT_General))
 
     config['Roblox'][category]['General'][option] = int(threads)
     autoSaveConfig()
@@ -5614,11 +5620,11 @@ def addCustomGamepassRoblox(customGamepassName: str, nameOfCategory: str) -> Non
     if customGamepassName == '0':
         return
     if not customGamepassName.strip():
-        return errorOrCorrectHandler(True, 5, MT_The_Name_Cannot_Be_Empty, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
+        return errorOrCorrectHandler(True, MT_The_Name_Cannot_Be_Empty, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
     if len(customGamepassName) > 50:
-        return errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Name.format('50'), generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
+        return errorOrCorrectHandler(True, MT_Incorrect_Length_Of_Name.format('50'), generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
     if checkExist(customGamepassName, 'Custom_Gamepasses'):
-        return errorOrCorrectHandler(True, 5, MT_Gamepass_With_This_Name_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
+        return errorOrCorrectHandler(True, MT_Gamepass_With_This_Name_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
     config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses_List'].append([customGamepassName, False])
     autoSaveConfig()
@@ -5628,12 +5634,12 @@ async def addPlaceRoblox(placeId: str, nameOfCategory: Literal['Favorite Places'
         return
     _nameOfCategory = '_'.join(nameOfCategory.split())
     if checkExist(placeId, _nameOfCategory):
-        return errorOrCorrectHandler(True, 5, MT_Place_With_This_ID_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
+        return errorOrCorrectHandler(True, MT_Place_With_This_ID_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
     try:
         universeId = (await sendGetRequest(f'https://apis.roblox.com/universes/v1/places/{placeId}/universe', 'JSON'))['universeId']
         if not universeId:
-            return errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
+            return errorOrCorrectHandler(True, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
         placeName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
         cleanPlaceName = rmTwoSpaces(rmPatternFromString(SPECIAL_CHARS, rmBracketsAndIn(rmEmojies(placeName), round=True, square=True)))
@@ -5648,13 +5654,13 @@ async def addPlaceRoblox(placeId: str, nameOfCategory: Literal['Favorite Places'
         autoSaveConfig()
     except Exception as e:
         logger.exception(f'< [ROBLOX_ADD_{_nameOfCategory.upper()}] > {MT_Unknown_Error}: {e}', force=True)
-        return errorOrCorrectHandler(True, 5, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
+        return errorOrCorrectHandler(True, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
 async def addBundleRoblox(bundleId: str, nameOfCategory: Literal['Bundles']) -> None:
     if bundleId == '0':
         return
     if checkExist(bundleId, nameOfCategory):
-        return errorOrCorrectHandler(True, 5, MT_Bundle_With_This_ID_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
+        return errorOrCorrectHandler(True, MT_Bundle_With_This_ID_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
     try:
         response: ClientResponse = await sendGetRequest(f'https://catalog.roblox.com/v1/bundles/{bundleId}/details', 'ALL')
@@ -5664,23 +5670,23 @@ async def addBundleRoblox(bundleId: str, nameOfCategory: Literal['Bundles']) -> 
                 config['Roblox']['CookieChecker']['Main'][f'{nameOfCategory}_List'].append([int(bundleId), bundleName, False])
                 autoSaveConfig()
             case 400:
-                return errorOrCorrectHandler(True, 5, MT_Incorrent_Bundle_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
+                return errorOrCorrectHandler(True, MT_Incorrent_Bundle_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
             case _:
-                return errorOrCorrectHandler(True, 5, f'{MT_Unknown_Server_Response_Code}: {response.status}', generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
+                return errorOrCorrectHandler(True, f'{MT_Unknown_Server_Response_Code}: {response.status}', generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
     except Exception as e:
         logger.exception(f'< [ROBLOX_ADD_BUNDLE] > {MT_Unknown_Error}: {e}', force=True)
-        return errorOrCorrectHandler(True, 5, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
+        return errorOrCorrectHandler(True, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory))
 
 # Настройки > Роблокс > Куки чекер > Сортировка
 def addSortParameterFrom(sortValue: str, configRCCSorting: dict[str, dict[str, dict[str, list[list]]]], categoryConfigName: str, categoryMenuName: str) -> None:
     if sortValue == '0':
         return
     if len(sortValue) > 25:
-        return errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Parameter.format('25'), generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
+        return errorOrCorrectHandler(True, MT_Incorrect_Length_Of_Parameter.format('25'), generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
     if not sortValue.isdigit():
-        return errorOrCorrectHandler(True, 5, MT_Parameter_Must_Be_A_Number, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
+        return errorOrCorrectHandler(True, MT_Parameter_Must_Be_A_Number, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
     if int(sortValue) in [parameter[0] for parameter in configRCCSorting[categoryConfigName][2][1]]:
-        return errorOrCorrectHandler(True, 5, MT_Such_A_Parameter_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
+        return errorOrCorrectHandler(True, MT_Such_A_Parameter_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
 
     configRCCSorting[categoryConfigName][2][1].append([int(sortValue), False])
     autoSaveConfig()
@@ -5689,16 +5695,16 @@ def addSortParameterFromTo(sortValue: str, configRCCSorting: dict[str, dict[str,
     if sortValue == '0':
         return
     if len(sortValue.split()) != 2:
-        return errorOrCorrectHandler(True, 5, MT_Specify_Two_Numbers_Separated_By_A_Space, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
+        return errorOrCorrectHandler(True, MT_Specify_Two_Numbers_Separated_By_A_Space, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
     valueFrom, valueTo = sortValue.split()
     if len(valueFrom) > 25 or len(valueTo) > 25:
-        return errorOrCorrectHandler(True, 5, MT_Incorrect_Length_Of_Parameter.format('25'), generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
+        return errorOrCorrectHandler(True, MT_Incorrect_Length_Of_Parameter.format('25'), generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
     if not (valueFrom.isdigit() and valueTo.isdigit()):
-        return errorOrCorrectHandler(True, 5, MT_Both_Parameters_Must_Be_Numbers, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
+        return errorOrCorrectHandler(True, MT_Both_Parameters_Must_Be_Numbers, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
     if int(valueFrom) >= int(valueTo):
-        return errorOrCorrectHandler(True, 5, MT_First_Number_Must_Be_Less_Than_Second_One, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
+        return errorOrCorrectHandler(True, MT_First_Number_Must_Be_Less_Than_Second_One, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
     if [int(valueFrom), int(valueTo)] in [parameter[0] for parameter in configRCCSorting[categoryConfigName][3][1]]:
-        return errorOrCorrectHandler(True, 5, MT_Such_A_Parameter_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
+        return errorOrCorrectHandler(True, MT_Such_A_Parameter_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName))
 
     configRCCSorting[categoryConfigName][3][1].append([[int(valueFrom), int(valueTo)], False])
     autoSaveConfig()
@@ -5708,19 +5714,19 @@ async def addCustomPlaceRoblox(customPlaceId: str):
     if customPlaceId == '0':
         return
     if not customPlaceId.isdigit():
-        return errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
+        return errorOrCorrectHandler(True, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
     if int(customPlaceId) in config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places']:
-        return errorOrCorrectHandler(True, 5, MT_Place_With_This_ID_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
+        return errorOrCorrectHandler(True, MT_Place_With_This_ID_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
 
     try:
         universeId = (await sendGetRequest(f'https://apis.roblox.com/universes/v1/places/{customPlaceId}/universe', 'JSON'))['universeId']
         if not universeId:
-            return errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
+            return errorOrCorrectHandler(True, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
 
         customPlaceGamepassesData = (await sendGetRequest(f'https://apis.roblox.com/game-passes/v1/universes/{universeId}/game-passes?pageSize=101&sortOrder=Asc', 'JSON'))['gamePasses']
         customPlaceBadgesData     = (await sendGetRequest(f'https://badges.roblox.com/v1/universes/{universeId}/badges?limit=100&sortOrder=Asc', 'JSON'))['data']
         if not (customPlaceGamepassesData or customPlaceBadgesData):
-            return errorOrCorrectHandler(True, 5, MT_The_Place_Has_No_Gamepasses_And_Badges, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
+            return errorOrCorrectHandler(True, MT_The_Place_Has_No_Gamepasses_And_Badges, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
 
         customPlaceName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
         normalPlaceName = rmEmojies(rmBracketsAndIn(customPlaceName, round=True, square=True)).replace('"', '').strip()
@@ -5756,21 +5762,21 @@ async def addCustomPlaceRoblox(customPlaceId: str):
         autoSaveConfig()
     except Exception as e:
         logger.exception(f' < [ADD_CUSTOM_PLACE_RCC] > {MT_Unknown_Error}: {e}', force=True)
-        return errorOrCorrectHandler(True, 5, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
+        return errorOrCorrectHandler(True, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places))
 
 # Настройки > Роблокс > Анализ транзакций > Плейсы
 async def addPlaceRTA(placeId: str) -> None:
     if placeId == '0':
         return
     if not placeId.isdigit():
-        return errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places))
+        return errorOrCorrectHandler(True, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places))
     if int(placeId) in config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places']:
-        return errorOrCorrectHandler(True, 5, MT_Place_With_This_ID_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places))
+        return errorOrCorrectHandler(True, MT_Place_With_This_ID_Already_Exists, generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places))
 
     try:
         universeId = (await sendGetRequest(f'https://apis.roblox.com/universes/v1/places/{placeId}/universe', 'JSON'))['universeId']
         if not universeId:
-            return errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places))
+            return errorOrCorrectHandler(True, MT_Incorrent_Place_ID, generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places))
 
         placeName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
 
@@ -5783,23 +5789,23 @@ async def addPlaceRTA(placeId: str) -> None:
         config['Roblox']['TransactionAnalysis']['Places'][f'{placeId}_Ignore_List'] = []
         autoSaveConfig()
     except Exception:
-        return errorOrCorrectHandler(True, 5, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places))
+        return errorOrCorrectHandler(True, MT_Unknown_Error, generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places))
 
 # Настройки > Роблокс > Разное > [Парсер геймпассов, Парсер бейджей]
 async def parsePlaceItemsRoblox(info: dict[str, str], placeId: str, columnarHeaders: list):
     if placeId == '0':
         return
     if not placeId.isdigit():
-        return errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID, info['visualPath'])
+        return errorOrCorrectHandler(True, MT_Incorrent_Place_ID, info['visualPath'])
 
     try:
         universeId = (await sendGetRequest(f'https://apis.roblox.com/universes/v1/places/{placeId}/universe', 'JSON'))['universeId']
         if not universeId:
-            return errorOrCorrectHandler(True, 5, MT_Incorrent_Place_ID, info['visualPath'])
+            return errorOrCorrectHandler(True, MT_Incorrent_Place_ID, info['visualPath'])
 
         response = (await sendGetRequest(info['url'].format(universeId), 'JSON'))['data']
         if not response:
-            return errorOrCorrectHandler(True, 5, info['errorHasNo'], info['visualPath'])
+            return errorOrCorrectHandler(True, info['errorHasNo'], info['visualPath'])
 
         placeName = (await sendGetRequest(f'https://games.roblox.com/v1/games?universeIds={universeId}', 'JSON'))['data'][0]['name']
         cleanPlaceName = rmTwoSpaces(rmPatternFromString(SPECIAL_CHARS, rmBracketsAndIn(rmEmojies(placeName, replace=''), round=True, square=True))).strip()
@@ -5826,7 +5832,7 @@ async def parsePlaceItemsRoblox(info: dict[str, str], placeId: str, columnarHead
         waitingInput()
     except Exception as e:
         logger.exception(f' < [PARSE_PLACE_ITEMS_ROBLOX] > {MT_Unknown_Error}: {e}', force=True)
-        return errorOrCorrectHandler(True, 5, MT_Unknown_Error, info['visualPath'])
+        return errorOrCorrectHandler(True, MT_Unknown_Error, info['visualPath'])
 
 ### Конфиг функции
 
@@ -6175,11 +6181,11 @@ def createConfig(nameOfNewConfig: str, configsList: list[str]) -> None:
     if nameOfNewConfig == '0':
         return
     if nameOfNewConfig.lower() in ('', '.loader') or any(char in nameOfNewConfig for char in FILENAME_SPECIAL_CHARS):
-        return errorOrCorrectHandler(True, 7, MT_Incorrect_Filename, generateVisualPath(MT_Settings, MT_Configs))
+        return errorOrCorrectHandler(True, MT_Incorrect_Filename, generateVisualPath(MT_Settings, MT_Configs))
     if len(nameOfNewConfig) > 50:
-        return errorOrCorrectHandler(True, 7, MT_Incorrect_Length_Of_Name.format('50'), generateVisualPath(MT_Settings, MT_Configs))
+        return errorOrCorrectHandler(True, MT_Incorrect_Length_Of_Name.format('50'), generateVisualPath(MT_Settings, MT_Configs))
     if nameOfNewConfig.lower() in [file.lower() for file in configsList]:
-        return errorOrCorrectHandler(True, 7, MT_File_With_This_Name_Already_Exists, generateVisualPath(MT_Settings, MT_Configs))
+        return errorOrCorrectHandler(True, MT_File_With_This_Name_Already_Exists, generateVisualPath(MT_Settings, MT_Configs))
 
     shutil.copyfile(
         Path('Settings', 'Configs', f'{configLoader['Loader']['Current_Config']}.toml'),
@@ -6192,13 +6198,13 @@ def renameConfig(chosenConfig: str, newNameOfConfig: str, configPath: Path) -> N
     if newNameOfConfig == '0':
         return removeLines(7)
     if newNameOfConfig.lower() in ('', '.loader') or any(char in newNameOfConfig for char in FILENAME_SPECIAL_CHARS):
-        return errorOrCorrectHandler(True, 7, MT_Incorrect_Filename, generateVisualPath(MT_Settings, MT_Configs))
+        return errorOrCorrectHandler(True, MT_Incorrect_Filename, generateVisualPath(MT_Settings, MT_Configs))
     if len(newNameOfConfig) > 50:
-        return errorOrCorrectHandler(True, 7, MT_Incorrect_Length_Of_Name.format('50'), generateVisualPath(MT_Settings, MT_Configs))
+        return errorOrCorrectHandler(True, MT_Incorrect_Length_Of_Name.format('50'), generateVisualPath(MT_Settings, MT_Configs))
     if not (configPath / f'{chosenConfig}.toml').exists():
-        return errorOrCorrectHandler(True, 7, f'{MT_File_Is_Missing}...', generateVisualPath(MT_Settings, MT_Configs))
+        return errorOrCorrectHandler(True, f'{MT_File_Is_Missing}...', generateVisualPath(MT_Settings, MT_Configs))
     if newNameOfConfig.lower() in configFiles(loweredFilenames=True):
-        return errorOrCorrectHandler(True, 7, MT_File_With_This_Name_Already_Exists, generateVisualPath(MT_Settings, MT_Configs))
+        return errorOrCorrectHandler(True, MT_File_With_This_Name_Already_Exists, generateVisualPath(MT_Settings, MT_Configs))
 
     (configPath / f'{chosenConfig}.toml').rename(configPath / f'{newNameOfConfig}.toml')
     for option in ['Load_Config', 'Current_Config']:
@@ -6629,7 +6635,7 @@ async def mainMenu() -> None:
                                                 allBadges = [[badge[1], badge[0], f'https://www.roblox.com/badges/{badge[1]}'] for badge in place.Badges.listOfBadges]
                                                 with open(allItemsPath / 'Badges' / f'{place.placeNames[3]} ({placeName}).txt', 'w', encoding='utf-8') as file:
                                                     file.write(f'\n  Meow :3\n\n  {MT_Place_ID}: {place.placeNames[3]}\n  {MT_Place_Name}: {place.placeNames[0]}\n  {MT_Place_Link}: https://www.roblox.com/games/{place.placeNames[3]}\n\n  [*] {MT_Badges}\n{columnar(allBadges, columnarHeaders, no_borders=True)}')    
-                                        errorOrCorrectHandler(False, 9, f'{MT_Successfully_Uploaded_In} \'Roblox{OS_SEP}Misc{OS_SEP}All gamepasses and badges from program\'', generateVisualPath(MT_Roblox, MT_Misc))
+                                        errorOrCorrectHandler(False, f'{MT_Successfully_Uploaded_In} \'Roblox{OS_SEP}Misc{OS_SEP}All gamepasses and badges from program\'', generateVisualPath(MT_Roblox, MT_Misc))
                                     case 'F' | 'А':
                                         cls()
                                         lableASCII()
@@ -6856,9 +6862,9 @@ async def mainMenu() -> None:
                                                     async def changeProxyTimeout():
                                                         if settingsPCTimeoutChange == '0': return removeLines(5)
                                                         if not settingsPCTimeoutChange.isdigit():
-                                                            return errorOrCorrectHandler(True, 5, MT_Incorrect_Value, generateVisualPath(MT_Settings, MT_Proxy, MT_Checker))
+                                                            return errorOrCorrectHandler(True, MT_Incorrect_Value, generateVisualPath(MT_Settings, MT_Proxy, MT_Checker))
                                                         if int(settingsPCTimeoutChange) > 60:
-                                                            return errorOrCorrectHandler(True, 5, MT_Incorrect_Waiting_Time_60, generateVisualPath(MT_Settings, MT_Proxy, MT_Checker))
+                                                            return errorOrCorrectHandler(True, MT_Incorrect_Waiting_Time_60, generateVisualPath(MT_Settings, MT_Proxy, MT_Checker))
 
                                                         config['Proxy']['Checker']['Timeout'] = int(settingsPCTimeoutChange)
                                                         autoSaveConfig()
@@ -7670,7 +7676,7 @@ async def mainMenu() -> None:
 
                     autoSaveConfigAndRemoveLinesInSettings(aboutTheProgramTab, (), ('0', 'R', 'К'), 12)
             case 'Meow' | 'Мяу':
-                errorOrCorrectHandler(False, mainDecorators[0], f'...{mainTab}! :3', f'{'Hew-hew' if mainTab == 'Meow' else 'Хи-хи'}~')
+                errorOrCorrectHandler(False, f'...{mainTab}! :3', f'{'Hew-hew' if mainTab == 'Meow' else 'Хи-хи'}~')
             # Закрыть программу
             case '0':
                 if not config['General']['Disable_Warnings_For_Dangerous_Actions']:
