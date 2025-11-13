@@ -815,7 +815,7 @@ STRING_MINIMUM_100_SYMBOLS_PATTERN = re.compile(
 # Роблокс
 
 COOKIE_PATTERN = re.compile(
-    r'_\|(?:_|[^\s\r\n]*?\|_)\S{100,}' # :3
+    r'_\|(?:_|[^\s\r\n]*?\|_)\S{100,}' # Учитывает все строки вида: '_|_...', '_||_...', '_|...|_...', где ... - любые символы
 )
 
 AGE_GROUP_PATTERN = re.compile(
@@ -862,6 +862,7 @@ def generateVisualPath(*pathArgs: str) -> str:
     return f'[{ANSI.FG.CYAN}P{ANSI.FG.WHITE}] {ANSI.FG.CYAN}M:{OS_SEP}{visualPath}{ANSI.FG.WHITE}'
 
 def lableASCII() -> None:
+    cls()
     cmdWriter(ANSI.DECOR.BOLD)
     # MeowTool
     if config['General']['Show_Lable_MeowTool']:
@@ -924,26 +925,31 @@ def waitingInput() -> None:
     cmdWriter(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {ANSI.DECOR.FLASHING}{MT_Press_Enter_To_Continue}...{ANSI.DECOR.FLASHINGOFF}')
     cmdFlusher()
     input()
-    cls()
     lableASCII()
 
 def errorOrCorrectHandler(isError: bool, message: str, visualPath: str) -> None:
-    cls()
     lableASCII()
     cmdWriter(f'\r {visualPath}\n\n {f'[{ANSI.FG.RED if isError else ANSI.FG.GREEN}>{ANSI.FG.WHITE}]'} {message}\n\n')
     waitingInput()
 
+def mkdir(*pathArgs: str, parents: bool = True, exist_ok: bool = True):
+    path = Path(*pathArgs)
+    if path.is_file():
+        path.parent.mkdir(parents=parents, exist_ok=exist_ok)
+    else:
+        path.mkdir(parents=parents, exist_ok=exist_ok)
+    return path
+
 def autoSaveConfigLoader() -> None:
-    loaderPath = Path('Settings', 'Configs', '.Loader.toml')
-    loaderPath.parent.mkdir(parents=True, exist_ok=True)
-    open(Path('Settings', 'Configs', '.Loader.toml'), 'w', encoding='utf-8', errors='ignore').write(dumps(configLoader))
+    loaderPath = mkdir('Settings', 'Configs', '.Loader.toml')
+    with open(loaderPath, 'w', encoding='utf-8', errors='ignore') as file:
+        file.write(dumps(configLoader))
 
 def autoSaveConfig(force: bool = False) -> None:
     if not (configLoader['Saver']['Auto_Save_Changes'] or force):
         return
 
-    configPath = Path('Settings', 'Configs', f'{configLoader['Loader']['Current_Config']}.toml')
-    configPath.parent.mkdir(parents=True, exist_ok=True)
+    configPath = mkdir('Settings', 'Configs', f'{configLoader['Loader']['Current_Config']}.toml')
     with open(configPath, 'w', encoding='utf-8', errors='ignore') as file:
         file.write(dumps(config))
 
@@ -1035,7 +1041,6 @@ def openFile(path: Path, *, highlightFile: bool = False, filename: str = '') -> 
 
 async def closeProgram() -> None:
     logger.info(f'{MT_We_Out_Now}...', force=True)
-    cls()
     lableASCII()
     cmdWriter(f'{'' if (config['General']['Show_Lable_MeowTool'] or config['General']['Show_Lable_by_h1kken']) else ' '} [{ANSI.FG.PINK}<3{ANSI.FG.WHITE}] {MT_Bye}... *{MT_Eep.lower()}* :<')
     cmdFlusher()
@@ -1351,7 +1356,6 @@ async def checkProxy(workProtocols: dict[str, None], proxy: str, protocol: str, 
             logger.exception(f'< [CHECK_PROXY] > {MT_Critical_Error}: {e}', force=True)
 
 async def proxyChecker(file: str) -> None:
-    cls()
     lableASCII()
     cmdWriter(f' {generateVisualPath(MT_Proxy, MT_Checker)}\n\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Wait[0]}...')
 
@@ -4168,7 +4172,6 @@ async def dataFromCookieRoblox(order: list[str], checkedAccounts: set[str], cook
     return responseAllDataDict
 
 async def robloxCookieChecker(file: str) -> None:
-    cls()
     lableASCII()
     cmdWriter(f' {generateVisualPath(MT_Roblox, MT_Cookie_Checker)}\n\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Wait[0]}...')
 
@@ -4586,7 +4589,6 @@ def openPlaceGamepasses(indexPlace: int) -> None:
                     config['Roblox']['CookieChecker'][listOfPlaces[indexPlace].__name__][gamepass[2]] = False
             case 'R' | 'К':
                 loadConfig(configLoader['Loader']['Current_Config'])
-        cls()
         lableASCII()
         autoSaveConfigAndRemoveLinesInSettings(settingsRCCPlacesPlaceGamepassesTab, ('+', '=', '-', '_'), (), 0)
 
@@ -4618,12 +4620,10 @@ def openPlaceBadges(indexPlace: int) -> None:
                     config['Roblox']['CookieChecker'][listOfPlaces[indexPlace].__name__][badge[2]] = False
             case 'R' | 'К':
                 loadConfig(configLoader['Loader']['Current_Config'])
-        cls()
         lableASCII()
         autoSaveConfigAndRemoveLinesInSettings(settingsRCCPlacesPlaceBadgesTab, ('+', '=', '-', '_'), (), 0)
 
 def placeContextMenuRCC(indexPlace: int):
-    cls()
     lableASCII()
     whileTrueStage4 = True
     while whileTrueStage4:
@@ -4659,7 +4659,6 @@ def placeContextMenuRCC(indexPlace: int):
                 whileTrueStage4 = False
                 removeLinesRCCPlaces(indexPlace)
             case 'F' | 'А':
-                cls()
                 lableASCII()
             case _:
                 removeLinesRCCPlaces(indexPlace)
@@ -4710,7 +4709,6 @@ def openCustomPlaceGamepasses(listOfRCCCustomPlaces: list, placeIndex: int):
             case '-' | '_':
                 for gamepass in config['Roblox']['CookieChecker']['CustomPlaces'][f'{listOfRCCCustomPlaces[placeIndex]}_Gamepasses']:
                     gamepass[2] = False
-        cls()
         lableASCII()
         autoSaveConfigAndRemoveLinesInSettings(settingsRCCCustomPlacesPlaceGamepassesTab, ('+', '=', '-', '_'), (), 0)
 
@@ -4740,14 +4738,12 @@ def openCustomPlaceBadges(listOfRCCCustomPlaces: list, placeIndex: int):
             case '-' | '_':
                 for badge in config['Roblox']['CookieChecker']['CustomPlaces'][f'{listOfRCCCustomPlaces[placeIndex]}_Badges']:
                     badge[2] = False
-        cls()
         lableASCII()
         autoSaveConfigAndRemoveLinesInSettings(settingsRCCCustomPlacesPlaceBadgesTab, ('+', '=', '-', '_'), (), 0)
 
 def customPlaceContextMenuRCC(placeIndex: int):
     listOfRCCCustomPlaces = [str(customPlace) for customPlace in config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places']
                              if str(customPlace).isdigit() and str(customPlace) in config['Roblox']['CookieChecker']['CustomPlaces']]
-    cls()
     lableASCII()
     whileTrueStage5 = True
     while whileTrueStage5:
@@ -4822,7 +4818,6 @@ def customPlaceContextMenuRCC(placeIndex: int):
                 whileTrueStage5 = False
                 removeLinesCustomPlaces(listOfRCCCustomPlaces, placeIndex)
             case 'F' | 'А':
-                cls()
                 lableASCII()
             case _:
                 removeLinesCustomPlaces(listOfRCCCustomPlaces, placeIndex)
@@ -4947,9 +4942,9 @@ async def robloxCookieSorter() -> None:
 
                     counterOfCookies += 1
                     cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Sorting_File} \'{ANSI.DECOR.UNDERLINEON}{visualRoot}{file}{ANSI.DECOR.UNDERLINEOFF}\': {counterOfCookies} {MT_Of} {amountOfCookiesFromFile}')
-    
+
     removeLines(9)
-    
+
     start = timer('start')
     robloxCookieSorterWorker(Path('Roblox', 'Cookie Sorter'))
     stop = timer('stop', start=start)
@@ -4981,15 +4976,11 @@ async def robloxCookieSorter() -> None:
 async def saveCookieRCR(mode: Literal['MassMode', 'SingleMode'], oldCookie: str, newCookie: str, savePath: Path) -> None:
     savePath.mkdir(parents=True, exist_ok=True)
     modes = config['Roblox']['CookieRefresher'][mode]['Cookie_Save_Mode']
-    if 1 in modes or not any(mode in modes for mode in [2, 3]):
-        async with aiofiles.open(savePath / 'refreshed_cookies_mode_1.txt', 'a', encoding='utf-8') as file:
-            await file.write(f'{oldCookie} -> {newCookie}\n')
+    if 1 in modes or not any(mode in modes for mode in [2]):
+        async with aiofiles.open(savePath / 'old_cookie - new_cookie.txt', 'a', encoding='utf-8', errors='ignore') as file:
+            await file.write(f'{oldCookie} > {newCookie}\n')
     if 2 in modes:
-        async with aiofiles.open(savePath / 'refreshed_cookies_mode_2.txt', 'a', encoding='utf-8') as file:
-            await file.write(f'{newCookie}\n')
-    if 3 in modes:
-        (savePath / 'refreshed_cookies_mode_3').mkdir(parents=True, exist_ok=True)
-        async with aiofiles.open(savePath / 'refreshed_cookies_mode_3' / f'{oldCookie}.txt', 'a', encoding='utf-8') as file:
+        async with aiofiles.open(savePath / 'new_cookie.txt', 'a', encoding='utf-8', errors='ignore') as file:
             await file.write(f'{newCookie}\n')
 
 async def getXCSRFToken(cookies: dict[str, str], proxies: Optional[list[str]]) -> str:
@@ -5046,7 +5037,6 @@ async def massModeRCR(cookies: dict, savePath: Path, proxies: Optional[list[str]
         cmdWriter(f' [{ANSI.FG.RED}>{ANSI.FG.WHITE}] {oldCookie} {ANSI.FG.CYAN}>{ANSI.FG.WHITE} {MT_Invalid_Cookie}\n')
 
 async def cookieRefresherSingleMode(string: str):
-    cls()
     lableASCII()
     cmdWriter(f' {generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Single_Mode)}\n\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] ┃ {MT_Wait[0]}...\n')
 
@@ -5079,7 +5069,6 @@ async def cookieRefresherSingleMode(string: str):
     waitingInput()
 
 async def cookieRefresherMassMode(file: str) -> None:
-    cls()
     lableASCII()
     cmdWriter(f' {generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Mass_Mode)}\n\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Wait[0]}...')
 
@@ -5145,7 +5134,6 @@ def addPlaceIgnoreNameRTA(ignoreName: str, placeId: str) -> None:
     autoSaveConfig()
 
 def placeContextMenuRTA(placeIndex: int) -> None:
-    cls()
     lableASCII()
     placeId = str(config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places'][placeIndex])
     whileTrueStage5 = True
@@ -5168,7 +5156,6 @@ def placeContextMenuRTA(placeIndex: int) -> None:
                             if len(settingsRTAIgnoreListTab) == 1:
                                 whileTrueStage6 = False
                         case settingsRTAIgnoreListTab if (settingsRTAIgnoreListTab.isdigit() and int(settingsRTAIgnoreListTab) <= len(config['Roblox']['TransactionAnalysis']['Places'][f'{placeId}_Ignore_List'])):
-                            cls()
                             lableASCII()
                             ignoreItem = config['Roblox']['TransactionAnalysis']['Places'][f'{placeId}_Ignore_List'][int(settingsRTAIgnoreListTab) - 1]
                             whileTrueStage7 = True
@@ -5208,14 +5195,12 @@ def placeContextMenuRTA(placeIndex: int) -> None:
                                             autoSaveConfig()
                                             whileTrueStage7 = False
                                     case 'F' | 'А':
-                                        cls()
                                         lableASCII()
                                     case _:
                                         removeLines(7)
 
                                 autoSaveConfigAndRemoveLinesInSettings(settingsRTAIgnoreListIgnoreNameTab, ('I', 'Ш'), ('0', 'I', 'Ш'), 7)
                         case 'A' | 'Ф':
-                            cls()
                             lableASCII()
                             cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places, placeId, MT_Ignore_List)}\n\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Cancel}\n\n')
                             settingsRTAPlaceIgnoreNameAdd = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_A_Transaction_Name}: ').strip()
@@ -5230,7 +5215,6 @@ def placeContextMenuRTA(placeIndex: int) -> None:
                             config['Roblox']['TransactionAnalysis']['Places'][placeId][3] ^= True
                         case 'C' | 'С':
                             config['Roblox']['TransactionAnalysis']['Places'][placeId][4] ^= True
-                    cls()
                     lableASCII()
                     autoSaveConfigAndRemoveLinesInSettings(settingsRTAIgnoreListTab, ('+', '=', '-', '_', 'S', 'Ы', 'C', 'С'), (), 0)
             case 'C' | 'С':
@@ -5275,7 +5259,6 @@ def placeContextMenuRTA(placeIndex: int) -> None:
 
                     autoSaveConfig()
             case 'F' | 'А':
-                cls()
                 lableASCII()
             case _:
                 removeLines(9)
@@ -5311,7 +5294,6 @@ async def isTransactionsFromCookieFunc(checkedAccount: set, checkListPlaces: dic
     return userId, isName, checkListPlaces
 
 async def robloxTransactionAnalysis(file: str) -> None:
-    cls()
     lableASCII()
     cmdWriter(f' {generateVisualPath(MT_Roblox, MT_Transaction_Analysis)}\n\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Wait[0]}...')
 
@@ -5560,7 +5542,6 @@ def changeDiscordWebhookURL(webhookUrl: str) -> None:
 
     config['Outputs']['DiscordWebhook']['Discord_Webhook_URL'] = webhookUrl
     autoSaveConfig()
-    cls()
     lableASCII()
 
 def testMeowDiscordWebhook() -> None:
@@ -6214,7 +6195,6 @@ def renameConfig(chosenConfig: str, newNameOfConfig: str, configPath: Path) -> N
     removeLines(7)
 
 def configContextMenu(chosenConfig: str) -> None:
-    cls()
     lableASCII()
     configPath = Path('Settings', 'Configs')
     whileTrueStage3 = True
@@ -6294,7 +6274,6 @@ def configContextMenu(chosenConfig: str) -> None:
             case '0':
                 whileTrueStage3 = False
             case 'F' | 'А':
-                cls()
                 lableASCII()
             case _:
                 removeLines(13)
@@ -6354,7 +6333,6 @@ class Logger:
 ### Меню
 
 async def mainMenu() -> None:
-    cls()
     lableASCII()
     while True:
         # Главное меню
@@ -6402,11 +6380,9 @@ async def mainMenu() -> None:
                                         config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'] ^= True
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                cls()
                                 lableASCII()
                                 autoSaveConfigAndRemoveLinesInSettings(proxyCheckerTab, ('G', 'П', 'L', 'Д', 'S', 'Ы', 'T', 'Е', 'D', 'В'), (), 0)
                         case 'F' | 'А':
-                            cls()
                             lableASCII()
                         case 'R' | 'К':
                             loadConfig(configLoader['Loader']['Current_Config'])
@@ -6455,7 +6431,6 @@ async def mainMenu() -> None:
                                         config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'] ^= True
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                cls()
                                 lableASCII()
                                 autoSaveConfigAndRemoveLinesInSettings(robloxCookieCheckerTab, ('G', 'П', 'P', 'З', 'L', 'Д', 'S', 'Ы', 'T', 'Е', 'D', 'В'), (), 0)
                         # Куки сортер (RCS)
@@ -6479,7 +6454,6 @@ async def mainMenu() -> None:
                                     case 'D' | 'В':
                                         config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'] ^= True
                                     case 'F' | 'А':
-                                        cls()
                                         lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
@@ -6533,7 +6507,6 @@ async def mainMenu() -> None:
                                                     config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'] ^= True
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
-                                            cls()
                                             lableASCII()
                                             autoSaveConfigAndRemoveLinesInSettings(robloxCookieRefresherMassModeTab, ('S', 'Ы', 'P', 'З', 'T', 'Е', 'D', 'В'), (), 0)
                                     case 'B' | 'И':
@@ -6543,7 +6516,6 @@ async def mainMenu() -> None:
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
                                     case 'F' | 'А':
-                                        cls()
                                         lableASCII()
                                     case _:
                                         removeLines(10)
@@ -6580,7 +6552,6 @@ async def mainMenu() -> None:
                                         config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'] ^= True
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                cls()
                                 lableASCII()
                                 autoSaveConfigAndRemoveLinesInSettings(transactionAnalysisTab, ('G', 'П', 'S', 'Ы', 'P', 'З', 'T', 'Е', 'D', 'В'), (), 0)
                         # Разное
@@ -6618,7 +6589,6 @@ async def mainMenu() -> None:
                                         chosenInfo = infoMisc[robloxMiscTab]
                                         miscParsePlaceGamepassesOrBadgesTab = input(f' {chosenInfo['visualPath']}\n\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] {MT_Cancel}\n\n [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_The_Place_ID}: ').strip()
                                         await parsePlaceItemsRoblox(chosenInfo, miscParsePlaceGamepassesOrBadgesTab, columnarHeaders)
-                                        cls()
                                         lableASCII()
                                     # Выгрузка геймпассов и бейджей используемые программой
                                     case '3':
@@ -6637,7 +6607,6 @@ async def mainMenu() -> None:
                                                     file.write(f'\n  Meow :3\n\n  {MT_Place_ID}: {place.placeNames[3]}\n  {MT_Place_Name}: {place.placeNames[0]}\n  {MT_Place_Link}: https://www.roblox.com/games/{place.placeNames[3]}\n\n  [*] {MT_Badges}\n{columnar(allBadges, columnarHeaders, no_borders=True)}')    
                                         errorOrCorrectHandler(False, f'{MT_Successfully_Uploaded_In} \'Roblox{OS_SEP}Misc{OS_SEP}All gamepasses and badges from program\'', generateVisualPath(MT_Roblox, MT_Misc))
                                     case 'F' | 'А':
-                                        cls()
                                         lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
@@ -6646,7 +6615,6 @@ async def mainMenu() -> None:
 
                                 autoSaveConfigAndRemoveLinesInSettings(robloxMiscTab, (), ('0', 'R', 'К'), 9)
                         case 'F' | 'А':
-                            cls()
                             lableASCII()
                         case 'R' | 'К':
                             loadConfig(configLoader['Loader']['Current_Config'])
@@ -6689,7 +6657,6 @@ async def mainMenu() -> None:
                                                     config['General']['Language'] = languageOptions[settingsLanguageTab]
                                                     translateMT(config['General']['Language'])
                                                 case 'F' | 'А':
-                                                    cls()
                                                     lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
@@ -6714,7 +6681,6 @@ async def mainMenu() -> None:
                                                     configLoader['Updater']['Save_Old_Versions'] ^= True
                                                     autoSaveConfigLoader()
                                                 case 'F' | 'А':
-                                                    cls()
                                                     lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
@@ -6729,18 +6695,15 @@ async def mainMenu() -> None:
                                         changeConsoleTitle(settingsTitleEnter)
                                     case '4':
                                         config['General']['Show_Lable_MeowTool'] ^= True
-                                        cls()
                                         lableASCII()
                                     case '5':
                                         config['General']['Show_Lable_by_h1kken'] ^= True
-                                        cls()
                                         lableASCII()
                                     case '6':
                                         config['General']['Disable_Warnings_For_Links'] ^= True
                                     case '7':
                                         config['General']['Disable_Warnings_For_Dangerous_Actions'] ^= True
                                     case '8' | 'F' | 'А':
-                                        cls()
                                         lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
@@ -6790,7 +6753,6 @@ async def mainMenu() -> None:
                                                 case 'C' | 'С':
                                                     openLink('https://t.me/BotFather', 13, generateVisualPath(MT_Settings, MT_Outputs, MT_Telegram_Bot))
                                                 case 'F' | 'А':
-                                                    cls()
                                                     lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
@@ -6817,7 +6779,6 @@ async def mainMenu() -> None:
                                                 case '3':
                                                     config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'] ^= True
                                                 case 'F' | 'А':
-                                                    cls()
                                                     lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
@@ -6826,7 +6787,6 @@ async def mainMenu() -> None:
 
                                             autoSaveConfigAndRemoveLinesInSettings(settingsRobloxGeneralOutputsDiscordWebhookTab, ('3'), ('0', '3', 'R', 'К'), 9)
                                     case 'F' | 'А':
-                                        cls()
                                         lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
@@ -6876,7 +6836,6 @@ async def mainMenu() -> None:
                                                 case '3':
                                                     config['Proxy']['Checker']['Save_Without_Protocol'] ^= True
                                                 case 'F' | 'А':
-                                                    cls()
                                                     lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
@@ -6885,7 +6844,6 @@ async def mainMenu() -> None:
 
                                             autoSaveConfigAndRemoveLinesInSettings(settingsPCTab, ('2', '3'), ('0', '2', '3', 'R', 'К'), 9)
                                     case 'F' | 'А':
-                                        cls()
                                         lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
@@ -6947,7 +6905,6 @@ async def mainMenu() -> None:
                                                                             autoProtocolOptions = {'1': 'http', '2': 'socks4', '3': 'socks5'}
                                                                             config['Roblox']['General']['Proxy']['Auto_Protocol_If_Not_Specified'] = autoProtocolOptions[settingsRCCProxyAutoProtocolTab]
                                                                         case 'F' | 'А':
-                                                                            cls()
                                                                             lableASCII()
                                                                         case 'R' | 'К':
                                                                             loadConfig(configLoader['Loader']['Current_Config'])
@@ -6956,7 +6913,6 @@ async def mainMenu() -> None:
 
                                                                     autoSaveConfigAndRemoveLinesInSettings(settingsRCCProxyAutoProtocolTab, ('1', '2', '3'), ('0', '1', '2', '3', 'R', 'К'), 9)
                                                             case 'F' | 'А':
-                                                                cls()
                                                                 lableASCII()
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
@@ -6965,7 +6921,6 @@ async def mainMenu() -> None:
 
                                                         autoSaveConfigAndRemoveLinesInSettings(settingsRCCProxyTab, ('1'), ('0', '1', 'R', 'К'), 13)
                                                 case 'F' | 'А':
-                                                    cls()
                                                     lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
@@ -7010,7 +6965,6 @@ async def mainMenu() -> None:
                                                             case '6':
                                                                 config['Roblox']['CookieChecker']['General']['Move_Cookie_To_The_Next_Line'] ^= True
                                                             case 'F' | 'А':
-                                                                cls()
                                                                 lableASCII()
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
@@ -7059,7 +7013,6 @@ async def mainMenu() -> None:
                                                                     ),
                                                                     'Custom Gamepasses': ['Number', 'NameNumber']
                                                                 }
-                                                                cls()
                                                                 lableASCII()
                                                                 whileTrueStage5 = True
                                                                 while whileTrueStage5:
@@ -7079,7 +7032,6 @@ async def mainMenu() -> None:
                                                                             if len(settingsRCCGeneralCategoryTab) == 1:
                                                                                 whileTrueStage5 = False
                                                                         case settingsRCCGeneralCategoryTab if (hasList and settingsRCCGeneralCategoryTab.isdigit() and int(settingsRCCGeneralCategoryTab) <= len(config['Roblox']['CookieChecker']['Main'][f'{_nameOfCategory}_List'])):
-                                                                            cls()
                                                                             lableASCII()
                                                                             choice = int(settingsRCCGeneralCategoryTab) - 1
                                                                             whileTrueStage6 = True
@@ -7115,7 +7067,6 @@ async def mainMenu() -> None:
                                                                                             autoSaveConfig()
                                                                                             removeLines(7)
                                                                                     case 'F' | 'А':
-                                                                                        cls()
                                                                                         lableASCII()
                                                                                     case 'R' | 'К':
                                                                                         loadConfig(configLoader['Loader']['Current_Config'])
@@ -7124,7 +7075,6 @@ async def mainMenu() -> None:
 
                                                                                 autoSaveConfigAndRemoveLinesInSettings(settingsRCCGeneralCategoryContextMenuTab, ('C', 'С'), ('0', 'C', 'С', 'R', 'К'), 7)
                                                                         case 'M' | 'Ь':
-                                                                            cls()
                                                                             lableASCII()
                                                                             whileTrueStage6 = True
                                                                             while whileTrueStage6:
@@ -7144,7 +7094,6 @@ async def mainMenu() -> None:
 
                                                                                 removeLines(len(listWithModes) + 6)
                                                                         case ('A' | 'Ф') if hasList:
-                                                                            cls()
                                                                             lableASCII()
                                                                             cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Main, nameOfCategory)}\n\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Cancel}\n\n')
                                                                             settingsRCCGeneralCategoryItemAdd = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {sortLabels[nameOfCategory][1]}: ')
@@ -7165,7 +7114,6 @@ async def mainMenu() -> None:
                                                                             config['Roblox']['CookieChecker']['Main'][_nameOfCategory] ^= True
                                                                         case 'R' | 'К':
                                                                             loadConfig(configLoader['Loader']['Current_Config'])
-                                                                    cls()
                                                                     lableASCII()
                                                                     autoSaveConfigAndRemoveLinesInSettings(settingsRCCGeneralCategoryTab, ('+', '=', '-', '_', 'C', 'С'), (), 0)
                                                             case settingsRCCMainTab if (settingsRCCMainTab.isdigit() and int(settingsRCCMainTab) <= len(cookieData.listOfCookieData)):
@@ -7179,7 +7127,6 @@ async def mainMenu() -> None:
                                                                     config['Roblox']['CookieChecker']['Main'][param[1]] = False
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
-                                                        cls()
                                                         lableASCII()
                                                         autoSaveConfigAndRemoveLinesInSettings(settingsRCCMainTab, ('+', '=', '-', '_'), (), 0)
                                                 # Сортировка
@@ -7214,7 +7161,6 @@ async def mainMenu() -> None:
                                                                 settingsRCCGeneralSortTabNumber = int(settingsRCCGeneralSortTab) - 1
                                                                 categoryMenuName, categoryConfigName, categoryType = cookieDataCategories[settingsRCCGeneralSortTabNumber]
                                                                 if categoryType == int:
-                                                                    cls()
                                                                     lableASCII()
                                                                     showOptionSortNames = categoryMenuName in sortLabels
                                                                     showOptionSortPlaces = categoryMenuName in ('Gamepasses', 'Badges')
@@ -7258,7 +7204,6 @@ async def mainMenu() -> None:
                                                                                                 whileTrueStage6 = False
                                                                                         case settingsRCCSortNumberContextMenuTab if (settingsRCCSortNumberContextMenuTab.isdigit() and int(settingsRCCSortNumberContextMenuTab) <= len(sortValues)):
                                                                                             choice = int(settingsRCCSortNumberContextMenuTab) - 1
-                                                                                            cls()
                                                                                             lableASCII()
                                                                                             whileTrueStage7 = True
                                                                                             while whileTrueStage7:
@@ -7293,7 +7238,6 @@ async def mainMenu() -> None:
                                                                                                             autoSaveConfig()
                                                                                                             removeLines(7)
                                                                                                     case 'F' | 'А':
-                                                                                                        cls()
                                                                                                         lableASCII()
                                                                                                     case _:
                                                                                                         removeLines(7)
@@ -7306,7 +7250,6 @@ async def mainMenu() -> None:
                                                                                             for index, _ in enumerate(sortValues):
                                                                                                 configRCCSorting[categoryConfigName][indexOfValues][1][index][1] = False
                                                                                         case 'A' | 'Ф':
-                                                                                            cls()
                                                                                             lableASCII()
                                                                                             cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName)}\n\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Cancel}\n\n')
                                                                                             settingsRCCGeneralSortParameterAdd = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_The_Parameter_Value}: ').strip()
@@ -7315,7 +7258,6 @@ async def mainMenu() -> None:
                                                                                                 case '2': addSortParameterFromTo(settingsRCCGeneralSortParameterAdd, configRCCSorting, categoryConfigName, categoryMenuName)
                                                                                         case 'S' | 'Ы':
                                                                                             configRCCSorting[categoryConfigName][indexOfValues][0] ^= True
-                                                                                    cls()
                                                                                     lableASCII()
                                                                                     autoSaveConfigAndRemoveLinesInSettings(settingsRCCSortNumberContextMenuTab, ('+', '=', '-', '_', 'S', 'Ы'), (), 0)
                                                                             case '3':
@@ -7327,7 +7269,6 @@ async def mainMenu() -> None:
                                                                             case 'S' | 'Ы':
                                                                                 configRCCSorting[categoryConfigName][0] ^= True
                                                                             case 'F' | 'А':
-                                                                                cls()
                                                                                 lableASCII()
                                                                             case 'R' | 'К':
                                                                                 loadConfig(configLoader['Loader']['Current_Config'])
@@ -7354,7 +7295,6 @@ async def mainMenu() -> None:
                                                                 configRCCSorting['Sort'] ^= True
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
-                                                        cls()
                                                         lableASCII()
                                                         autoSaveConfigAndRemoveLinesInSettings(settingsRCCGeneralSortTab, ('+', '=', '-', '_', 'S', 'Ы'), (), 0)
                                                 # Плейсы
@@ -7378,7 +7318,6 @@ async def mainMenu() -> None:
                                                             case '-' | '_':
                                                                 for place in listOfPlaces:
                                                                     config['Roblox']['CookieChecker']['Places'][place.placeNames[1]] = False
-                                                        cls()
                                                         lableASCII()
                                                         autoSaveConfigAndRemoveLinesInSettings(settingsRCCPlacesTab, ('+', '=', '-', '_'), (), 0)
                                                 # Кастомные плейсы
@@ -7397,7 +7336,6 @@ async def mainMenu() -> None:
                                                             case settingsRCCCustomPlacesTab if (settingsRCCCustomPlacesTab.isdigit() and int(settingsRCCCustomPlacesTab) <= len(config['Roblox']['CookieChecker']['CustomPlaces']['List_Of_Custom_Places'])):
                                                                 customPlaceContextMenuRCC(int(settingsRCCCustomPlacesTab) - 1)
                                                             case 'A' | 'Ф':
-                                                                cls()
                                                                 lableASCII()
                                                                 cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Custom_Places)}\n\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Cancel}\n\n')
                                                                 settingsRCCCustomPlaceAdd = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_The_Place_ID}: ')
@@ -7412,11 +7350,9 @@ async def mainMenu() -> None:
                                                                 config['Roblox']['CookieChecker']['CustomPlaces']['Show_Game_ID_Next_To_The_Name'] ^= True
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
-                                                        cls()
                                                         lableASCII()
                                                         autoSaveConfigAndRemoveLinesInSettings(settingsRCCCustomPlacesTab, ('+', '=', '-', '_', 'S', 'Ы'), (), 0)
                                                 case 'F' | 'А':
-                                                    cls()
                                                     lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
@@ -7439,7 +7375,6 @@ async def mainMenu() -> None:
                                                     newOutputFilenameRCS = input(f' [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] {MT_Cancel}\n\n [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_New_Filename}: ')
                                                     changeOutputFilenameRoblox('CookieSorter', newOutputFilenameRCS)
                                                 case 'F' | 'А':
-                                                    cls()
                                                     lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
@@ -7475,7 +7410,6 @@ async def mainMenu() -> None:
                                                                 else:
                                                                     saveModes.append(caseValue)
                                                             case 'F' | 'А':
-                                                                cls()
                                                                 lableASCII()
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
@@ -7501,7 +7435,6 @@ async def mainMenu() -> None:
                                                                 else:
                                                                     saveModes.append(caseValue)
                                                             case 'F' | 'А':
-                                                                cls()
                                                                 lableASCII()
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
@@ -7510,7 +7443,6 @@ async def mainMenu() -> None:
 
                                                         autoSaveConfigAndRemoveLinesInSettings(settingsRCRMassModeTab, ('1', '2', '3'), ('0', '1', '2', '3', 'R', 'К'), 9)
                                                 case 'F' | 'А':
-                                                    cls()
                                                     lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
@@ -7550,7 +7482,6 @@ async def mainMenu() -> None:
                                                             case '4':
                                                                 config['Roblox']['TransactionAnalysis']['General']['Indentation_By_The_Longest_Name'] ^= True
                                                             case 'F' | 'А':
-                                                                cls()
                                                                 lableASCII()
                                                             case 'R' | 'К':
                                                                 loadConfig(configLoader['Loader']['Current_Config'])
@@ -7574,7 +7505,6 @@ async def mainMenu() -> None:
                                                             case settingsRTAPlacesTab if settingsRTAPlacesTab.isdigit() and int(settingsRTAPlacesTab) <= len(config['Roblox']['TransactionAnalysis']['Places']['List_Of_Places']):
                                                                 placeContextMenuRTA(int(settingsRTAPlacesTab) - 1)
                                                             case 'A' | 'Ф':
-                                                                cls()
                                                                 lableASCII()
                                                                 cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Transaction_Analysis, MT_Places)}\n\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Cancel}\n\n')
                                                                 settingsRTAPlaceAdd = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_The_Place_ID}: ')
@@ -7590,11 +7520,9 @@ async def mainMenu() -> None:
                                                             case 'S' | 'Ы':
                                                                 config['Roblox']['TransactionAnalysis']['Places']['Show_Game_ID_Next_To_The_Name'] ^= True
                                                                 autoSaveConfig()
-                                                        cls()
                                                         lableASCII()
                                                         autoSaveConfigAndRemoveLinesInSettings(settingsRTAPlacesTab, ('+', '=', '-', '_', 'S', 'Ы'), (), 0)
                                                 case 'F' | 'А':
-                                                    cls()
                                                     lableASCII()
                                                 case 'R' | 'К':
                                                     loadConfig(configLoader['Loader']['Current_Config'])
@@ -7603,7 +7531,6 @@ async def mainMenu() -> None:
 
                                             autoSaveConfigAndRemoveLinesInSettings(settingsTransactionAnalysisTab, (), ('0', 'R', 'К'), 8)
                                     case 'F' | 'А':
-                                        cls()
                                         lableASCII()
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
@@ -7628,7 +7555,6 @@ async def mainMenu() -> None:
                                     case configsTab if (configsTab.isdigit() and int(configsTab) <= len(configsList)):
                                         configContextMenu(configsList[int(configsTab) - 1])
                                     case 'C' | 'С':
-                                        cls()
                                         lableASCII()
                                         nameOfNewConfig = input(f' {generateVisualPath(MT_Settings, MT_Configs)}\n\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃ {MT_Do_Not_Use_This_Characters}: \\, /, :, *, ?, ", <, >, |\n  ┃\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Cancel}\n\n [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Name_For_New_Config}: ')
                                         createConfig(nameOfNewConfig, configsList)
@@ -7637,10 +7563,8 @@ async def mainMenu() -> None:
                                         open(Path('Settings', 'Configs', '.Loader.toml'), 'w', encoding='utf-8').write(dumps(configLoader))
                                     case 'R' | 'К':
                                         loadConfig(configLoader['Loader']['Current_Config'])
-                                cls()
                                 lableASCII()
                         case 'F' | 'А':
-                            cls()
                             lableASCII()
                         case 'R' | 'К':
                             loadConfig(configLoader['Loader']['Current_Config'])
@@ -7667,7 +7591,6 @@ async def mainMenu() -> None:
                         case 'T' | 'Е':
                             openLink('https://t.me/L1feeK', 12, generateVisualPath(MT_About_The_Program))
                         case 'F' | 'А':
-                            cls()
                             lableASCII()
                         case 'R' | 'К':
                             loadConfig(configLoader['Loader']['Current_Config'])
@@ -7695,7 +7618,6 @@ async def mainMenu() -> None:
                 else:
                     await closeProgram()
             case 'f' | 'F' | 'а' | 'А':
-                cls()
                 lableASCII()
             case 'r' | 'R' | 'к' | 'К':
                 loadConfig(configLoader['Loader']['Current_Config'])
@@ -7739,6 +7661,7 @@ if __name__ == '__main__':
                 with open(configsPath / f'{configLoader['Loader']['Current_Config']}.toml', 'w', encoding='utf-8') as file:
                     file.write(dumps(config))
             configLoader['MeowTool']['First_Launch'] = False
+            autoSaveConfigLoader()
             with open(configsPath / '.Loader.toml', 'w', encoding='utf-8') as file:
                 file.write(dumps(configLoader))
         translateMT(config['General']['Language'])
