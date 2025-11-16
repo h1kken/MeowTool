@@ -3517,8 +3517,6 @@ async def getFavoritePlacesRoblox(cookies: dict, proxies: Optional[list[str]], u
     }
 
 async def getPlacesWeeklyPlaytimeRoblox(cookies: dict, proxies: Optional[list[str]], outputMode: str = 'Names') -> dict:
-    if not config['Roblox']['CookieChecker']['Main']['Places_Weekly_Playtime']:
-        return {'Places Weekly Playtime': None}
     response: dict = await sendGetRequestRoblox('https://apis.roblox.com/parental-controls-api/v1/parental-controls/get-top-weekly-screentime-by-universe', cookies=cookies, proxies=proxies)
     placesWeeklyPlaytimeColor = {}
     placesWeeklyPlaytimeNoColor = {}
@@ -4921,7 +4919,7 @@ async def robloxCookieSorter() -> None:
                 counterOfCookies = 0
                 cookiesFromFile = open(root / file, 'r', encoding='utf-8', errors='ignore').readlines()
                 amountOfCookiesFromFile = len(cookiesFromFile)
-                visualRoot = f'.{OS_SEP}' * (len(Path(root).parts) - 1)
+                visualRoot = f'.{OS_SEP}' * len(Path(root).parts) - 1
                 cmdWriter(f'\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Sorting_File} \'{ANSI.DECOR.UNDERLINEON}{visualRoot}{file}{ANSI.DECOR.UNDERLINEOFF}\': 0 {MT_Of} {amountOfCookiesFromFile}')
                 for line in cookiesFromFile:
                     cookie = re.search(COOKIE_PATTERN, line)
