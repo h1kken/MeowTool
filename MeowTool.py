@@ -852,6 +852,12 @@ PROXY_PROTOCOL_IP_PORT_PATTERN = re.compile(
     r'(?P<port>\d{1,5})$'
 )
 
+PROXY_PATTERNS = [
+    PROXY_PROTOCOL_USER_PASS_IP_PORT_PATTERN,
+    PROXY_PROTOCOL_IP_PORT_USER_PASS_PATTERN,
+    PROXY_PROTOCOL_IP_PORT_PATTERN
+]
+
 ### Основные функции
 
 def timer(command: Literal['start', 'stop'], *, start: Optional[int] = None) -> int:
@@ -882,8 +888,9 @@ def currentDate(format: str) -> str:
     return datetime.now().strftime(format)
 
 def playSystemSound() -> None:
-    cmdWriter('\a')
-    cmdFlusher()
+    if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
+        cmdWriter('\a')
+        cmdFlusher()
 
 def removeLines(amountOfLines: int) -> None:
     if amountOfLines:
@@ -1079,7 +1086,7 @@ async def downloadPythonVersion() -> None:
         content = (await sendGetRequest('https://raw.githubusercontent.com/h1kken/MeowTool/refs/heads/meow/MeowTool.py', 'TEXT')).replace('\r', '')
         userProgramName = Path(__file__).name
         saveOldVersionOfProgram(userProgramName)
-        with open(userProgramName, 'w', encoding='utf-8') as file:
+        with open(userProgramName, 'w', encoding='utf-8', errors='ignore') as file:
             file.write(content)
         openFile(userProgramName)
         sys.exit()
@@ -1285,34 +1292,28 @@ def sendMessageDiscordWebhook(text: str = None, filename: str = None, *pathArgs:
         cmdFlusher()
 
 def findProxyPatternInString(string: str) -> Optional[dict[str, Optional[str]]]:
-    patterns = [
-        PROXY_PROTOCOL_USER_PASS_IP_PORT_PATTERN,
-        PROXY_PROTOCOL_IP_PORT_USER_PASS_PATTERN,
-        PROXY_PROTOCOL_IP_PORT_PATTERN
-    ]
-
-    for pattern in patterns:
+    for pattern in PROXY_PATTERNS:
         match = pattern.match(string.strip())
         if match:
             return match.groupdict()
 
-def getProxiesFromFile(proxiesPath: Path, amountOfRemoveLines: int, visualPath: str) -> list[str]:
+def getProxiesFromFile(path: Path, visualPath: str) -> list[str]:
+    proxies = set()
     try:
-        proxies = set()
-        with open(proxiesPath, 'r', encoding='utf-8', errors='replace') as file:
+        with open(path, 'r', encoding='utf-8', errors='ignore') as file:
             for line in file:
                 proxy = findProxyPatternInString(line)
                 if proxy:
+                    protocol = f'{'http' if proxy['protocol'].lower() == 'https' else proxy['protocol'].lower()}://' if proxy['protocol'] else ''
                     if proxy.get('username') and proxy.get('password'):
-                        proxies.add(f'{f'{'http' if proxy['protocol'].lower() == 'https' else proxy['protocol'].lower()}://' if proxy['protocol'] else ''}{proxy['username']}:{proxy['password']}@{proxy['ip']}:{proxy['port']}')
+                        proxies.add(f'{protocol}{proxy['username']}:{proxy['password']}@{proxy['ip']}:{proxy['port']}')
                     else:
-                        proxies.add(f'{f'{'http' if proxy['protocol'].lower() == 'https' else proxy['protocol'].lower()}://' if proxy['protocol'] else ''}{proxy['ip']}:{proxy['port']}')
+                        proxies.add(f'{protocol}{proxy['ip']}:{proxy['port']}')
 
         if not proxies:
             raise FileNotFoundError
 
         logger.debug(f'< [GET_PROXIES_FROM_FILE] > Proxies found: {len(proxies)}')
-
         return list(proxies)
     except FileNotFoundError:
         return errorOrCorrectHandler(True, MT_No_Proxy_Was_Found, visualPath)
@@ -1361,7 +1362,7 @@ async def proxyChecker(file: str) -> None:
     labelASCII()
     cmdWriter(f' {generateVisualPath(MT_Proxy, MT_Checker)}\n\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Wait[0]}...')
 
-    proxiesFromFile = getProxiesFromFile(Path('Proxy', 'Checker', f'{file}.txt'), 2, generateVisualPath(MT_Proxy, MT_Checker))
+    proxiesFromFile = getProxiesFromFile(Path('Proxy', 'Checker', f'{file}.txt'), generateVisualPath(MT_Proxy, MT_Checker))
     if not proxiesFromFile:
         return
 
@@ -1372,10 +1373,10 @@ async def proxyChecker(file: str) -> None:
     def printTotalOutputPC() -> None:
         cmdWriter(rf'''
  {ANSI.FG.GRAY}{'_____________________________________'}
- {ANSI.FG.GRAY}| {ANSI.FG.CYAN}Proxy{                                ANSI.FG.WHITE}: {counters['proxy']} {MT_Of} {amountOfProxiesFromFile}
- {ANSI.FG.GRAY}| {ANSI.FG.CYAN}Good{                                 ANSI.FG.WHITE}: {counters['good']}
- {ANSI.FG.GRAY}| {ANSI.FG.CYAN}Bad{                                  ANSI.FG.WHITE}: {counters['bad']}
- {ANSI.FG.GRAY}| {ANSI.FG.CYAN}Response time >{maxResponseTime} sec.{ANSI.FG.WHITE}: {counters['timeout']}
+ {ANSI.FG.GRAY}| {ANSI.FG.CYAN  }Proxy{                                ANSI.FG.WHITE}: {counters['proxy']} {MT_Of} {amountOfProxiesFromFile}
+ {ANSI.FG.GRAY}| {ANSI.FG.GREEN }Good{                                 ANSI.FG.WHITE}: {counters['good']}
+ {ANSI.FG.GRAY}| {ANSI.FG.RED   }Bad{                                  ANSI.FG.WHITE}: {counters['bad']}
+ {ANSI.FG.GRAY}| {ANSI.FG.YELLOW}Response time >{maxResponseTime} sec.{ANSI.FG.WHITE}: {counters['timeout']}
  {ANSI.FG.GRAY}{'‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾'}{ANSI.FG.WHITE}
 '''.lstrip('\n'))
 
@@ -1466,8 +1467,7 @@ async def proxyChecker(file: str) -> None:
     stop = timer('stop', start=start)
 
     cmdWriter(f' [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Checking_Complete} {MT_In[1].lower()} {formatDuration(int(stop * 1000))}\n\n')
-    if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
-        playSystemSound()
+    playSystemSound()
 
     if isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
         messageText = f'*💜 {MT_Proxy} {MT_Checker.lower()}\n\n🟢 Good: {counters['good']}\n🔴 Bad: {counters['bad']}\n🟡 Response time \\>{maxResponseTime} sec\\.: {counters['timeout']}*'
@@ -1480,15 +1480,15 @@ async def proxyChecker(file: str) -> None:
 
 ### Roblox Cookie Checker
 
-def getProxiesFromFileRoblox(isUseProxy: bool, proxiesPath: Path, amountOfRemoveLines: int, visualPath: str) -> Optional[list[str]]:
-    if not isUseProxy:
+def getProxiesFromFileRoblox(path: Path, visualPath: str) -> Optional[list[str]]:
+    if not config['Roblox']['General']['Proxy']['Use_Proxy']:
         return
 
     try:
         configProtocol = str(config['Roblox']['General']['Proxy']['Auto_Protocol_If_Not_Specified']).lower()
         autoProtocol = configProtocol if configProtocol in ('http', 'socks4', 'socks5') else 'http'
         proxies = set()
-        with open(proxiesPath, 'r', encoding='utf-8', errors='replace') as file:
+        with open(path, 'r', encoding='utf-8', errors='ignore') as file:
             for line in file:
                 proxy = findProxyPatternInString(line)
                 if proxy:
@@ -1502,18 +1502,17 @@ def getProxiesFromFileRoblox(isUseProxy: bool, proxiesPath: Path, amountOfRemove
             raise FileNotFoundError
 
         logger.debug(f'< [GET_PROXIES_FROM_FILE_ROBLOX] > Proxies found: {len(proxies)}')
-            
         return list(proxies)
     except FileNotFoundError:
         return errorOrCorrectHandler(True, MT_No_Proxy_Was_Found, visualPath)
     except Exception as e:
         logger.exception(f'< [GET_PROXIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}', force=True)
 
-def getCookiesFromFileRoblox(cookiesPath: Path, amountOfRemoveLines: int, visualPath: str) -> Optional[set[str]]:
+def getCookiesFromFileRoblox(path: Path, visualPath: str) -> Optional[set[str]]:
     symbolsBetweenWarningAndCookie = str(config['Roblox']['General']['Symbols_Between_Warning_And_Cookie']).strip() if config['Roblox']['General']['Add_Symbols_Between_Warning_And_Cookie'] else ''
     cookiesSet = set()
     try:
-        with open(cookiesPath, 'r', encoding='utf-8', errors='replace') as file:
+        with open(path, 'r', encoding='utf-8', errors='ignore') as file:
             for line in file:
                 cookie = re.search(COOKIE_PATTERN, line.strip())
                 if not cookie:
@@ -1539,12 +1538,7 @@ def getCookiesFromFileRoblox(cookiesPath: Path, amountOfRemoveLines: int, visual
 
 def getConnectorRoblox(proxies: Optional[list[str]]) -> TCPConnector | ProxyConnector:
     if not (config['Roblox']['General']['Proxy']['Use_Proxy'] and proxies):
-        return TCPConnector(
-            limit=0,
-            enable_cleanup_closed=True,
-            ttl_dns_cache=300,
-            use_dns_cache=True
-        )
+        return TCPConnector(limit=0)
     return ProxyConnector.from_url(random.choice(proxies))
 
 class NinetyNineNightsintheForest: # https://www.roblox.com/games/79546208627805
@@ -4178,12 +4172,11 @@ async def robloxCookieChecker(file: str) -> None:
     if not [data[1] for data in cookieData.listOfCookieData if config['Roblox']['CookieChecker']['Main'][data[1]]]:
         return errorOrCorrectHandler(True, MT_Enable_Something_In, generateVisualPath(MT_Roblox, MT_Cookie_Checker))
 
-    isUseProxy = config['Roblox']['General']['Proxy']['Use_Proxy']
-    proxiesFromFile = getProxiesFromFileRoblox(isUseProxy, Path('Roblox', 'proxies.txt'), 2, generateVisualPath(MT_Roblox, MT_Cookie_Checker))
-    if isUseProxy and not proxiesFromFile:
+    proxiesFromFile = getProxiesFromFileRoblox(Path('Roblox', 'proxies.txt'), generateVisualPath(MT_Roblox, MT_Cookie_Checker))
+    if proxiesFromFile is None:
         return
 
-    cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Cookie Checker', f'{file}.txt'), 2, generateVisualPath(MT_Roblox, MT_Cookie_Checker))
+    cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Cookie Checker', f'{file}.txt'), generateVisualPath(MT_Roblox, MT_Cookie_Checker))
     if not cookiesFromFile:
         return
 
@@ -4507,8 +4500,7 @@ async def robloxCookieChecker(file: str) -> None:
     stop = timer('stop', start=start)
     
     cmdWriter(f' [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Checking_Complete} {MT_In[1].lower()} {formatDuration(int(stop * 1000))}\n\n')
-    if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
-        playSystemSound()
+    playSystemSound()
 
     if isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
         messageText = f'*💜 {MT_Roblox} {MT_Cookie_Checker.lower()}\n\n🟢 {MT_Valid}: {counters['valid']}\n🟡 {MT_Duplicates}: {counters['duplicates']}\n🔴 {MT_Invalid}: {counters['invalid']}\n🟠 {MT_Banned[1]}: {counters['banned']}\n\n{f'💎 Robux: {totalDataCurrent['Robux'] if type(totalDataCurrent['Robux']) is int else 'Off'}\n'}{f'💵 Billing: {totalDataCurrent['Billing'] if type(totalDataCurrent['Billing']) is int else 'Off'}\n'}{f'⌛ Pending: {totalDataCurrent['Pending'] if type(totalDataCurrent['Pending']) is int else 'Off'}\n'}{f'💰 Donate \\(1 Year\\): {totalDataCurrent['Donate (1 Year)'] if type(totalDataCurrent['Donate (1 Year)']) is int else 'Off'}\n'}{f'💰 Donate \\(All Time\\): {totalDataCurrent['Donate (All Time)'] if type(totalDataCurrent['Donate (All Time)']) is int else 'Off'}\n'}{f'🚀 Rap: {totalDataCurrent['Rap'] if type(totalDataCurrent['Rap']) is int else 'Off'}\n'}{f'💳 Card: {totalDataCurrent['Card'] if type(totalDataCurrent['Card']) is int else 'Off'}\n'}{f'👑 Premium: {totalDataCurrent['Premium'] if type(totalDataCurrent['Premium']) is int else 'Off'}\n'}{f'🎫 Gamepasses: {totalDataCurrent['Gamepasses'] if type(totalDataCurrent['Gamepasses']) is int else 'Off'}\n'}{f'🎫 Custom Gamepasses: {totalDataCurrent['Custom Gamepasses'] if type(totalDataCurrent['Custom Gamepasses']) is int else 'Off'}\n'}{f'🏆 Badges: {totalDataCurrent['Badges'] if type(totalDataCurrent['Badges']) is int else 'Off'}\n'}{f'⭐ Favorite Places: {totalDataCurrent['Favorite Places'] if type(totalDataCurrent['Favorite Places']) is int else 'Off'}\n'}{f'📦 Bundles: {totalDataCurrent['Bundles'] if type(totalDataCurrent['Bundles']) is int else 'Off'}\n'}{f'🌐 Groups Owned: {totalDataCurrent['Groups Owned'] if type(totalDataCurrent['Groups Owned']) is int else 'Off'}\n'}{f'👯‍♀️ Groups Members: {totalDataCurrent['Groups Members'] if type(totalDataCurrent['Groups Members']) is int else 'Off'}\n'}{f'⌛ Groups Pending: {totalDataCurrent['Groups Pending'] if type(totalDataCurrent['Groups Pending']) is int else 'Off'}\n'}{f'💎 Groups Funds: {totalDataCurrent['Groups Funds'] if type(totalDataCurrent['Groups Funds']) is int else 'Off'}'}*'
@@ -4959,8 +4951,7 @@ async def robloxCookieSorter() -> None:
         file.write('\n'.join(cookieSortingList))
 
     cmdWriter(f'\n\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] {MT_Unique_Cookies_Found}: {counters['unique']}\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] {MT_Duplicated_Cookies_Removed}: {counters['duplicates']}\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] {MT_Incorrect_Cookies_Removed}: {counters['incorrect']}\n\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Sorting_Complete} {MT_In[1].lower()} {formatDuration(int(stop * 1000))}\n\n')
-    if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
-        playSystemSound()
+    playSystemSound()
 
     if config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'] or config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']:
         messageText = f'*💜 {MT_Roblox} {MT_Cookie_Sorter.lower()}\n\n🟢 {MT_Unique_Cookies_Found}: {counters['unique']} \n🟡 {MT_Duplicated_Cookies_Removed}: {counters['duplicates']} \n🔴 {MT_Incorrect_Cookies_Removed}: {counters['incorrect']}*'
@@ -5051,10 +5042,8 @@ async def cookieRefresherSingleMode(string: str):
     else:
         cookie = cookie.group(0)
 
-
-    isUseProxy = config['Roblox']['General']['Proxy']['Use_Proxy']
-    proxiesFromFile = getProxiesFromFileRoblox(isUseProxy, Path('Roblox', 'proxies.txt'), 2, generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Single_Mode))
-    if isUseProxy and not proxiesFromFile:
+    proxiesFromFile = getProxiesFromFileRoblox(Path('Roblox', 'proxies.txt'), generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Single_Mode))
+    if proxiesFromFile is None:
         return
 
     try:
@@ -5072,12 +5061,11 @@ async def cookieRefresherMassMode(file: str) -> None:
     labelASCII()
     cmdWriter(f' {generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Mass_Mode)}\n\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Wait[0]}...')
 
-    isUseProxy = config['Roblox']['General']['Proxy']['Use_Proxy']
-    proxiesFromFile = getProxiesFromFileRoblox(isUseProxy, Path('Roblox', 'proxies.txt'), 2, generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Mass_Mode))
-    if isUseProxy and not proxiesFromFile:
+    proxiesFromFile = getProxiesFromFileRoblox(Path('Roblox', 'proxies.txt'), generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Mass_Mode))
+    if proxiesFromFile is None:
         return
 
-    cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Cookie Refresher', 'Mass Mode', f'{file}.txt'), 2, generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Mass_Mode))
+    cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Cookie Refresher', 'Mass Mode', f'{file}.txt'), generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Mass_Mode))
     if not cookiesFromFile:
         return
 
@@ -5093,8 +5081,7 @@ async def cookieRefresherMassMode(file: str) -> None:
     stop = timer('stop', start=start)
 
     cmdWriter(f' [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Checking_Complete} {MT_In[1].lower()} {formatDuration(int(stop * 1000))}\n\n')
-    if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
-        playSystemSound()
+    playSystemSound()
     
     if config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'] or config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']:
         messageText = f'*💜 {MT_Roblox} {MT_Cookie_Refresher.lower()}*'
@@ -5302,12 +5289,11 @@ async def robloxTransactionAnalysis(file: str) -> None:
     if not checkListPlaces:
         return errorOrCorrectHandler(True, MT_Enable_At_Least_One_Place_To_Start_Analysis, generateVisualPath(MT_Roblox, MT_Transaction_Analysis))
 
-    isUseProxy = config['Roblox']['General']['Proxy']['Use_Proxy']
-    proxiesFromFile = getProxiesFromFileRoblox(isUseProxy, Path('Roblox', 'proxies.txt'), 2, generateVisualPath(MT_Roblox, MT_Transaction_Analysis))
-    if isUseProxy and not proxiesFromFile:
+    proxiesFromFile = getProxiesFromFileRoblox(Path('Roblox', 'proxies.txt'), generateVisualPath(MT_Roblox, MT_Transaction_Analysis))
+    if proxiesFromFile is None:
         return
 
-    cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Transaction Analysis', f'{file}.txt'), 2, generateVisualPath(MT_Roblox, MT_Transaction_Analysis))
+    cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Transaction Analysis', f'{file}.txt'), generateVisualPath(MT_Roblox, MT_Transaction_Analysis))
     if not cookiesFromFile:
         return
 
@@ -5432,8 +5418,7 @@ async def robloxTransactionAnalysis(file: str) -> None:
     stop = timer('stop', start=start)
 
     cmdWriter(f' [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Checking_Complete} {MT_In[1].lower()} {formatDuration(int(stop * 1000))}\n\n')
-    if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
-        playSystemSound()
+    playSystemSound()
 
     if config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'] or config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']:
         messageText = f'*💜 {MT_Roblox} {MT_Transaction_Analysis.lower()}\n\n🟢 {MT_Valid}: {counters['valid']}\n🟡 {MT_Duplicates}: {counters['duplicates']}\n🔴 {MT_Invalid}: {counters['invalid']}\n🟠 {MT_Banned[1]}: {counters['banned']}\n🔵 {MT_Non_Empty}: {counters['nonempty']}\n\n🛒 {MT_Transactions}: {counters['transactions']}\n💎 {MT_Spent}: {counters['robux']} R$*'
@@ -6372,8 +6357,7 @@ async def mainMenu() -> None:
                                         config['General']['Show_Amount_Of_Lines_In_Files'] ^= True
                                     case 'S' | 'Ы':
                                         config['Outputs']['Play_Sound_At_The_End_Of_The_Work'] ^= True
-                                        if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
-                                            playSystemSound()
+                                        playSystemSound()
                                     case 'T' | 'Е':
                                         config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'] ^= True
                                     case 'D' | 'В':
@@ -6423,8 +6407,7 @@ async def mainMenu() -> None:
                                         config['General']['Show_Amount_Of_Lines_In_Files'] ^= True
                                     case 'S' | 'Ы':
                                         config['Outputs']['Play_Sound_At_The_End_Of_The_Work'] ^= True
-                                        if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
-                                            playSystemSound()
+                                        playSystemSound()
                                     case 'T' | 'Е':
                                         config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'] ^= True
                                     case 'D' | 'В':
@@ -6447,8 +6430,7 @@ async def mainMenu() -> None:
                                         await robloxCookieSorter()
                                     case 'S' | 'Ы':
                                         config['Outputs']['Play_Sound_At_The_End_Of_The_Work'] ^= True
-                                        if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
-                                            playSystemSound()
+                                        playSystemSound()
                                     case 'T' | 'Е':
                                         config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'] ^= True
                                     case 'D' | 'В':
@@ -6499,8 +6481,7 @@ async def mainMenu() -> None:
                                                     config['General']['Show_Amount_Of_Lines_In_Files'] ^= True
                                                 case 'S' | 'Ы':
                                                     config['Outputs']['Play_Sound_At_The_End_Of_The_Work'] ^= True
-                                                    if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
-                                                        playSystemSound()
+                                                    playSystemSound()
                                                 case 'T' | 'Е':
                                                     config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'] ^= True
                                                 case 'D' | 'В':
@@ -6544,8 +6525,7 @@ async def mainMenu() -> None:
                                         config['General']['Show_Amount_Of_Lines_In_Files'] ^= True
                                     case 'S' | 'Ы':
                                         config['Outputs']['Play_Sound_At_The_End_Of_The_Work'] ^= True
-                                        if config['Outputs']['Play_Sound_At_The_End_Of_The_Work']:
-                                            playSystemSound()
+                                        playSystemSound()
                                     case 'T' | 'Е':
                                         config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'] ^= True
                                     case 'D' | 'В':
