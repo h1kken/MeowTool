@@ -1,4 +1,4 @@
-# environments
+# envs
 .env
 
 # utils
@@ -7,14 +7,11 @@
 .beta things
 
 # paths created MeowTool
+/Logs/
 /Proxy/
 /Roblox/
 /Settings/
 /Versions/
-
-# logs
-Logs/
-*.log
 
 # caches
 __pycache__/
@@ -22,5 +19,6 @@ __pycache__/
 
 # trash
 .vscode/
-notepad.txt
 *.png
+*.log
+notepad.txt
