@@ -943,16 +943,9 @@ def errorOrCorrectHandler(isError: bool, message: str, visualPath: str) -> None:
     cmdWriter(f'\r {visualPath}\n\n {f'[{ANSI.FG.RED if isError else ANSI.FG.GREEN}>{ANSI.FG.WHITE}]'} {message}\n\n')
     waitingInput()
 
-def mkdir(*pathArgs: str, parents: bool = True, exist_ok: bool = True):
-    path = Path(*pathArgs)
-    if path.is_file():
-        path.parent.mkdir(parents=parents, exist_ok=exist_ok)
-    else:
-        path.mkdir(parents=parents, exist_ok=exist_ok)
-    return path
-
 def autoSaveConfigLoader() -> None:
-    loaderPath = mkdir('Settings', 'Configs', '.Loader.toml')
+    loaderPath = Path('Settings', 'Configs', '.Loader.toml')
+    loaderPath.parent.mkdir(parents=True, exist_ok=True)
     with open(loaderPath, 'w', encoding='utf-8', errors='ignore') as file:
         file.write(dumps(configLoader))
 
@@ -960,7 +953,8 @@ def autoSaveConfig(force: bool = False) -> None:
     if not (configLoader['Saver']['Auto_Save_Changes'] or force):
         return
 
-    configPath = mkdir('Settings', 'Configs', f'{configLoader['Loader']['Current_Config']}.toml')
+    configPath = Path('Settings', 'Configs', f'{configLoader['Loader']['Current_Config']}.toml')
+    configPath.parent.mkdir(parents=True, exist_ok=True)
     with open(configPath, 'w', encoding='utf-8', errors='ignore') as file:
         file.write(dumps(config))
 
@@ -7657,4 +7651,5 @@ if __name__ == '__main__':
     except Exception:
         traceback.print_exc()
         logger.exception(f'{MT_Oh_Noo_My_Home_It_Is_Over}... :<', force=True)
+
         input(f'\n  [?] Traceback saved to: {ANSI.DECOR.UNDERLINEON}{logger._path}{ANSI.DECOR.UNDERLINEOFF}\n\n  [<] Press Enter to close the program...')
