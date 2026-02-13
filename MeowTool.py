@@ -65,7 +65,7 @@ except Exception as e:
 
 # MeowTool :3
 
-VERSION = 'v2.3.2'
+VERSION = 'v2.3.3'
 
 ### ANSI коды
 
@@ -783,7 +783,7 @@ class AccountBanned(RobloxException):
 
 ### Ошибки
 
-ETHERNET_ERRORS = [
+ETHERNET_ERRORS = {
     asyncio.TimeoutError,
     asyncio.exceptions.CancelledError,
     ClientOSError,
@@ -793,14 +793,14 @@ ETHERNET_ERRORS = [
     ClientPayloadError,
     SocketTimeoutError,
     ProxyError
-]
+}
 
 ### Константы
 
 # Общие
 
-CONSOLE_NAME_SPECIAL_CHARS = ['<', '>', '|', '^', '&']
-FILENAME_SPECIAL_CHARS = ['\\', '/', ':', '*', '?', '"', '<', '>', '|']
+CONSOLE_NAME_SPECIAL_CHARS = {'<', '>', '|', '^', '&'}
+FILENAME_SPECIAL_CHARS = {'\\', '/', ':', '*', '?', '"', '<', '>', '|'}
 
 # Роблокс
 
@@ -809,11 +809,15 @@ COOKIE_START = '_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-t
 ### Паттерны
 
 SPECIAL_CHARS = re.compile(
-    r'[\\/*?:"<>|\x00-\x1f]'
+    r'[\\/*?:"<>|]'
 )
 
 STRING_MINIMUM_100_SYMBOLS_PATTERN = re.compile(
     r'\S{100,}'
+)
+
+DATE_NANOSECONDS_PATTERN = re.compile(
+    r'(.*\.\d{6})\d*Z$'
 )
 
 # Роблокс
@@ -823,8 +827,22 @@ COOKIE_PATTERN = re.compile(
 )
 
 AGE_GROUP_PATTERN = re.compile(
-    r'(?i)(Over|Under)(\d+)(Checked)?'
+    r'(?i)(Over|Under)?(\d+)[^\d]*(\d+)?'
 )
+
+DATE_FORMATS = [
+    '%Y-%m-%dT%H:%M:%S.%fZ',
+    '%Y-%m-%dT%H:%M:%SZ'
+]
+
+AGE_GROUP_MAPPING = {
+    'over': '+',
+    'under': '-'
+}
+
+WARNED_CATEGORIES_GENERAL_RCC = {
+    'Card'
+}
 
 # Прокси
 
@@ -862,7 +880,7 @@ PROXY_PATTERNS = [
 
 ### Основные функции
 
-def timer(command: Literal['start', 'stop'], *, start: Optional[int] = None) -> int:
+def timer(command: Literal['start', 'stop'], start: int = 0) -> int:
     match command:
         case 'start': return time.perf_counter()
         case 'stop':  return time.perf_counter() - start
@@ -919,13 +937,13 @@ def rmEmojies(string: str, *, replace: str = ' ') -> str:
 def rmTwoSpaces(string: str) -> str:
     return ' '.join(string.split())
 
-def amountOfLines(*pathArgs: str) -> str:
-    path = Path(*pathArgs)
-    if not path.with_suffix('.txt').exists():
+def amountOfLines(path: Path) -> str:
+    if not path.exists():
+        print(path)
         return '0 lines'
 
     try:
-        with open(f'{path}.txt', 'r', encoding='utf-8', errors='ignore') as file:
+        with open(path, 'r', encoding='utf-8', errors='ignore') as file:
             amount = sum(1 for _ in file)
         return f'{amount} line{'s' if amount != 1 else ''}'
     except Exception as e:
@@ -964,15 +982,15 @@ def autoSaveConfigAndRemoveLinesInSettings(caseValue: str, autoSaveConfigKeys: t
     if numberOfLines and caseValue in removeLinesKeys:
         removeLines(numberOfLines)
 
-def printFiles(path: Path, *, isPrintFiles: bool = False) -> list[str]:
+def getFiles(path: Path, *, isPrintFiles: bool = False) -> list[str]:
     path.mkdir(parents=True, exist_ok=True)
-    listOfFiles = [file.stem for file in path.iterdir()
-                   if file.suffix.lower() == '.txt']
+    listOfFiles = [file.name for file in path.iterdir()
+                   if file.is_file()]
 
     if isPrintFiles:
         length = len(str(len(listOfFiles))) + 12
         for index, file in enumerate(listOfFiles):
-            cmdWriter(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {file} {f'({amountOfLines(path, file)})' if config['General'][f'Show_Amount_Of_Lines_In_Files'] else ''}\n')
+            cmdWriter(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {file} {f'({amountOfLines(path / file)})' if config['General'][f'Show_Amount_Of_Lines_In_Files'] else ''}\n')
 
     return listOfFiles
 
@@ -982,20 +1000,18 @@ def convertDate(inputDate: str, outputFormat: str) -> str:
     - %Y-%m-%dT%H:%M:%S.%fZ
     - %Y-%m-%dT%H:%M:%SZ
     '''
-    DATE_FORMATS = [
-        '%Y-%m-%dT%H:%M:%S.%fZ',
-        '%Y-%m-%dT%H:%M:%SZ'
-    ]
+
+    if (match := re.match(DATE_NANOSECONDS_PATTERN, inputDate)):
+        inputDate = f'{match.group(1)}Z'
 
     for dateFormat in DATE_FORMATS:
         try:
-            dateFormatted = datetime.strptime(inputDate, dateFormat)
-            return dateFormatted.strftime(outputFormat)
+            return datetime.strptime(inputDate, dateFormat).strftime(outputFormat)
         except ValueError:
             continue
 
     logger.warning(f'< [CONVERT_DATE] > {MT_Conversion_Error}: (in): {inputDate}, (out): {outputFormat}', force=True)
-    return 'error'
+    return 'ERROR'
 
 def formatDuration(ms: int, *, inColor: str = ANSI.FG.BLUE, outColor: str = ANSI.FG.WHITE, sep: str = '. ', end: str = '.', outUnits: Literal['d', 'h', 'm', 's', 'ms', 'all'] = 'all') -> str:
     s, ms = divmod(ms, 1000)
@@ -1163,39 +1179,38 @@ def makeArchive(dateString: str, *pathArgs: str) -> None:
         except Exception as e:
             logger.exception(f'< [MAKE_ARCHIVE] > {MT_Critical_Error}: {e}', force=True)
 
-async def sendMessageTelegramBot(text: str = None, *pathArgs: str, test: bool = False) -> None:
+async def sendMessageTelegramBot(text: Optional[str] = None, filePath: Optional[Path] = None, test: bool = False) -> None:
     if not (config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'] or test):
         return
 
-    token  = str(config['Outputs']['TelegramBot']['Telegram_Bot_Token'])
+    token = str(config['Outputs']['TelegramBot']['Telegram_Bot_Token'])
     chatId = str(config['Outputs']['TelegramBot']['Telegram_Bot_Chat_ID'])
 
     bot = None
     try:
         bot = Bot(token=token)
 
-        if pathArgs:
-            filePath = Path(*pathArgs)
+        if filePath is None and text:
+            await bot.send_message(
+                chat_id=chatId,
+                text=text
+            )
+            cmdWriter(f'\r [{ANSI.FG.GREEN}{MT_Telegram[1]}{ANSI.FG.WHITE}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.FG.WHITE} | {MT_Message_Was_Sent} :3\n')
+        else:
             if not filePath.exists():
                 raise FileNotFoundError
-
+            
             cmdWriter(f'\r [{ANSI.FG.CYAN}{MT_Telegram[1]}{ANSI.FG.WHITE}] {MT_Send[1]} {MT_Results_To_Telegram[0].lower()}{MT_Results_To_Telegram[1:]}\r')
             await bot.send_message(
                 chat_id=chatId,
                 text=text,
-                parse_mode=ParseMode.MARKDOWN_V2
+                parse_mode=ParseMode.HTML
             )
             await bot.send_document(
                 chat_id=chatId,
                 document=FSInputFile(filePath)
             )
             cmdWriter(f'\r [{ANSI.FG.GREEN}{MT_Telegram[1]}{ANSI.FG.WHITE}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.FG.WHITE} | {MT_Send[2]} {MT_Results_To_Telegram[0].lower()}{MT_Results_To_Telegram[1:]} :3\n')
-        elif text:
-            await bot.send_message(
-                chat_id=chatId,
-                text=text
-            )
-            cmdWriter(f'\r [{ANSI.FG.GREEN}{MT_Telegram[1]}{ANSI.FG.WHITE}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.FG.WHITE} | {MT_Message_Was_Sent} :3\n')
     except FileNotFoundError:
         cmdWriter(f'\r [{ANSI.FG.RED}{MT_Telegram[1]}{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.FG.WHITE} | {MT_File_Was_Not_Created}... :<\n')
     except Exception as e:
@@ -1207,70 +1222,73 @@ async def sendMessageTelegramBot(text: str = None, *pathArgs: str, test: bool = 
                 MT_Possibly_A_Typo_In_The_Bot_Token
             )
         }
-        if type(e) not in ERRORS:
-            logger.exception(f'< [SEND_MESSAGE_TELEGRAM_BOT] > {MT_Unknown_Error}: {e}', force=True)
+        logger.exception(f'< [SEND_MESSAGE_TELEGRAM_BOT] > {MT_Unknown_Error}: {e}', force=type(e) not in ERRORS)
         cmdWriter(f'\r [{ANSI.FG.RED}{MT_Telegram[1]}{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.FG.WHITE} | {ERRORS.get(type(e), f'{MT_Unknown_Error}: {e}')}... :<\n')
     finally:
         cmdFlusher()
         if bot:
             await bot.session.close()
 
-def sendMessageDiscordWebhook(text: str = None, filename: str = None, *pathArgs: str, test: bool = False) -> None:
+def sendMessageDiscordWebhook(text: Optional[str] = None, filePath: Optional[Path] = None, test: bool = False) -> None:
     if not (config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'] or test):
         return
 
-    webhookUrl = config['Outputs']['DiscordWebhook']['Discord_Webhook_URL']
+    webhookUrl = str(config['Outputs']['DiscordWebhook']['Discord_Webhook_URL'])
+
     try:
-        webhookText = DiscordWebhook(
-            url=webhookUrl,
-            rate_limit_retry=True
-        )
-
-        embed = DiscordEmbed(
-            description=text,
-            color='c883b3'
-        )
-        webhookText.add_embed(embed)
-        
-        if not test:
-            embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/1393994423481663528/1394053567899369533/Neko_for_MeowTool_Discord_output.png?ex=68f1fece&is=68f0ad4e&hm=3c5267d3c1f66e643a80f27b54f02d512fc2cc9ca10d6de5c983d55be9834c58&')
-
-        webhookText.execute()
-
-        if not pathArgs:
-            cmdWriter(f'\r [{ANSI.FG.GREEN}{MT_Discord[1]}{ANSI.FG.WHITE}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.FG.WHITE} | {MT_Message_Was_Sent} :3\n')
-            return
-
         cmdWriter(f'\r [{ANSI.FG.CYAN}{MT_Discord[1]}{ANSI.FG.WHITE}] {MT_Send[1]} {MT_Results_To_Discord[0].lower()}{MT_Results_To_Discord[1:]}\r')
-
-        webhookFile = DiscordWebhook(
-            url=webhookUrl,
-            rate_limit_retry=True
-        )
         
-        filePath = Path(*pathArgs, filename)
+        if filePath is None:
+            webhookFile = None
+        elif filePath.exists():
+            webhookFile = DiscordWebhook(
+                url=webhookUrl,
+                rate_limit_retry=True
+            )
+            
+            with open(filePath, 'rb') as file:
+                webhookFile.add_file(file=file.read(), filename=filePath.name)
 
-        if not filePath.exists():
+        else:
             raise FileNotFoundError
 
-        with open(filePath, 'rb') as file:
-            webhookFile.add_file(file=file.read(), filename=filename)
-        
-        response = webhookFile.execute()
+        if text is not None:
+            webhookText = DiscordWebhook(
+                url=webhookUrl,
+                rate_limit_retry=True
+            )
 
-        RESPONSES = {
-            **dict.fromkeys(
-                [401, 404],
-                MT_Possibly_A_Typo_In_The_Webhook_URL
-            ),
-            413: MT_File_Is_Too_Big
-        }
+            embed = DiscordEmbed(
+                description=text,
+                color='c883b3'
+            )
 
-        status = response.status_code
-        if status == 200:
-            cmdWriter(f'\r [{ANSI.FG.GREEN}{MT_Discord[1]}{ANSI.FG.WHITE}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.FG.WHITE} | {MT_Send[2]} {MT_Results_To_Discord[0].lower()}{MT_Results_To_Discord[1:]} :3\n')
-        else:
-            cmdWriter(f'\r [{ANSI.FG.RED}{MT_Discord[1]}{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.FG.WHITE} | {RESPONSES.get(status, f'{MT_Unknown_Server_Response_Code}: {status}')}... :< \n')
+            if not test:
+                embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/1393994423481663528/1394053567899369533/Neko_for_MeowTool_Discord_output.png?ex=68f1fece&is=68f0ad4e&hm=3c5267d3c1f66e643a80f27b54f02d512fc2cc9ca10d6de5c983d55be9834c58&')        
+
+            webhookText.add_embed(embed)
+
+        if webhookText is not None:
+            webhookText.execute()
+            if test:
+                cmdWriter(f'\r [{ANSI.FG.GREEN}{MT_Discord[1]}{ANSI.FG.WHITE}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.FG.WHITE} | {MT_Message_Was_Sent} :3\n')
+                return
+
+        if webhookFile is not None:
+            response = webhookFile.execute()
+            RESPONSES = {
+                **dict.fromkeys(
+                    [401, 404],
+                    MT_Possibly_A_Typo_In_The_Webhook_URL
+                ),
+                413: MT_File_Is_Too_Big
+            }
+
+            status = response.status_code
+            if status == 200:
+                cmdWriter(f'\r [{ANSI.FG.GREEN}{MT_Discord[1]}{ANSI.FG.WHITE}] {ANSI.FG.GREEN}{MT_Successfully}{ANSI.FG.WHITE} | {MT_Send[2]} {MT_Results_To_Discord[0].lower()}{MT_Results_To_Discord[1:]} :3\n')
+            else:
+                cmdWriter(f'\r [{ANSI.FG.RED}{MT_Discord[1]}{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.FG.WHITE} | {RESPONSES.get(status, f'{MT_Unknown_Server_Response_Code}: {status}')}... :< \n')
     except FileNotFoundError:
         cmdWriter(f'\r [{ANSI.FG.RED}{MT_Discord[1]}{ANSI.FG.WHITE}] {ANSI.FG.RED}{MT_Unsuccessfully}{ANSI.FG.WHITE} | {MT_File_Was_Not_Created}... :<\n')
     except Exception as e:
@@ -1358,7 +1376,7 @@ async def proxyChecker(file: str) -> None:
     labelASCII()
     cmdWriter(f' {generateVisualPath(MT_Proxy, MT_Checker)}\n\n [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Wait[0]}...')
 
-    proxiesFromFile = getProxiesFromFile(Path('Proxy', 'Checker', f'{file}.txt'), generateVisualPath(MT_Proxy, MT_Checker))
+    proxiesFromFile = getProxiesFromFile(Path('Proxy', 'Checker', file), generateVisualPath(MT_Proxy, MT_Checker))
     if not proxiesFromFile:
         return
 
@@ -1453,7 +1471,7 @@ async def proxyChecker(file: str) -> None:
             async with proxyOutputLock:
                 consoleOutputHandlerPC(resultValue, messageString)
 
-    cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}.txt{ANSI.DECOR.UNDERLINEOFF}\':\n')
+    cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}{ANSI.DECOR.UNDERLINEOFF}\':\n')
 
     savePath.mkdir(parents=True, exist_ok=True)
     start = timer('start')
@@ -1466,10 +1484,17 @@ async def proxyChecker(file: str) -> None:
     playSystemSound()
 
     if isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
-        messageText = f'*💜 {MT_Proxy} {MT_Checker.lower()}\n\n🟢 Good: {counters['good']}\n🔴 Bad: {counters['bad']}\n🟡 Response time \\>{maxResponseTime} sec\\.: {counters['timeout']}*'
+        messageText = (
+            f'<b>💜 {MT_Proxy} {MT_Checker.lower()}\n\n'
+            
+            f'🟢 Good: {counters['good']}\n'
+            f'🔴 Bad: {counters['bad']}\n'
+            f'🟡 Response time >{maxResponseTime} sec.: {counters['timeout']}</b>'
+        )
         makeArchive(dateOfCheck, 'Proxy', 'Checker', 'outputs')
-        await sendMessageTelegramBot(messageText, 'Proxy', 'Checker', 'outputs', 'archives', f'{dateOfCheck}.zip')
-        sendMessageDiscordWebhook(messageText.replace('*', '**'), f'{dateOfCheck}.zip', 'Proxy', 'Checker', 'outputs', 'archives')
+        _path = Path('Proxy', 'Checker', 'outputs', 'archives', f'{dateOfCheck}.zip')
+        await sendMessageTelegramBot(messageText, _path)
+        sendMessageDiscordWebhook(f'**{messageText.lstrip('<b>').rstrip('</b>')}**', _path)
         cmdWriter('\n')
 
     waitingInput()
@@ -1531,7 +1556,7 @@ def getCookiesFromFileRoblox(path: Path, visualPath: str) -> Optional[set[str]]:
     except Exception as e:
         logger.exception(f'< [GET_COOKIES_FROM_FILE_ROBLOX] > {MT_Critical_Error}: {e}', force=True)
 
-def getConnectorRoblox(proxies: Optional[list[str]]) -> TCPConnector | ProxyConnector:
+def getConnectorRoblox(proxies: Optional[list[str]] = None) -> TCPConnector | ProxyConnector:
     if not (config['Roblox']['General']['Proxy']['Use_Proxy'] and proxies):
         return TCPConnector(limit=0)
     return ProxyConnector.from_url(random.choice(proxies))
@@ -3028,10 +3053,8 @@ async def sendGetRequestRoblox(
         except (InvalidCookie, AccountBanned):
             raise
         except Exception as e:
-            if type(e) in ETHERNET_ERRORS:
-                logger.exception(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130] if cookies else 'No cookie'} | {MT_Error}: {e}')
-            else:
-                logger.exception(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130] if cookies else 'No cookie'} | {MT_Critical_Error}: {e}', force=True)
+            force, lable = [False, MT_Error] if type(e) in ETHERNET_ERRORS else [True, MT_Critical_Error]
+            logger.exception(f'< [GET_REQUEST_ROBLOX] > | {cookies['.ROBLOSECURITY'][115:130] if cookies else 'No cookie'} | {lable}: {e}', force=force)
             await asyncio.sleep(5)
 
 async def sendPostRequestRoblox(
@@ -3149,7 +3172,6 @@ async def getProfileInformationRoblox(
         'Collections',
         'Communities',
         'FavoriteExperiences',
-        'RobloxBadges',
         'PlayerBadges',
         'Statistics',
         'Experiences',
@@ -3162,39 +3184,36 @@ async def getProfileInformationRoblox(
     json = {
         'components': [{'component': component} for component in components],
         'includeComponentOrdering': True,
-        'profileId': str(userId),
+        'profileId': userId,
         'profileType': 'User'
     }
     return await (await sendPostRequestRoblox('https://apis.roblox.com/profile-platform-api/v1/profiles/get', json=json, cookies=cookies, proxies=proxies)).json()
 
-async def getMixedInformationRoblox(cookies: dict[str, str], proxies: Optional[list[str]], userId: str, outputModes: dict[str, str]) -> dict:
+async def getMixedInformationRoblox(userId: int, cookies: dict[str, str], proxies: Optional[list[str]] = None) -> dict:
     configRCCMain = config['Roblox']['CookieChecker']['Main']
     components = ()
     if configRCCMain['Place_Visits']:
         components += ('Statistics',)
-    if configRCCMain['Friends'] or configRCCMain['Followers'] or configRCCMain['Followings']:
+    if any([configRCCMain['Friends'], configRCCMain['Followers'], configRCCMain['Followings']]):
         components += ('UserProfileHeader',)
-    if configRCCMain['Roblox_Badges']:
-        components += ('RobloxBadges',)
     if not components:
-        return {'Place Visits': None, 'Roblox Badges': None, 'Friends': None, 'Followers': None, 'Followings': None}
+        return {'Place Visits': None, 'Friends': None, 'Followers': None, 'Followings': None}
     response: dict = await getProfileInformationRoblox(cookies, userId, *components, proxies=proxies)
     resultsMixed = await asyncio.gather(
         getPlaceVisitsRoblox(response),
-        getFriendsRoblox(response),
+        getFriendsRoblox(response), 
         getFollowersRoblox(response),
-        getFollowingsRoblox(response),
-        getRobloxBadgesRoblox(response, outputModes['Roblox_Badges'])
+        getFollowingsRoblox(response)
     )
     returner = {}
     for value in resultsMixed:
         returner.update(value)
     return returner
 
-async def getAccountInformationRoblox(cookies: dict[str, str], proxies: Optional[list[str]]) -> dict:
+async def getAccountInformationRoblox(cookies: dict[str, str], proxies: Optional[list[str]] = None) -> dict:
     return await sendGetRequestRoblox('https://www.roblox.com/my/settings/json', cookies=cookies, proxies=proxies)
 
-async def getLinkRoblox(userId: str) -> dict[str, Optional[dict]]:
+async def getLinkRoblox(userId: int) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Link']:
         return {'Link': None}
     return {
@@ -3228,12 +3247,12 @@ async def getDisplayNameRoblox(accountInformation: dict) -> dict[str, Optional[d
         }
     }
 
-async def getRegistrationDateRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, accountInformation: dict) -> dict[str, Optional[dict]]:
+async def getRegistrationDateRoblox(accountInformation: dict, userId: int, cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Registration_Date_DMY']:
         return {'Registration Date': None}
     response: dict = await sendGetRequestRoblox(f'https://users.roblox.com/v1/users/{userId}', cookies=cookies, proxies=proxies)
-    registrationDateDMY              = convertDate(response['created'], '%d.%m.%Y')
-    registrationDateInDays           = accountInformation['AccountAgeInDays']
+    registrationDateDMY = convertDate(response['created'], '%d.%m.%Y')
+    registrationDateInDays = accountInformation['AccountAgeInDays']
     registrationDateInDaysInBrackets = f' ({registrationDateInDays})' if config['Roblox']['CookieChecker']['Main']['Registration_Date_In_Days'] else ''
     return {
         'Registration Date': {
@@ -3244,7 +3263,7 @@ async def getRegistrationDateRoblox(cookies: dict, proxies: Optional[list[str]],
         }
     }
 
-async def getCountryRegistrationRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
+async def getCountryRegistrationRoblox(cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Country_Registration']:
         return {'Country Registration': None}
     response: dict = await sendGetRequestRoblox('https://users.roblox.com/v1/users/authenticated/country-code', cookies=cookies, proxies=proxies)
@@ -3257,7 +3276,7 @@ async def getCountryRegistrationRoblox(cookies: dict, proxies: Optional[list[str
         }
     }
 
-async def getRobuxRoblox(cookies: dict, proxies: Optional[list[str]], userId: str) -> dict[str, Optional[dict]]:
+async def getRobuxRoblox(userId: int, cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Robux']:
         return {'Robux': None}
     response: dict = await sendGetRequestRoblox(f'https://economy.roblox.com/v1/users/{userId}/currency', cookies=cookies, proxies=proxies)
@@ -3270,7 +3289,7 @@ async def getRobuxRoblox(cookies: dict, proxies: Optional[list[str]], userId: st
         }
     }
 
-async def getBillingRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
+async def getBillingRoblox(cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Billing']:
         return {'Billing': None}
     response: dict = await sendGetRequestRoblox('https://billing.roblox.com/v1/credit', cookies=cookies, proxies=proxies)
@@ -3283,7 +3302,7 @@ async def getBillingRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[
         }
     }
 
-async def getTransactionsForYearRoblox(cookies: dict, proxies: Optional[list[str]], userId: str) -> dict[str, Optional[dict]]:
+async def getTransactionsForYearRoblox(userId: int, cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not (config['Roblox']['CookieChecker']['Main']['Pending'] or config['Roblox']['CookieChecker']['Main']['Donate_1_Year']):
         return {'Pending': None, 'Donate (1 Year)': None}
     response: dict = await sendGetRequestRoblox(f'https://economy.roblox.com/v2/users/{userId}/transaction-totals?timeFrame=Year&transactionType=Summary', cookies=cookies, proxies=proxies)
@@ -3310,7 +3329,7 @@ async def getTransactionsForYearRoblox(cookies: dict, proxies: Optional[list[str
         
     return returner
 
-async def getDonateAllTimeRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, outputMode: str = 'NameNumber') -> dict[str, Optional[dict]]:
+async def getDonateAllTimeRoblox(userId: int, cookies: dict, proxies: Optional[list[str]] = None, outputMode: str = 'NameNumber') -> dict[str, Optional[dict]]:
     checkDonateAllTime = config['Roblox']['CookieChecker']['Main']['Donate_All_Time']
     checkCustomGamepasses = config['Roblox']['CookieChecker']['Main']['Custom_Gamepasses']
     if not (checkDonateAllTime or checkCustomGamepasses):
@@ -3329,7 +3348,6 @@ async def getDonateAllTimeRoblox(cookies: dict, proxies: Optional[list[str]], us
     while nextCursor is not None and currentPage != maximumPage:
         response: Optional[dict[str, dict[dict[str, str]]]] = await sendGetRequestRoblox(f'https://economy.roblox.com/v2/users/{userId}/transactions?transactionType=2&limit=100&cursor={nextCursor}', cookies=cookies, proxies=proxies)
         if response is None:
-            nextCursor = None
             break
             
         for transaction in response['data']:
@@ -3367,7 +3385,7 @@ async def getDonateAllTimeRoblox(cookies: dict, proxies: Optional[list[str]], us
         
     return returner
 
-async def getRapRoblox(cookies: dict, proxies: Optional[list[str]], userId: str) -> dict[str, Optional[dict]]:
+async def getRapRoblox(userId: int, cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Rap']:
         return {'Rap': None}
     rap = 0
@@ -3389,7 +3407,7 @@ async def getRapRoblox(cookies: dict, proxies: Optional[list[str]], userId: str)
         }
     }
 
-async def getCardRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
+async def getCardRoblox(cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Card']:
         return {'Card': None}
     response: dict = await sendGetRequestRoblox(f'https://apis.roblox.com/payments-gateway/v1/payment-profiles', cookies=cookies, proxies=proxies)
@@ -3415,7 +3433,7 @@ async def getPremiumRoblox(accountInformation: dict) -> dict[str, Optional[dict]
         }
     }
 
-async def getGamepassesRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, outputMode: str = 'PlaceNames') -> dict[str, Optional[dict]]:
+async def getGamepassesRoblox(userId: int, cookies: dict, proxies: Optional[list[str]] = None, outputMode: str = 'PlaceNames') -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Gamepasses']:
         return {'Gamepasses': None}
     gamepasses = {gamepass['PlaceName']: [] for gamepass in checkListGamepasses.values()}
@@ -3447,7 +3465,7 @@ async def getGamepassesRoblox(cookies: dict, proxies: Optional[list[str]], userI
         }
     }
 
-async def getBadgesRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, outputMode: str = 'PlaceNames') -> dict[str, Optional[dict]]:
+async def getBadgesRoblox(userId: int, cookies: dict, proxies: Optional[list[str]] = None, outputMode: str = 'PlaceNames') -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Badges']:
         return {'Badges': None}
     badges = {badge['PlaceName']: [] for badge in checkListBadges.values()}
@@ -3476,7 +3494,7 @@ async def getBadgesRoblox(cookies: dict, proxies: Optional[list[str]], userId: s
         }
     }
 
-async def getFavoritePlacesRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, outputMode: str = 'Names') -> dict[str, Optional[dict]]:
+async def getFavoritePlacesRoblox(userId: int, cookies: dict, proxies: Optional[list[str]] = None, outputMode: str = 'Names') -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Favorite_Places']:
         return {'Favorite Places': None}
     favoritePlaces = []
@@ -3505,7 +3523,7 @@ async def getFavoritePlacesRoblox(cookies: dict, proxies: Optional[list[str]], u
         }
     }
 
-async def getPlacesWeeklyPlaytimeRoblox(cookies: dict, proxies: Optional[list[str]], outputMode: str = 'Names') -> dict:
+async def getPlacesWeeklyPlaytimeRoblox(cookies: dict, proxies: Optional[list[str]] = None, outputMode: str = 'Names') -> dict:
     if not config['Roblox']['CookieChecker']['Main']['Places_Weekly_Playtime']:
         return {'Places Weekly Playtime': None}
     response: dict = await sendGetRequestRoblox('https://apis.roblox.com/parental-controls-api/v1/parental-controls/get-top-weekly-screentime-by-universe', cookies=cookies, proxies=proxies)
@@ -3536,7 +3554,7 @@ async def getPlacesWeeklyPlaytimeRoblox(cookies: dict, proxies: Optional[list[st
         }
     }
 
-async def getBundlesRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, outputMode: str = 'Names') -> dict[str, Optional[dict]]:
+async def getBundlesRoblox(userId: int, cookies: dict, proxies: Optional[list[str]] = None, outputMode: str = 'Names') -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Bundles']:
         return {'Bundles': None, 'Korblox': None, 'Headless': None}
     returner = {}
@@ -3595,7 +3613,7 @@ async def getBundlesRoblox(cookies: dict, proxies: Optional[list[str]], userId: 
         
     return returner
 
-async def getInventoryPrivacyRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
+async def getInventoryPrivacyRoblox(cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Inventory_Privacy']:
         return {'Inventory Privacy': None}
     response: dict = await sendGetRequestRoblox('https://apis.roblox.com/user-settings-api/v1/user-settings/settings-and-options', cookies=cookies, proxies=proxies)
@@ -3613,7 +3631,7 @@ async def getInventoryPrivacyRoblox(cookies: dict, proxies: Optional[list[str]])
         }
     }
 
-async def getTradePrivacyRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
+async def getTradePrivacyRoblox(cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Trade_Privacy']:
         return {'Trade Privacy': None}
     response: dict = await sendGetRequestRoblox('https://accountsettings.roblox.com/v1/trade-privacy', cookies=cookies, proxies=proxies)
@@ -3643,7 +3661,7 @@ async def getCanTradeRoblox(accountInformation: dict) -> dict[str, Optional[dict
         }
     }
 
-async def getSessionsRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
+async def getSessionsRoblox(cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Sessions']:
         return {'Sessions': None}
     sessions = 0
@@ -3684,7 +3702,7 @@ async def getEmailRoblox(accountInformation: dict) -> dict[str, Optional[dict]]:
         }
     }
 
-async def getPhoneRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
+async def getPhoneRoblox(cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Phone']:
         return {'Phone': None}
     response: dict = await sendGetRequestRoblox('https://accountinformation.roblox.com/v1/phone', cookies=cookies, proxies=proxies)
@@ -3721,7 +3739,7 @@ async def getPinRoblox(accountInformation: dict) -> dict[str, Optional[dict]]:
         }
     }
 
-async def getGroupsInformationRoblox(cookies: dict, proxies: Optional[list[str]], userId: str, outputMode: str = 'Names') -> dict[str, Optional[dict]]:
+async def getGroupsInformationRoblox(userId: int, cookies: dict, proxies: Optional[list[str]] = None, outputMode: str = 'Names') -> dict[str, Optional[dict]]:
     configRCCMain = config['Roblox']['CookieChecker']['Main']
     if not (configRCCMain['Groups_Owned'] or configRCCMain['Groups_Members'] or configRCCMain['Groups_Pending'] or configRCCMain['Groups_Funds']):
         return {'Groups Owned': None, 'Groups Members': None, 'Groups Pending': None, 'Groups Funds': None}
@@ -3758,15 +3776,15 @@ async def getGroupsInformationRoblox(cookies: dict, proxies: Optional[list[str]]
 
     groupsIds = list(groupsOwned.values())
     groupsPending, groupsFunds = await asyncio.gather(
-        getGroupsPendingRoblox(cookies, proxies, groupsIds),
-        getGroupsFundsRoblox(  cookies, proxies, groupsIds)
+        getGroupsPendingRoblox(groupsIds, cookies, proxies),
+        getGroupsFundsRoblox(  groupsIds, cookies, proxies)
     )
     returner.update(groupsPending)
     returner.update(groupsFunds)
 
     return returner
 
-async def getGroupsPendingRoblox(cookies: dict, proxies: Optional[list[str]], groupsIds: list[str]) -> dict[str, Optional[dict]]:
+async def getGroupsPendingRoblox(groupsIds: list[str], cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Groups_Pending']:
         return {'Groups Pending': None}
     groupsPending = 0
@@ -3784,7 +3802,7 @@ async def getGroupsPendingRoblox(cookies: dict, proxies: Optional[list[str]], gr
         }
     }
 
-async def getGroupsFundsRoblox(cookies: dict, proxies: Optional[list[str]], groupsIds: list[str]) -> dict[str, Optional[dict]]:
+async def getGroupsFundsRoblox(groupsIds: list[str], cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Groups_Funds']:
         return {'Groups Funds': None}
     groupsFunds = 0
@@ -3821,23 +3839,24 @@ def convertAgeGroupRoblox(text: str) -> str:
         logger.warning(f'< [CONVERT_AGE_GROUP_ROBLOX] > Can\'t convert age: {text}', force=True)
         return 'UNK'
     
-    direction, age, checked = match.groups()
-    return f'{age}{'+' if direction.lower() == 'over' else '-'}{' (Checked)' if checked else ''}'
+    direction, ageFrom, ageTo = match.groups()
+    return f'{ageFrom}{f'-{ageTo}' if ageTo else ''}{AGE_GROUP_MAPPING.get(str(direction).lower(), '')}'
 
-async def getAgeGroupRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
+async def getAgeGroupRoblox(cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Age_Group']:
         return {'Age Group': None}
     response: dict = await sendGetRequestRoblox('https://apis.roblox.com/user-settings-api/v1/account-insights/age-group', cookies=cookies, proxies=proxies)
     ageGroup = convertAgeGroupRoblox(response['ageGroupTranslationKey'])
+    isChecked = ' (Checked)' if response['isChecked'] else ''
     return {
         'Age Group': {
-            'color': f'{ANSI.FG.CYAN}Age Group:{ANSI.FG.WHITE} {ageGroup}',
-            'no-color': f'Age Group: {ageGroup}',
-            'sort-str': ageGroup
+            'color': f'{ANSI.FG.CYAN}Age Group:{ANSI.FG.WHITE} {ageGroup}{isChecked}',
+            'no-color': f'Age Group: {ageGroup}{isChecked}',
+            'sort-str': f'{ageGroup}{isChecked}'
         }
     }
 
-async def getVerifiedAgeRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
+async def getVerifiedAgeRoblox(cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Verified_Age']:
         return {'Verified Age': None}
     response: dict = await sendGetRequestRoblox('https://apis.roblox.com/age-verification-service/v1/age-verification/verified-age', cookies=cookies, proxies=proxies)
@@ -3850,7 +3869,7 @@ async def getVerifiedAgeRoblox(cookies: dict, proxies: Optional[list[str]]) -> d
         }
     }
 
-async def getVerifiedVoiceRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
+async def getVerifiedVoiceRoblox(cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Verified_Voice']:
         return {'Verified Voice': None}
     response: dict = await sendGetRequestRoblox('https://voice.roblox.com/v1/settings', cookies=cookies, proxies=proxies)
@@ -3899,10 +3918,11 @@ async def getFollowingsRoblox(data: dict) -> dict[str, Optional[dict]]:
         }
     }
 
-async def getRobloxBadgesRoblox(data: dict, outputMode: str = 'Names') -> dict[str, Optional[dict]]:
+async def getRobloxBadgesRoblox(userId: int, cookies: dict, proxies: Optional[list[str]] = None, outputMode: str = 'Names') -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['Roblox_Badges']:
         return {'Roblox Badges': None}
-    robloxBadges = [robloxBadge['type']['value'] for robloxBadge in data['components']['RobloxBadges']['robloxBadgeList']]
+    response = await sendGetRequestRoblox(f'https://accountinformation.roblox.com/v1/users/{userId}/roblox-badges', cookies=cookies, proxies=proxies)
+    robloxBadges = [badge['name'] for badge in response]
     value = formatNNOutput(robloxBadges, mode=outputMode) if robloxBadges else '0'
     return {
         'Roblox Badges': {
@@ -3913,7 +3933,7 @@ async def getRobloxBadgesRoblox(data: dict, outputMode: str = 'Names') -> dict[s
         }
     }
 
-async def getXCSRFTokenRoblox(cookies: dict, proxies: Optional[list[str]]) -> dict[str, Optional[dict]]:
+async def getXCSRFTokenRoblox(cookies: dict, proxies: Optional[list[str]] = None) -> dict[str, Optional[dict]]:
     if not config['Roblox']['CookieChecker']['Main']['X_CSRF_Token']:
         return {'X-CSRF-Token': None}
     response: ClientResponse = await sendPostRequestRoblox('https://auth.roblox.com/v2/logout', cookies=cookies, proxies=proxies)
@@ -4070,7 +4090,7 @@ async def sortingDataRoblox(locker: asyncio.Lock, path: Path, category: str, sor
             sortListNamesDataRoblox(sortOptions[category]['names'], locker, path, allDataString, complexData)
         )
 
-async def robloxCookieValidChecker(category: str, cookies: set[str], proxies: Optional[list[str]]) -> list[str]:
+async def robloxCookieValidChecker(category: str, cookies: set[str], proxies: Optional[list[str]] = None) -> list[str]:
     if not config['Roblox'][category]['General']['First_Check_All_Cookies_For_Valid']:
         return list(cookies)
 
@@ -4106,54 +4126,56 @@ async def robloxCookieValidChecker(category: str, cookies: set[str], proxies: Op
         return errorOrCorrectHandler(True, MT_All_Cookies_Were_Invalid, generateVisualPath(MT_Roblox, MT_Cookie_Checker if category == 'CookieChecker' else MT_Transaction_Analysis))
 
     removeLines(1)
+    cmdWriter('\n')
     return list(cookies)
 
-async def dataFromCookieRoblox(order: list[str], checkedAccounts: set[str], cookies: dict[str, str], proxies: Optional[list[str]], outputModes: dict[str, str]) -> dict[str, dict]:
+async def dataFromCookieRoblox(order: list[str], checkedAccounts: set[int], cookies: dict[str, str], proxies: Optional[list[str]] = None, outputModes: dict[str, str] = None) -> dict[str, dict]:
     accountInformation = await getAccountInformationRoblox(cookies, proxies)
-    userId = str(accountInformation['UserId'])
+    userId = accountInformation['UserId']
     if userId in checkedAccounts:
         return userId
     checkedAccounts.add(userId)
 
     responseAllDataList: list[dict] = await asyncio.gather(
-        getMixedInformationRoblox(    cookies, proxies,  userId,                       outputModes),
-        getLinkRoblox(                                   userId),
-        getNameRoblox(                                            accountInformation),
-        getDisplayNameRoblox(                                     accountInformation),
-        getRegistrationDateRoblox(    cookies, proxies,  userId,  accountInformation),
-        getCountryRegistrationRoblox( cookies, proxies),
-        getRobuxRoblox(               cookies, proxies,  userId),
-        getBillingRoblox(             cookies, proxies),
-        getTransactionsForYearRoblox( cookies, proxies,  userId),
-        getDonateAllTimeRoblox(       cookies, proxies,  userId,                       outputModes['Custom_Gamepasses']),
-        getRapRoblox(                 cookies, proxies,  userId),
-        getCardRoblox(                cookies, proxies),
-        getPremiumRoblox(                                         accountInformation),
-        getGamepassesRoblox(          cookies, proxies,  userId,                       outputModes['Gamepasses']),
-        getBadgesRoblox(              cookies, proxies,  userId,                       outputModes['Badges']),
-        getFavoritePlacesRoblox(      cookies, proxies,  userId,                       outputModes['Favorite_Places']),
-        getPlacesWeeklyPlaytimeRoblox(cookies, proxies,                                outputModes['Places_Weekly_Playtime']),
-        getBundlesRoblox(             cookies, proxies,  userId,                       outputModes['Bundles']),
-        getInventoryPrivacyRoblox(    cookies, proxies),
-        getTradePrivacyRoblox(        cookies, proxies),
-        getCanTradeRoblox(                                        accountInformation),
-        getSessionsRoblox(            cookies, proxies),
-        getEmailRoblox(                                           accountInformation),
-        getPhoneRoblox(               cookies, proxies),
-        get2FARoblox(                                             accountInformation),
-        getPinRoblox(                                             accountInformation),
-        getGroupsInformationRoblox(   cookies, proxies,  userId,                       outputModes['Groups_Owned']),
-        getAgeGroupRoblox(            cookies, proxies),
-        getVerifiedAgeRoblox(         cookies, proxies),
-        getVerifiedVoiceRoblox(       cookies, proxies),
-        getXCSRFTokenRoblox(          cookies, proxies)
+        getMixedInformationRoblox(userId, cookies, proxies),
+        getLinkRoblox(userId),
+        getNameRoblox(accountInformation),
+        getDisplayNameRoblox(accountInformation),
+        getRegistrationDateRoblox(accountInformation, userId, cookies, proxies),
+        getCountryRegistrationRoblox(cookies, proxies),
+        getRobuxRoblox(userId, cookies, proxies),
+        getBillingRoblox(cookies, proxies),
+        getTransactionsForYearRoblox( userId, cookies, proxies),
+        getDonateAllTimeRoblox(userId, cookies, proxies, outputModes['Custom_Gamepasses']),
+        getRapRoblox(userId, cookies, proxies),
+        getCardRoblox(cookies, proxies),
+        getPremiumRoblox(accountInformation),
+        getGamepassesRoblox(userId, cookies, proxies, outputModes['Gamepasses']),
+        getBadgesRoblox(userId, cookies, proxies, outputModes['Badges']),
+        getFavoritePlacesRoblox(userId, cookies, proxies, outputModes['Favorite_Places']),
+        getPlacesWeeklyPlaytimeRoblox(cookies, proxies, outputModes['Places_Weekly_Playtime']),
+        getBundlesRoblox(userId, cookies, proxies, outputModes['Bundles']),
+        getInventoryPrivacyRoblox(cookies, proxies),
+        getTradePrivacyRoblox(cookies, proxies),
+        getCanTradeRoblox(accountInformation),
+        getSessionsRoblox(cookies, proxies),
+        getEmailRoblox(accountInformation),
+        getPhoneRoblox(cookies, proxies),
+        get2FARoblox(accountInformation),
+        getPinRoblox(accountInformation),
+        getGroupsInformationRoblox(userId, cookies, proxies, outputModes['Groups_Owned']),
+        getAgeGroupRoblox(cookies, proxies),
+        getVerifiedAgeRoblox(cookies, proxies),
+        getVerifiedVoiceRoblox(cookies, proxies),
+        getRobloxBadgesRoblox(userId, cookies, proxies, outputModes['Roblox_Badges']),
+        getXCSRFTokenRoblox(cookies, proxies)
     )
 
     responseAllDataTimedDict = {
         'ID': {
             'color': f'{ANSI.FG.CYAN}ID:{ANSI.FG.WHITE} {userId}',
             'no-color': f'ID: {userId}',
-            'sort-str': userId
+            'sort-str': str(userId)
         }
     } if config['Roblox']['CookieChecker']['Main']['ID'] else {'ID': None}
 
@@ -4179,7 +4201,7 @@ async def robloxCookieChecker(file: str) -> None:
     if isUseProxy and not proxiesFromFile:
         return
 
-    cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Cookie Checker', f'{file}.txt'), generateVisualPath(MT_Roblox, MT_Cookie_Checker))
+    cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Cookie Checker', file), generateVisualPath(MT_Roblox, MT_Cookie_Checker))
     if not cookiesFromFile:
         return
 
@@ -4494,7 +4516,7 @@ async def robloxCookieChecker(file: str) -> None:
                 logger.exception(f'< [ROBLOX_COOKIE_CHECKER] > {MT_Critical_Error}: {e}', force=True)
 
     savePath.mkdir(parents=True, exist_ok=True)
-    cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}.txt{ANSI.DECOR.UNDERLINEOFF}\':\n')
+    cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}{ANSI.DECOR.UNDERLINEOFF}\':\n')
     
     start = timer('start')
     await asyncio.gather(
@@ -4506,10 +4528,42 @@ async def robloxCookieChecker(file: str) -> None:
     playSystemSound()
 
     if isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
-        messageText = f'*💜 {MT_Roblox} {MT_Cookie_Checker.lower()}\n\n🟢 {MT_Valid}: {counters['valid']}\n🟡 {MT_Duplicates}: {counters['duplicates']}\n🔴 {MT_Invalid}: {counters['invalid']}\n🟠 {MT_Banned[1]}: {counters['banned']}\n\n{f'💎 Robux: {totalDataCurrent['Robux'] if type(totalDataCurrent['Robux']) is int else 'Off'}\n'}{f'💵 Billing: {totalDataCurrent['Billing'] if type(totalDataCurrent['Billing']) is int else 'Off'}\n'}{f'⌛ Pending: {totalDataCurrent['Pending'] if type(totalDataCurrent['Pending']) is int else 'Off'}\n'}{f'💰 Donate \\(1 Year\\): {totalDataCurrent['Donate (1 Year)'] if type(totalDataCurrent['Donate (1 Year)']) is int else 'Off'}\n'}{f'💰 Donate \\(All Time\\): {totalDataCurrent['Donate (All Time)'] if type(totalDataCurrent['Donate (All Time)']) is int else 'Off'}\n'}{f'🚀 Rap: {totalDataCurrent['Rap'] if type(totalDataCurrent['Rap']) is int else 'Off'}\n'}{f'💳 Card: {totalDataCurrent['Card'] if type(totalDataCurrent['Card']) is int else 'Off'}\n'}{f'👑 Premium: {totalDataCurrent['Premium'] if type(totalDataCurrent['Premium']) is int else 'Off'}\n'}{f'🎫 Gamepasses: {totalDataCurrent['Gamepasses'] if type(totalDataCurrent['Gamepasses']) is int else 'Off'}\n'}{f'🎫 Custom Gamepasses: {totalDataCurrent['Custom Gamepasses'] if type(totalDataCurrent['Custom Gamepasses']) is int else 'Off'}\n'}{f'🏆 Badges: {totalDataCurrent['Badges'] if type(totalDataCurrent['Badges']) is int else 'Off'}\n'}{f'⭐ Favorite Places: {totalDataCurrent['Favorite Places'] if type(totalDataCurrent['Favorite Places']) is int else 'Off'}\n'}{f'📦 Bundles: {totalDataCurrent['Bundles'] if type(totalDataCurrent['Bundles']) is int else 'Off'}\n'}{f'🌐 Groups Owned: {totalDataCurrent['Groups Owned'] if type(totalDataCurrent['Groups Owned']) is int else 'Off'}\n'}{f'👯‍♀️ Groups Members: {totalDataCurrent['Groups Members'] if type(totalDataCurrent['Groups Members']) is int else 'Off'}\n'}{f'⌛ Groups Pending: {totalDataCurrent['Groups Pending'] if type(totalDataCurrent['Groups Pending']) is int else 'Off'}\n'}{f'💎 Groups Funds: {totalDataCurrent['Groups Funds'] if type(totalDataCurrent['Groups Funds']) is int else 'Off'}'}*'
+        messageText = (
+            f'<b>💜 {MT_Roblox} {MT_Cookie_Checker.lower()}\n\n'
+        
+            f'🟢 {MT_Valid}: {counters['valid']}\n'
+            f'🟡 {MT_Duplicates}: {counters['duplicates']}\n'
+            f'🔴 {MT_Invalid}: {counters['invalid']}\n'
+            f'🟠 {MT_Banned[1]}: {counters['banned']}\n\n'
+            
+            + '\n'.join(
+                f'{e} {k}: {totalDataCurrent[k] if isinstance(totalDataCurrent[k], int) else 'Off'}'
+                for e, k in [
+                    ('💎', 'Robux'),
+                    ('💵', 'Billing'),
+                    ('⌛', 'Pending'),
+                    ('💰', 'Donate (1 Year)'),
+                    ('💰', 'Donate (All Time)'),
+                    ('🚀', 'Rap'),
+                    ('💳', 'Card'),
+                    ('👑', 'Premium'),
+                    ('🎫', 'Gamepasses'),
+                    ('🎫', 'Custom Gamepasses'),
+                    ('🏆', 'Badges'),
+                    ('⭐', 'Favorite Places'),
+                    ('📦', 'Bundles'),
+                    ('🌐', 'Groups Owned'),
+                    ('👯‍♀️', 'Groups Members'),
+                    ('⌛', 'Groups Pending'),
+                    ('💎', 'Groups Funds')
+                ]
+            )
+            + '</b>'
+        )
         makeArchive(dateOfCheck, 'Roblox', 'Cookie Checker', 'outputs')
-        await sendMessageTelegramBot(messageText, 'Roblox', 'Cookie Checker', 'outputs', 'archives', f'{dateOfCheck}.zip')
-        sendMessageDiscordWebhook(messageText.replace('*', '**'), f'{dateOfCheck}.zip', 'Roblox', 'Cookie Checker', 'outputs', 'archives')
+        _path = Path('Roblox', 'Cookie Checker', 'outputs', 'archives', f'{dateOfCheck}.zip')
+        await sendMessageTelegramBot(messageText, _path)
+        sendMessageDiscordWebhook(f'**{messageText.lstrip('<b>').rstrip('</b>')}**', _path)
         cmdWriter('\n')
 
     waitingInput()
@@ -4517,10 +4571,8 @@ async def robloxCookieChecker(file: str) -> None:
 def printGeneralRCC():
     length = len(str(len(cookieData.listOfCookieData))) + 12
     for index, data in enumerate(cookieData.listOfCookieData):
-        if data[0] == 'Card':
-            cmdWriter(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][data[1]])} {data[0]} ({ANSI.FG.RED}{MT_Can_Break_USA_Cookie}{ANSI.FG.WHITE})\n')
-            continue
-        cmdWriter(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][data[1]])} {data[0]}\n')
+        extendedMessage = f' ({ANSI.FG.RED}{MT_Can_Break_USA_Cookie}{ANSI.FG.WHITE})' if data[0] in WARNED_CATEGORIES_GENERAL_RCC else ''
+        cmdWriter(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {enabledOrDisabledOption(config['Roblox']['CookieChecker']['Main'][data[1]])} {data[0]}{extendedMessage}\n')
 
 def generalCategoryRCC(printItems: bool = False, categoryName = '') -> list:
     noDuplicatedArrays = []
@@ -4961,10 +5013,17 @@ async def robloxCookieSorter() -> None:
     playSystemSound()
 
     if config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'] or config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']:
-        messageText = f'*💜 {MT_Roblox} {MT_Cookie_Sorter.lower()}\n\n🟢 {MT_Unique_Cookies_Found}: {counters['unique']} \n🟡 {MT_Duplicated_Cookies_Removed}: {counters['duplicates']} \n🔴 {MT_Incorrect_Cookies_Removed}: {counters['incorrect']}*'
+        messageText = (
+            f'<b>💜 {MT_Roblox} {MT_Cookie_Sorter.lower()}\n\n'
+            
+            f'🟢 {MT_Unique_Cookies_Found}: {counters['unique']} \n'
+            f'🟡 {MT_Duplicated_Cookies_Removed}: {counters['duplicates']} \n'
+            f'🔴 {MT_Incorrect_Cookies_Removed}: {counters['incorrect']}</b>'
+        )
         makeArchive(dateOfSorting, 'Roblox', 'Cookie Sorter', 'outputs')
-        await sendMessageTelegramBot(messageText, 'Roblox', 'Cookie Sorter', 'outputs', 'archives', f'{dateOfSorting}.zip')
-        sendMessageDiscordWebhook(messageText.replace('*', '**'), f'{dateOfSorting}.zip', 'Roblox', 'Cookie Sorter', 'outputs', 'archives')
+        _path = Path('Roblox', 'Cookie Sorter', 'outputs', 'archives', f'{dateOfSorting}.zip')
+        await sendMessageTelegramBot(messageText, _path)
+        sendMessageDiscordWebhook(f'**{messageText.lstrip('<b>').rstrip('</b>')}**', _path)
         cmdWriter('\n')
 
     waitingInput()
@@ -4981,31 +5040,49 @@ async def saveCookieRCR(mode: Literal['MassMode', 'SingleMode'], oldCookie: str,
         async with aiofiles.open(savePath / 'new_cookie.txt', 'a', encoding='utf-8', errors='ignore') as file:
             await file.write(f'{newCookie}\n')
 
-async def getXCSRFToken(cookies: dict[str, str], proxies: Optional[list[str]]) -> str:
+async def getXCSRFToken(cookies: dict[str, str], proxies: Optional[list[str]] = None) -> str:
     return (await sendPostRequestRoblox('https://auth.roblox.com/v2/logout', cookies=cookies, proxies=proxies)).headers['X-CSRF-Token']
 
-async def getRBXAuthenticationTicket(cookies: dict[str, str], proxies: Optional[list[str]]) -> tuple[str, str]:
-    isXCSRFToken = await getXCSRFToken(cookies, proxies)
+async def getRBXAuthenticationTicket(cookies: dict[str, str], proxies: Optional[list[str]] = None, XCSRFToken: Optional[str] = None) -> tuple[str, str]:
+    if XCSRFToken is None:
+        XCSRFToken = await getXCSRFToken(cookies, proxies)
+
     headers = {
         'RBXauthenticationNegotiation': '1',
         'referer': 'https://www.roblox.com/hewhewhew',
-        'X-CSRF-Token': isXCSRFToken
+        'X-CSRF-Token': XCSRFToken
     }
     isTicket = None
     while True:
-        responseHeaders = (await sendPostRequestRoblox('https://auth.roblox.com/v1/authentication-ticket', cookies=cookies, headers=headers, proxies=proxies)).headers
+        responseHeaders = (await sendPostRequestRoblox('https://auth.roblox.com/v1/authentication-ticket', headers=headers, cookies=cookies, proxies=proxies)).headers
         isTicket = responseHeaders.get('rbx-authentication-ticket')
         if isTicket:
             break
-    return isXCSRFToken, isTicket
+    return isTicket
 
-async def createNewCookie(cookies: dict[str, str], proxies: Optional[list[str]]) -> Optional[str]:
-    isXCSRFToken, isTicket = await getRBXAuthenticationTicket(cookies, proxies)
+# async def createNewCookie(cookies: dict[str, str], proxies: Optional[list[str]] = None) -> Optional[str]:
+#     XCSRFToken = await getXCSRFToken(cookies, proxies)
+#     headers = {
+#         'X-CSRF-Token': XCSRFToken
+#     }
+#     responseHeaders = (await sendPostRequestRoblox('https://auth.roblox.com/v2/session/refresh', headers=headers, cookies=cookies, proxies=proxies)).headers
+#     isNewCookie = re.search(COOKIE_PATTERN, str(responseHeaders))
+#     if not isNewCookie:
+#         raise InvalidCookie
+
+#     if config['Roblox']['CookieRefresher']['Break_Old_Cookies']:
+#         await breakOldCookie(cookies, XCSRFToken, proxies)
+
+#     return isNewCookie.group(0)[:-1]
+
+async def createNewCookie(cookies: dict[str, str], proxies: Optional[list[str]] = None) -> Optional[str]:
+    XCSRFToken = await getXCSRFToken(cookies, proxies)
+    authTicket = await getRBXAuthenticationTicket(cookies, proxies, XCSRFToken)
     headers = {
         'RBXauthenticationNegotiation': '1'
     }
     data = {
-        'authenticationTicket': isTicket
+        'authenticationTicket': authTicket
     }
     responseHeaders = (await sendPostRequestRoblox('https://auth.roblox.com/v1/authentication-ticket/redeem', data=data, headers=headers, proxies=proxies)).headers
     isNewCookie = re.search(COOKIE_PATTERN, str(responseHeaders))
@@ -5013,18 +5090,18 @@ async def createNewCookie(cookies: dict[str, str], proxies: Optional[list[str]])
         raise InvalidCookie
 
     if config['Roblox']['CookieRefresher']['Break_Old_Cookies']:
-        await breakOldCookie(cookies, isXCSRFToken, proxies)
+        await breakOldCookie(cookies, XCSRFToken, proxies)
     return isNewCookie.group(0)[:-1]
 
-async def breakOldCookie(cookies: dict[str, str], isXCSRFToken: str, proxies: Optional[list[str]]) -> None:
+async def breakOldCookie(cookies: dict[str, str], XCSRFToken: str, proxies: Optional[list[str]] = None) -> None:
     headers = {
         'Cookie': f'.ROBLOSECURITY: {cookies['.ROBLOSECURITY']}',
-        'X-CSRF-Token': isXCSRFToken,
+        'X-CSRF-Token': XCSRFToken,
         'Set-Cookie': '.ROBLOSECURITY=; Max-Age=0; Path=/;'
     }
     await sendPostRequestRoblox('https://auth.roblox.com/v2/logout', cookies=cookies, headers=headers, proxies=proxies)
 
-async def massModeRCR(cookies: dict, savePath: Path, proxies: Optional[list[str]]) -> None:
+async def massModeRCR(cookies: dict, savePath: Path, proxies: Optional[list[str]] = None) -> None:
     cookie = cookies['.ROBLOSECURITY']
     oldCookie = f'{cookie[115:130]}...{cookie[-15:-1]}'
     try:
@@ -5074,14 +5151,14 @@ async def cookieRefresherMassMode(file: str) -> None:
     if isUseProxy and not proxiesFromFile:
         return
 
-    cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Cookie Refresher', 'Mass Mode', f'{file}.txt'), generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Mass_Mode))
+    cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Cookie Refresher', 'Mass Mode', file), generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Mass_Mode))
     if not cookiesFromFile:
         return
 
     dateOfRefreshing = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Roblox', 'Cookie Refresher', 'Mass Mode', 'outputs', dateOfRefreshing)
 
-    cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}.txt{ANSI.DECOR.UNDERLINEOFF}\':\n')
+    cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}{ANSI.DECOR.UNDERLINEOFF}\':\n')
     
     start = timer('start')
     await asyncio.gather(
@@ -5093,10 +5170,13 @@ async def cookieRefresherMassMode(file: str) -> None:
     playSystemSound()
     
     if config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'] or config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']:
-        messageText = f'*💜 {MT_Roblox} {MT_Cookie_Refresher.lower()}*'
+        messageText = (
+            f'<b>💜 {MT_Roblox} {MT_Cookie_Refresher.lower()}</b>'
+        )
         makeArchive(dateOfRefreshing, 'Roblox', 'Cookie Refresher', 'Mass Mode', 'outputs')
-        await sendMessageTelegramBot(messageText, 'Roblox', 'Cookie Refresher', 'Mass Mode', 'outputs', 'archives', f'{dateOfRefreshing}.zip')
-        sendMessageDiscordWebhook(messageText.replace('*', '**'), f'{dateOfRefreshing}.zip', 'Roblox', 'Cookie Refresher', 'Mass Mode', 'outputs', 'archives')
+        _path = Path('Roblox', 'Cookie Refresher', 'Mass Mode', 'outputs', 'archives', f'{dateOfRefreshing}.zip')
+        await sendMessageTelegramBot(messageText, _path)
+        sendMessageDiscordWebhook(f'**{messageText.lstrip('<b>').rstrip('</b>')}**', _path)
         cmdWriter('\n')
 
     waitingInput()
@@ -5261,9 +5341,9 @@ def placeContextMenuRTA(placeIndex: int) -> None:
 
         autoSaveConfigAndRemoveLinesInSettings(settingsRTAPlacesPlaceTab, ('C', 'С'), ('0', 'C', 'С'), 9)
 
-async def isTransactionsFromCookieFunc(checkedAccount: set, checkListPlaces: dict[str, tuple[str, int, int, tuple[str, int, str]]], cookies: dict, proxies: Optional[list[str]]) -> tuple[str, str, dict]:
+async def isTransactionsFromCookieFunc(checkedAccount: set, checkListPlaces: dict[str, tuple[str, int, int, tuple[str, int, str]]], cookies: dict, proxies: Optional[list[str]] = None) -> tuple[str, str, dict]:
     accountInformation = await getAccountInformationRoblox(cookies, proxies)
-    userId = str(accountInformation['UserId'])
+    userId = accountInformation['UserId']
     if userId in checkedAccount:
         return userId, None, None
     checkedAccount.add(userId)
@@ -5271,7 +5351,7 @@ async def isTransactionsFromCookieFunc(checkedAccount: set, checkListPlaces: dic
 
     nextPageCursor = ''
     while nextPageCursor is not None:
-        response: dict = await sendGetRequestRoblox(f'https://economy.roblox.com/v2/users/{userId}/transactions?transactionType=2&limit=100&cursor={nextPageCursor}', cookies=cookies, proxies=proxies)
+        response: dict = await sendGetRequestRoblox(f'https://economy.roblox.com/v2/users/{userId}/transactions?transactionType=Purchase&limit=100&cursor={nextPageCursor}', cookies=cookies, proxies=proxies)
         for transaction in response['data']:
             placeID = str(transaction['details']['place']['placeId']) if 'place' in transaction['details'] else str(transaction['details']['id']) if 'id' in transaction['details'] else ''
             if placeID in checkListPlaces:
@@ -5303,7 +5383,7 @@ async def robloxTransactionAnalysis(file: str) -> None:
     if isUseProxy and not proxiesFromFile:
         return
 
-    cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Transaction Analysis', f'{file}.txt'), generateVisualPath(MT_Roblox, MT_Transaction_Analysis))
+    cookiesFromFile = getCookiesFromFileRoblox(Path('Roblox', 'Transaction Analysis', file), generateVisualPath(MT_Roblox, MT_Transaction_Analysis))
     if not cookiesFromFile:
         return
 
@@ -5314,17 +5394,23 @@ async def robloxTransactionAnalysis(file: str) -> None:
     def printTotalOutputRTA():
         cmdWriter(rf'''
   {ANSI.FG.GRAY}{'_____________________________________'}
- {ANSI.FG.GRAY}/   | {                                        ANSI.FG.CYAN}Cookie{      ANSI.FG.WHITE}: {counters['cookie']} {MT_Of} {amountOfCookies}
- {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[0]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Valid{       ANSI.FG.WHITE}: {counters['valid']} ({ANSI.FG.CYAN}Dupes{ANSI.FG.WHITE}: {counters['duplicates']})
- {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[1]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Invalid{     ANSI.FG.WHITE}: {counters['invalid']}
- {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[2]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Banned{      ANSI.FG.WHITE}: {counters['banned']}
- {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[3]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Non-empty{   ANSI.FG.WHITE}: {counters['nonempty']}
- {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[4]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Transactions{ANSI.FG.WHITE}: {counters['transactions']}
- {ANSI.FG.GRAY}\   | {                                        ANSI.FG.CYAN}Robux{       ANSI.FG.WHITE}: {counters['robux']}
+ {ANSI.FG.GRAY}/   | {                                        ANSI.FG.CYAN              }Cookie{      ANSI.FG.WHITE                 }: {counters['cookie']} {MT_Of} {amountOfCookies}
+ {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[0]}{ANSI.FG.GRAY} | {ANSI.FG.GREEN             }Valid{       ANSI.FG.WHITE                 }: {counters['valid']} ({ANSI.FG.YELLOW}Dupes{ANSI.FG.WHITE}: {counters['duplicates']})
+ {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[1]}{ANSI.FG.GRAY} | {ANSI.FG.RED               }Invalid{     ANSI.FG.WHITE                 }: {counters['invalid']}
+ {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[2]}{ANSI.FG.GRAY} | {ANSI.CLEAR}{ANSI.FG.YELLOW}Banned{      ANSI.FG.WHITE}{ANSI.DECOR.BOLD}: {counters['banned']}
+ {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[3]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN              }Non-empty{   ANSI.FG.WHITE                 }: {counters['nonempty']}
+ {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[4]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN              }Transactions{ANSI.FG.WHITE                 }: {counters['transactions']}
+ {ANSI.FG.GRAY}\   | {                                        ANSI.FG.CYAN              }Robux{       ANSI.FG.WHITE                 }: {counters['robux']}
   {ANSI.FG.GRAY}{'‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾'}{ANSI.FG.WHITE}
 '''.lstrip('\n'))
 
+
+    isOutputTotal = config['Outputs']['Output_Total']
+    isSendResultsToTelegramBot = config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot']
+    isSendResultsToDiscordWebhook = config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']
+
     checkedAccounts = set()
+    telegramOutputData = {}
     amountOfCookies = len(checkReadyCookies)
     counters = {
         'cookie'       : 0,
@@ -5338,7 +5424,6 @@ async def robloxTransactionAnalysis(file: str) -> None:
     }
     validLock  = asyncio.Lock()
     exceptLock = asyncio.Lock()
-    isOutputTotal = config['Outputs']['Output_Total']
     dateOfCheck = currentDate('%d.%m.%Y - %H.%M.%S')
     savePath = Path('Roblox', 'Transaction Analysis', 'outputs', dateOfCheck)
     semaphore = asyncio.Semaphore(int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) if str(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']).isdigit() and (0 < int(config['Roblox']['TransactionAnalysis']['General']['Number_Of_Threads_For_Transaction_Analysis']) <= 500) else 50)
@@ -5363,31 +5448,43 @@ async def robloxTransactionAnalysis(file: str) -> None:
                     raise AccountDuplicate
                 partOfCookie = f'{cookie[115:130]}...{cookie[-15:-1]}'
                 accountCounters = {
-                    'transactions' : 0,
-                    'robux'        : 0
+                    'transactions': 0,
+                    'robux': 0
                 }
 
                 for _, placeData in checkListPlaces_.items():
-                    if not placeData[1]:
+                    placeRobux = placeData[1]
+                    
+                    if not placeRobux:
                         continue
-                    accountCounters['robux']        += placeData[1]
-                    accountCounters['transactions'] += placeData[2]
+                    
+                    placeName = placeData[0]
+                    placeTransactions = placeData[2]
+                    placePurchasesData = placeData[3]
+                    
+                    if isSendResultsToTelegramBot:
+                        telegramOutputData.setdefault(placeName, {'robux': 0, 'transactions': 0})
+                        telegramOutputData[placeName]['robux'] += placeRobux
+                        telegramOutputData[placeName]['transactions'] += placeTransactions
+                        
+                    accountCounters['robux'] += placeRobux
+                    accountCounters['transactions'] += placeTransactions
                     (savePath / f'{partOfCookie} ({nickname})').mkdir(parents=True, exist_ok=True)
-                    async with aiofiles.open(savePath / f'{partOfCookie} ({nickname})' / f'{placeData[0]} ({placeData[2]} {MT_On.lower()} {placeData[1]} R$).txt', 'a', encoding='utf-8') as file:
+                    async with aiofiles.open(savePath / f'{partOfCookie} ({nickname})' / f'{placeName} ({placeTransactions} {MT_On.lower()} {placeRobux} R$).txt', 'a', encoding='utf-8') as file:
                         await file.write(f'\n Meow :3\n\n {MT_Id}: {userId}\n {MT_Nickname}: {nickname}\n {MT_Link}: https://www.roblox.com/users/{userId}\n {MT_Cookie}: {cookie}\n{minuses}\n > {MT_Total.capitalize()}: {placeData[1]} R$\n{minuses}\n')
-                        for item in placeData[3]:
+                        for item in placePurchasesData:
                             await file.write(f' > {MT_Name}: {item[0]}\n > {MT_Price}: {item[1]} R$\n > {MT_Date}: {item[2]}\n{minuses}\n')
 
-                counters['robux']        += accountCounters['robux']
+                counters['robux'] += accountCounters['robux']
                 counters['transactions'] += accountCounters['transactions']
 
                 if accountCounters['transactions']:
-                    indentationLength = max(len(placeData[0]) for _, placeData in checkListPlaces_.items() if placeData[1]) + 1 if config['Roblox']['TransactionAnalysis']['General']['Indentation_By_The_Longest_Name'] else 0
+                    indentationLength = max(len(placeName) for _, placeData in checkListPlaces_.items() if placeData[1]) + 1 if config['Roblox']['TransactionAnalysis']['General']['Indentation_By_The_Longest_Name'] else 0
                     async with aiofiles.open(savePath / f'{partOfCookie} ({nickname})' / f'.All ({accountCounters['transactions']} {MT_On.lower()} {accountCounters['robux']} R$).txt', 'a', encoding='utf-8') as file:
                         await file.write(f'\n Meow :3\n\n {MT_Id}: {userId}\n {MT_Nickname}: {nickname}\n {MT_Link}: https://www.roblox.com/users/{userId}\n {MT_Cookie}: {cookie}\n{minuses}\n > {MT_Total.capitalize()}: {accountCounters['robux']} R$\n{minuses}\n')
                         for _, placeData in checkListPlaces_.items():
                             if placeData[1]:
-                                await file.write(f' > {placeData[0]:<{indentationLength}}: {placeData[1]} R$\n')                        
+                                await file.write(f' > {placeName:<{indentationLength}}: {placeData[1]} R$\n')                        
                         await file.write(f'{minuses}\n')
 
                 color = ANSI.FG.GREEN if accountCounters['transactions'] else ANSI.FG.RED
@@ -5395,10 +5492,10 @@ async def robloxTransactionAnalysis(file: str) -> None:
                     if accountCounters['transactions']:
                         counters['nonempty'] += 1
                         async with aiofiles.open(savePath / '1+ transactions.txt', 'a', encoding='utf-8') as file:
-                            await file.write(f'{MT_Link}: https://www.roblox.com/users/{userId} | {MT_Id}: {userId} | {MT_Nickname}: {nickname} | {MT_Transactions}: {accountCounters['transactions']} {MT_On.lower()} {accountCounters['robux']}| {MT_Cookie}: {cookie}\n')
+                            await file.write(f'{MT_Link}: https://www.roblox.com/users/{userId} | {MT_Id}: {userId} | {MT_Nickname}: {nickname} | {MT_Transactions}: {accountCounters['transactions']} {MT_On.lower()} {accountCounters['robux']} R$ | {MT_Cookie}: {cookie}\n')
                     else:
                         async with aiofiles.open(savePath / '0 transactions.txt', 'a', encoding='utf-8') as file:
-                            await file.write(f'{MT_Link}: https://www.roblox.com/users/{userId} | {MT_Id}: {userId} | {MT_Nickname}: {nickname} | {MT_Transactions}: {accountCounters['transactions']} {MT_On.lower()} {accountCounters['robux']}| {MT_Cookie}: {cookie}\n')
+                            await file.write(f'{MT_Link}: https://www.roblox.com/users/{userId} | {MT_Id}: {userId} | {MT_Nickname}: {nickname} | {MT_Transactions}: 0 {MT_On.lower()} 0 R$ | {MT_Cookie}: {cookie}\n')
                     consoleOutputHandlerRTA('valid', f'\r [{ANSI.FG.GREEN}>{ANSI.FG.WHITE}] {ANSI.FG.CYAN}{MT_Nickname}{ANSI.FG.WHITE}: {nickname} | {ANSI.FG.CYAN}{MT_Transactions}{ANSI.FG.WHITE}: {color}{accountCounters['transactions']} {MT_On.lower()} {accountCounters['robux']} R${ANSI.FG.WHITE}\n')
             except InvalidCookie:
                 async with exceptLock:
@@ -5419,7 +5516,7 @@ async def robloxTransactionAnalysis(file: str) -> None:
                 logger.exception(f'< [ROBLOX_TRANSACTION_ANALYSIS] > {MT_Critical_Error}: {e}', force=True)
 
     savePath.mkdir(parents=True, exist_ok=True)
-    cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}.txt{ANSI.DECOR.UNDERLINEOFF}\':\n')
+    cmdWriter(f'\r [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Start_Checking_File} \'{ANSI.DECOR.UNDERLINEON}{file}{ANSI.DECOR.UNDERLINEOFF}\':\n')
     
     start = timer('start')
     await asyncio.gather(
@@ -5430,11 +5527,28 @@ async def robloxTransactionAnalysis(file: str) -> None:
     cmdWriter(f' [{ANSI.FG.CYAN}~{ANSI.FG.WHITE}] {MT_Checking_Complete} {MT_In[1].lower()} {formatDuration(int(stop * 1000))}\n\n')
     playSystemSound()
 
-    if config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'] or config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']:
-        messageText = f'*💜 {MT_Roblox} {MT_Transaction_Analysis.lower()}\n\n🟢 {MT_Valid}: {counters['valid']}\n🟡 {MT_Duplicates}: {counters['duplicates']}\n🔴 {MT_Invalid}: {counters['invalid']}\n🟠 {MT_Banned[1]}: {counters['banned']}\n🔵 {MT_Non_Empty}: {counters['nonempty']}\n\n🛒 {MT_Transactions}: {counters['transactions']}\n💎 {MT_Spent}: {counters['robux']} R$*'
+    if isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
+        messageText = (
+            f'<b>💜 {MT_Roblox} {MT_Transaction_Analysis.lower()}\n\n'
+            
+            f'🟢 {MT_Valid}: {counters['valid']}\n'
+            f'🟡 {MT_Duplicates}: {counters['duplicates']}\n'
+            f'🔴 {MT_Invalid}: {counters['invalid']}\n'
+            f'🟠 {MT_Banned[1]}: {counters['banned']}\n'
+            f'🔵 {MT_Non_Empty}: {counters['nonempty']}\n\n'
+            
+            f'🛒 {MT_Transactions}: {counters['transactions']}\n'
+            f'💎 {MT_Spent}: {counters['robux']} R$</b>\n\n'
+            
+            + '\n'.join(
+                f'🎮 {placeName}: <b>{placeData['robux']} R$</b> за <b>{placeData['transactions']} тр.</b>'
+                for placeName, placeData in telegramOutputData.items()
+            )
+        )
         makeArchive(dateOfCheck, 'Roblox', 'Transaction Analysis', 'outputs')
-        await sendMessageTelegramBot(messageText, 'Roblox', 'Transaction Analysis', 'outputs', 'archives', f'{dateOfCheck}.zip')
-        sendMessageDiscordWebhook(messageText.replace('*', '**'), f'{dateOfCheck}.zip', 'Roblox', 'Transaction Analysis', 'outputs', 'archives')
+        _path = Path('Roblox', 'Transaction Analysis', 'outputs', 'archives', f'{dateOfCheck}.zip')
+        await sendMessageTelegramBot(messageText, _path)
+        sendMessageDiscordWebhook(messageText.replace('<b>', '**').replace('</b>', '**'), _path)
         cmdWriter('\n')
 
     waitingInput()
@@ -6353,7 +6467,7 @@ async def mainMenu() -> None:
                             removeLines(7)
                             while whileTrueStage2:
                                 cmdWriter(f' {generateVisualPath(MT_Proxy, MT_Checker)}\n\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃ {MT_Available_Formats}:\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃  – {ANSI.FG.GRAY}protocol://{ANSI.FG.WHITE}user:pass@ip:port\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃  – {ANSI.FG.GRAY}protocol://{ANSI.FG.WHITE}ip:port:user:pass\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃  – {ANSI.FG.GRAY}protocol://{ANSI.FG.WHITE}ip:port\n\n')
-                                PCFiles = printFiles(Path('Proxy', 'Checker'), isPrintFiles=True)
+                                PCFiles = getFiles(Path('Proxy', 'Checker'), isPrintFiles=True)
                                 cmdWriter(f'{'  ┃\n' if PCFiles else ''} [{ANSI.FG.YELLOW}U{ANSI.FG.WHITE}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}G{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['Output_Total'])} {MT_Output_Total}\n [{ANSI.FG.YELLOW}L{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Show_Amount_Of_Lines_In_Files'])} {MT_Show_Amount_Of_Lines_In_Files}\n [{ANSI.FG.YELLOW}S{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['Play_Sound_At_The_End_Of_The_Work'])} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}T{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'])} {MT_Send[3]} {MT_Results_To_Telegram[0].lower()}{MT_Results_To_Telegram[1:]}\n [{ANSI.FG.YELLOW}D{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'])} {MT_Send[3]} {MT_Results_To_Discord[0].lower()}{MT_Results_To_Discord[1:]}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                 proxyCheckerTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                 match proxyCheckerTab:
@@ -6401,7 +6515,7 @@ async def mainMenu() -> None:
                             whileTrueStage2 = True
                             while whileTrueStage2:
                                 cmdWriter(f' {generateVisualPath(MT_Roblox, MT_Cookie_Checker)}\n\n')
-                                RCCFiles = printFiles(Path('Roblox', 'Cookie Checker'), isPrintFiles=True)
+                                RCCFiles = getFiles(Path('Roblox', 'Cookie Checker'), isPrintFiles=True)
                                 cmdWriter(f'{'  ┃\n' if RCCFiles else ''} [{ANSI.FG.YELLOW}U{ANSI.FG.WHITE}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}G{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['Output_Total'])} {MT_Output_Total}\n [{ANSI.FG.YELLOW}P{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['General']['Proxy']['Use_Proxy'])} {MT_Use_Proxy}\n [{ANSI.FG.YELLOW}L{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Show_Amount_Of_Lines_In_Files'])} {MT_Show_Amount_Of_Lines_In_Files}\n [{ANSI.FG.YELLOW}S{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['Play_Sound_At_The_End_Of_The_Work'])} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}T{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'])} {MT_Send[3]} {MT_Results_To_Telegram[0].lower()}{MT_Results_To_Telegram[1:]}\n [{ANSI.FG.YELLOW}D{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'])} {MT_Send[3]} {MT_Results_To_Discord[0].lower()}{MT_Results_To_Discord[1:]}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                 robloxCookieCheckerTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                 match robloxCookieCheckerTab:
@@ -6481,7 +6595,7 @@ async def mainMenu() -> None:
                                         whileTrueStage3 = True
                                         while whileTrueStage3:
                                             cmdWriter(f' {generateVisualPath(MT_Roblox, MT_Cookie_Refresher, MT_Mass_Mode)}\n\n')
-                                            RCRFiles = printFiles(Path('Roblox', 'Cookie Refresher', 'Mass Mode'), isPrintFiles=True)
+                                            RCRFiles = getFiles(Path('Roblox', 'Cookie Refresher', 'Mass Mode'), isPrintFiles=True)
                                             cmdWriter(f'{'  ┃\n' if RCRFiles else ''} [{ANSI.FG.YELLOW}U{ANSI.FG.WHITE}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}L{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Show_Amount_Of_Lines_In_Files'])} {MT_Show_Amount_Of_Lines_In_Files}\n [{ANSI.FG.YELLOW}S{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['Play_Sound_At_The_End_Of_The_Work'])} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}T{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'])} {MT_Send[3]} {MT_Results_To_Telegram[0].lower()}{MT_Results_To_Telegram[1:]}\n [{ANSI.FG.YELLOW}D{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'])} {MT_Send[3]} {MT_Results_To_Discord[0].lower()}{MT_Results_To_Discord[1:]}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')    
                                             robloxCookieRefresherMassModeTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                             match robloxCookieRefresherMassModeTab:
@@ -6521,7 +6635,7 @@ async def mainMenu() -> None:
                             whileTrueStage2 = True
                             while whileTrueStage2:
                                 cmdWriter(f' {generateVisualPath(MT_Roblox, MT_Transaction_Analysis)}\n\n')
-                                RTAFiles = printFiles(Path('Roblox', 'Transaction Analysis'), isPrintFiles=True)
+                                RTAFiles = getFiles(Path('Roblox', 'Transaction Analysis'), isPrintFiles=True)
                                 cmdWriter(f'{'  ┃\n' if RTAFiles else ''} [{ANSI.FG.YELLOW}U{ANSI.FG.WHITE}] ┃ {MT_Update_List}\n [{ANSI.FG.YELLOW}G{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['Output_Total'])} {MT_Output_Total}\n [{ANSI.FG.YELLOW}P{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Roblox']['General']['Proxy']['Use_Proxy'])} {MT_Use_Proxy}\n [{ANSI.FG.YELLOW}L{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['General']['Show_Amount_Of_Lines_In_Files'])} {MT_Show_Amount_Of_Lines_In_Files}\n [{ANSI.FG.YELLOW}S{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['Play_Sound_At_The_End_Of_The_Work'])} {MT_Play_The_Sound_At_The_End_Of_The_Work}\n [{ANSI.FG.YELLOW}T{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['TelegramBot']['Send_Results_To_Telegram_Bot'])} {MT_Send[3]} {MT_Results_To_Telegram[0].lower()}{MT_Results_To_Telegram[1:]}\n [{ANSI.FG.YELLOW}D{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook'])} {MT_Send[3]} {MT_Results_To_Discord[0].lower()}{MT_Results_To_Discord[1:]}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                 transactionAnalysisTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                 match transactionAnalysisTab:
