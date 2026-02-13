@@ -131,7 +131,7 @@ ____________
        [G] [C-]       [UIS] Place Information:         https://games.roblox.com/v1/games                                                    > ['name']                in [JSON]['data']
        [G] [C-] [PGS] [PGT] Gamepasses:                https://apis.roblox.com/game-passes/v1/universes/{UniverseId}/game-passes            > ['name'], ['id']        in [JSON]['gamePasses']
        [G] [C-] [LIM] [CSR] Badges:                    https://badges.roblox.com/v1/universes/{UniverseId}/badges                           > ['name'], ['id']        in [JSON]['data']
-       [G] [C-] [LIM] [LIM] Products:                  https://apis.roblox.com/experience-store/v1/universes/{UniverseId}/store             > ['Name'], ['ProductId'] in [JSON]['developerProducts']
+       [G] [C-] [LIM]       Products:                  https://apis.roblox.com/experience-store/v1/universes/{UniverseId}/store             > ['Name'], ['ProductId'] in [JSON]['developerProducts']
 
 ______________
  [*] Telegram
