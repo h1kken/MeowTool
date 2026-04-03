@@ -66,7 +66,7 @@ except Exception as e:
 
 # MeowTool :3
 
-VERSION = 'v2.3.4'
+VERSION = 'v2.3.5'
 
 ### ANSI коды
 
@@ -4149,7 +4149,7 @@ async def robloxCookieValidChecker(category: str, cookies: set[str], proxies: Op
 
 async def dataFromCookieRoblox(order: list[str], checkedAccounts: set[int], cookies: dict[str, str], proxies: Optional[list[str]] = None, outputModes: dict[str, str] = None) -> dict[str, dict]:
     accountInformation = await getAccountInformationRoblox(cookies, proxies)
-    userId = accountInformation['UserId']
+    userId: int = accountInformation['UserId']
     if userId in checkedAccounts:
         return userId
     checkedAccounts.add(userId)
@@ -4415,7 +4415,7 @@ async def robloxCookieChecker(file: str) -> None:
             try:
                 cookies = {'.ROBLOSECURITY': cookie}
                 resultsRCC = await dataFromCookieRoblox(order, checkedAccounts, cookies, proxiesFromFile, outputModes)
-                if type(resultsRCC) is str:
+                if isinstance(resultsRCC, int):
                     raise AccountDuplicate
 
                 # Обработка данных
