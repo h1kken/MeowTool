@@ -1,5 +1,9 @@
 # envs
 .env
+.venv
+
+# bats
+run.bat
 
 # utils
 .tests
