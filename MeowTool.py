@@ -975,7 +975,6 @@ def rmTwoSpaces(string: str) -> str:
 
 def amountOfLines(path: Path) -> str:
     if not path.exists():
-        print(path)
         return '0 lines'
 
     try:
@@ -4109,8 +4108,6 @@ async def sortListNamesDataRoblox(isSort: bool, locker: str, path: Path, allData
                 await file.write(allDataString)
 
 async def sortingDataRoblox(locker: asyncio.Lock, path: Path, category: str, sortOptions: dict, allDataString: str, simpleData: int | str, complexData: dict[str, list[str]] | list[str] = None) -> None:
-    print(path, category, sortOptions, simpleData, complexData)
-    input()
     if simpleData == 0:
         if sortOptions[category]['zero']:
             path.mkdir(parents=True, exist_ok=True)
@@ -4283,7 +4280,7 @@ async def robloxCookieChecker(file: str) -> None:
     isSendResultsToDiscordWebhook = config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']
 
     donatePeriod = RCCMain['Donate_1_Period_Output_Mode']
-    if RCCMain['Donate_1_Period'] and donatePeriod not in ['Day', 'Week', 'Month', 'Year']: # 12 : 8 + 4 : 3 4 5 4
+    if RCCMain['Donate_1_Period'] and donatePeriod not in ['Day', 'Week', 'Month', 'Year']:
         donatePeriod = 'Year'
     DONATE_INDENT = 12 + (4 - len(donatePeriod))
 
