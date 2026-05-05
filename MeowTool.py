@@ -802,14 +802,24 @@ ETHERNET_ERRORS = {
 ###
 
 def migrateTo236() -> None:
-    RCCMain = config['Roblox']['CookieChecker']['Main']
-    if 'Donate_1_Period' in RCCMain:
+    RCC = config['Roblox']['CookieChecker']
+    RCCMain = RCC['Main']
+    if 'Donate_1_Year' not in RCCMain:
         return
     try:
+        # Check
         RCCMain['Donate_1_Period'] = RCCMain['Donate_1_Year']
         RCCMain['Donate_1_Period_Output_Mode'] = 'Year'
+        del RCCMain['Donate_1_Year']
+        
+        # Sort
+        RCCSorting = RCC['Sorting']
+        RCCSorting['Donate_1_Period'] = RCCSorting['Donate_1_Year']
+        del RCCSorting['Donate_1_Year']
     except:
         pass
+    finally:
+        autoSaveConfig(True)
 
 ### Константы
 
@@ -4099,6 +4109,8 @@ async def sortListNamesDataRoblox(isSort: bool, locker: str, path: Path, allData
                 await file.write(allDataString)
 
 async def sortingDataRoblox(locker: asyncio.Lock, path: Path, category: str, sortOptions: dict, allDataString: str, simpleData: int | str, complexData: dict[str, list[str]] | list[str] = None) -> None:
+    print(path, category, sortOptions, simpleData, complexData)
+    input()
     if simpleData == 0:
         if sortOptions[category]['zero']:
             path.mkdir(parents=True, exist_ok=True)
@@ -4271,8 +4283,9 @@ async def robloxCookieChecker(file: str) -> None:
     isSendResultsToDiscordWebhook = config['Outputs']['DiscordWebhook']['Send_Results_To_Discord_Webhook']
 
     donatePeriod = RCCMain['Donate_1_Period_Output_Mode']
-    if RCCMain['Donate_1_Period'] and donatePeriod not in ['Day', 'Week', 'Month', 'Year']:
+    if RCCMain['Donate_1_Period'] and donatePeriod not in ['Day', 'Week', 'Month', 'Year']: # 12 : 8 + 4 : 3 4 5 4
         donatePeriod = 'Year'
+    DONATE_INDENT = 12 + (4 - len(donatePeriod))
 
     percentCategoriesList = ['Robux', 'Billing', 'Pending', 'Donate (1 Period)', 'Donate (All Time)', 'Rap', 'Card', 'Groups Owned', 'Groups Members', 'Groups Pending', 'Groups Funds', 'Place Visits']
     outputTotalCategoriesList = percentCategoriesList + ['Premium', 'Gamepasses', 'Custom Gamepasses', 'Badges', 'Favorite Places', 'Bundles']
@@ -4303,24 +4316,24 @@ async def robloxCookieChecker(file: str) -> None:
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.YELLOW}Duplicate{              ANSI.FG.WHITE              }: {counters['duplicates']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.RED}Invalid{                   ANSI.FG.WHITE              }: {counters['invalid']}
  {ANSI.FG.GRAY}|   | {                            ANSI.CLEAR}{ANSI.FG.YELLOW}Ban{                    ANSI.CLEAR}{ANSI.DECOR.BOLD}: {counters['banned']:<24}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Robux{                    ANSI.FG.WHITE              }: {totalDataCurrent['Robux']:<22} {                     totalDataCurrent['Robux %']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Billing{                  ANSI.FG.WHITE              }: {totalDataCurrent['Billing']:<20} {                   totalDataCurrent['Billing %']}
- {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[0]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Pending{                  ANSI.FG.WHITE              }: {totalDataCurrent['Pending']:<20} {                   totalDataCurrent['Pending %']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Donate (1 {donatePeriod}){ANSI.FG.WHITE              }: {totalDataCurrent[f'Donate (1 {donatePeriod})']:<12} {totalDataCurrent[f'Donate (1 {donatePeriod}) %']}
- {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[1]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Donate (All Time){        ANSI.FG.WHITE              }: {totalDataCurrent['Donate (All Time)']:<10} {         totalDataCurrent['Donate (All Time) %']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Rap{                      ANSI.FG.WHITE              }: {totalDataCurrent['Rap']:<24} {                       totalDataCurrent['Rap %']}
- {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[2]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Card{                     ANSI.FG.WHITE              }: {totalDataCurrent['Card']:<23} {                      totalDataCurrent['Card %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Robux{                    ANSI.FG.WHITE              }: {totalDataCurrent['Robux']:<22} {                                totalDataCurrent['Robux %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Billing{                  ANSI.FG.WHITE              }: {totalDataCurrent['Billing']:<20} {                              totalDataCurrent['Billing %']}
+ {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[0]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Pending{                  ANSI.FG.WHITE              }: {totalDataCurrent['Pending']:<20} {                              totalDataCurrent['Pending %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Donate (1 {donatePeriod}){ANSI.FG.WHITE              }: {totalDataCurrent[f'Donate (1 {donatePeriod})']:<{DONATE_INDENT}} {totalDataCurrent[f'Donate (1 {donatePeriod}) %']}
+ {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[1]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Donate (All Time){        ANSI.FG.WHITE              }: {totalDataCurrent['Donate (All Time)']:<10} {                    totalDataCurrent['Donate (All Time) %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Rap{                      ANSI.FG.WHITE              }: {totalDataCurrent['Rap']:<24} {                                  totalDataCurrent['Rap %']}
+ {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[2]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Card{                     ANSI.FG.WHITE              }: {totalDataCurrent['Card']:<23} {                                 totalDataCurrent['Card %']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Premium{                  ANSI.FG.WHITE              }: {totalDataCurrent['Premium']:<20}
  {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[3]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Gamepasses{               ANSI.FG.WHITE              }: {totalDataCurrent['Gamepasses']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Custom Gamepasses{        ANSI.FG.WHITE              }: {totalDataCurrent['Custom Gamepasses']}
  {ANSI.FG.GRAY}| {ANSI.FG.PINK}{MT_Total[4]}{ANSI.FG.GRAY} | {ANSI.FG.CYAN}Badges{                   ANSI.FG.WHITE              }: {totalDataCurrent['Badges']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Favorite Places{          ANSI.FG.WHITE              }: {totalDataCurrent['Favorite Places']}
  {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Bundles{                  ANSI.FG.WHITE              }: {totalDataCurrent['Bundles']} {ANSI.FG.WHITE}({ANSI.FG.CYAN}KB{ANSI.FG.WHITE}: {totalDataCurrent['Korblox']}, {ANSI.FG.CYAN}HL{ANSI.FG.WHITE}: {totalDataCurrent['Headless']})
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Owned{             ANSI.FG.WHITE              }: {totalDataCurrent['Groups Owned']:<15} {              totalDataCurrent['Groups Owned %']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Members{           ANSI.FG.WHITE              }: {totalDataCurrent['Groups Members']:<13} {            totalDataCurrent['Groups Members %']}
- {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Pending{           ANSI.FG.WHITE              }: {totalDataCurrent['Groups Pending']:<13} {            totalDataCurrent['Groups Pending %']}
- {ANSI.FG.GRAY}\   | {                                        ANSI.FG.CYAN}Groups Funds{             ANSI.FG.WHITE              }: {totalDataCurrent['Groups Funds']:<15} {              totalDataCurrent['Groups Funds %']}
-  {ANSI.FG.GRAY}\  | {                                        ANSI.FG.CYAN}Place Visits{             ANSI.FG.WHITE              }: {totalDataCurrent['Place Visits']:<15} {              totalDataCurrent['Place Visits %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Owned{             ANSI.FG.WHITE              }: {totalDataCurrent['Groups Owned']:<15} {                         totalDataCurrent['Groups Owned %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Members{           ANSI.FG.WHITE              }: {totalDataCurrent['Groups Members']:<13} {                       totalDataCurrent['Groups Members %']}
+ {ANSI.FG.GRAY}|   | {                                        ANSI.FG.CYAN}Groups Pending{           ANSI.FG.WHITE              }: {totalDataCurrent['Groups Pending']:<13} {                       totalDataCurrent['Groups Pending %']}
+ {ANSI.FG.GRAY}\   | {                                        ANSI.FG.CYAN}Groups Funds{             ANSI.FG.WHITE              }: {totalDataCurrent['Groups Funds']:<15} {                         totalDataCurrent['Groups Funds %']}
+  {ANSI.FG.GRAY}\  | {                                        ANSI.FG.CYAN}Place Visits{             ANSI.FG.WHITE              }: {totalDataCurrent['Place Visits']:<15} {                         totalDataCurrent['Place Visits %']}
    {ANSI.FG.GRAY}{upperTotalOutputLines}{ANSI.FG.WHITE}
 '''.lstrip('\n'))
 
@@ -4384,7 +4397,7 @@ async def robloxCookieChecker(file: str) -> None:
         'Robux'                     : 'Robux',
         'Billing'                   : 'Billing',
         'Pending'                   : 'Pending',
-        'Donate_1_Period'           : 'Donate (1 Period)',
+        'Donate_1_Period'           : f'Donate (1 {donatePeriod})',
         'Donate_All_Time'           : 'Donate (All Time)',
         'Rap'                       : 'Rap',
         'Card'                      : 'Card',
@@ -4505,34 +4518,34 @@ async def robloxCookieChecker(file: str) -> None:
                     }
 
                     await asyncio.gather(
-                        *(sortingDataRoblox(sortLock, savePath / 'Sort' / categoriesNames[category], category, sortOptions, allDataString, value)              for category, value in simpleSortValues.items()  if value and sortOptions[category]['sort']),
-                        *(sortingDataRoblox(sortLock, savePath / 'Sort' / categoriesNames[category], category, sortOptions, allDataString, value[0], value[1]) for category, value in complexSortValues.items() if value and sortOptions[category]['sort'])
+                        *(sortingDataRoblox(sortLock, savePath / 'Sort' / categoriesNames[category], category, sortOptions, allDataString, value)              for category, value in simpleSortValues.items()  if value is not None and sortOptions[category]['sort']),
+                        *(sortingDataRoblox(sortLock, savePath / 'Sort' / categoriesNames[category], category, sortOptions, allDataString, value[0], value[1]) for category, value in complexSortValues.items() if value is not None and sortOptions[category]['sort'])
                     )
 
                 async with validLock:
                     counters['valid'] += 1
                     if isOutputTotal or isSendResultsToTelegramBot or isSendResultsToDiscordWebhook:
                         totalDataUpdate = {
-                            'Robux'             : resultsRCC.get('Robux',                      {}).get('sort-int'),
-                            'Billing'           : resultsRCC.get('Billing',                    {}).get('sort-int'),
-                            'Pending'           : resultsRCC.get('Pending',                    {}).get('sort-int'),
+                            'Robux'                      : resultsRCC.get('Robux',                      {}).get('sort-int'),
+                            'Billing'                    : resultsRCC.get('Billing',                    {}).get('sort-int'),
+                            'Pending'                    : resultsRCC.get('Pending',                    {}).get('sort-int'),
                             f'Donate (1 {donatePeriod})' : resultsRCC.get(f'Donate (1 {donatePeriod})', {}).get('sort-int'),
-                            'Donate (All Time)' : resultsRCC.get('Donate (All Time)',          {}).get('sort-int'),
-                            'Rap'               : resultsRCC.get('Rap',                        {}).get('sort-int'),
-                            'Card'              : resultsRCC.get('Card',                       {}).get('sort-int'),
-                            'Premium'           : resultsRCC.get('Premium',                    {}).get('total'),
-                            'Gamepasses'        : resultsRCC.get('Gamepasses',                 {}).get('sort-int'),
-                            'Custom Gamepasses' : resultsRCC.get('Custom Gamepasses',          {}).get('sort-int'),
-                            'Badges'            : resultsRCC.get('Badges',                     {}).get('sort-int'),
-                            'Favorite Places'   : resultsRCC.get('Favorite Places',            {}).get('sort-int'),
-                            'Bundles'           : resultsRCC.get('Bundles',                    {}).get('sort-int'),
-                            'Groups Owned'      : resultsRCC.get('Groups Owned',               {}).get('sort-int'),
-                            'Groups Members'    : resultsRCC.get('Groups Members',             {}).get('sort-int'),
-                            'Groups Pending'    : resultsRCC.get('Groups Pending',             {}).get('sort-int'),
-                            'Groups Funds'      : resultsRCC.get('Groups Funds',               {}).get('sort-int'),
-                            'Place Visits'      : resultsRCC.get('Place Visits',               {}).get('sort-int'),
-                            'Korblox'           : resultsRCC.get('Korblox',                    {}).get('total'),
-                            'Headless'          : resultsRCC.get('Headless',                   {}).get('total')
+                            'Donate (All Time)'          : resultsRCC.get('Donate (All Time)',          {}).get('sort-int'),
+                            'Rap'                        : resultsRCC.get('Rap',                        {}).get('sort-int'),
+                            'Card'                       : resultsRCC.get('Card',                       {}).get('sort-int'),
+                            'Premium'                    : resultsRCC.get('Premium',                    {}).get('total'),
+                            'Gamepasses'                 : resultsRCC.get('Gamepasses',                 {}).get('sort-int'),
+                            'Custom Gamepasses'          : resultsRCC.get('Custom Gamepasses',          {}).get('sort-int'),
+                            'Badges'                     : resultsRCC.get('Badges',                     {}).get('sort-int'),
+                            'Favorite Places'            : resultsRCC.get('Favorite Places',            {}).get('sort-int'),
+                            'Bundles'                    : resultsRCC.get('Bundles',                    {}).get('sort-int'),
+                            'Groups Owned'               : resultsRCC.get('Groups Owned',               {}).get('sort-int'),
+                            'Groups Members'             : resultsRCC.get('Groups Members',             {}).get('sort-int'),
+                            'Groups Pending'             : resultsRCC.get('Groups Pending',             {}).get('sort-int'),
+                            'Groups Funds'               : resultsRCC.get('Groups Funds',               {}).get('sort-int'),
+                            'Place Visits'               : resultsRCC.get('Place Visits',               {}).get('sort-int'),
+                            'Korblox'                    : resultsRCC.get('Korblox',                    {}).get('total'),
+                            'Headless'                   : resultsRCC.get('Headless',                   {}).get('total')
                         }
 
                         for key, value in totalDataUpdate.items():
@@ -4598,7 +4611,7 @@ async def robloxCookieChecker(file: str) -> None:
                     ('💎', 'Robux'),
                     ('💵', 'Billing'),
                     ('⌛', 'Pending'),
-                    ('💰', 'Donate (1 Period)'),
+                    ('💰', f'Donate (1 {donatePeriod})'),
                     ('💰', 'Donate (All Time)'),
                     ('🚀', 'Rap'),
                     ('💳', 'Card'),
@@ -4934,7 +4947,13 @@ def printSortCategories(categories: list) -> None:
     RCCSorting = config['Roblox']['CookieChecker']['Sorting']
     length = len(str(len(categories))) + 12
     for index, category in enumerate(categories):
-        cmdWriter(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {enabledOrDisabledOption(category[2] == int and RCCSorting[category[1]][0] or category[2] == str and RCCSorting[category[1]])} {category[0]}\n')
+        cName = category[0]
+        cRawName = category[1]
+        match cName:
+            case 'Donate (1 Period)':
+                cName = corrRobloxNameOfCategory(cRawName, cName, ['Day', 'Week', 'Month', 'Year'])
+        cType = category[2]
+        cmdWriter(f' {f'[{ANSI.FG.PINK}{index + 1}{ANSI.FG.WHITE}]':>{length}} ┃ {enabledOrDisabledOption(cType == int and RCCSorting[cRawName][0] or cType == str and RCCSorting[cRawName])} {cName}\n')
 
 def getSortValuesFrom(category: str, *, checkSortIsEnabled: bool = False, getOnlyEnabledValues: bool = False) -> bool | list[int]:
     RCCSorting = config['Roblox']['CookieChecker']['Sorting']
@@ -7350,6 +7369,7 @@ async def mainMenu() -> None:
                                                                 categoryMenuName, categoryConfigName, categoryType = cookieDataCategories[settingsRCCGeneralSortTabNumber]
                                                                 if categoryType == int:
                                                                     labelASCII()
+                                                                    visualMenuName = corrRobloxNameOfCategory(categoryConfigName, categoryMenuName, ['Day', 'Week', 'Month', 'Year'])
                                                                     showOptionSortNames = categoryMenuName in sortLabels
                                                                     showOptionSortPlaces = categoryMenuName in ('Gamepasses', 'Badges')
                                                                     amountOfLines = 10
@@ -7366,7 +7386,7 @@ async def mainMenu() -> None:
                                                                     }
                                                                     whileTrueStage5 = True
                                                                     while whileTrueStage5:
-                                                                        cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName)}\n\n [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(configRCCSorting[categoryConfigName][2][0])} {MT_Sort_Numbers_From.format('...')}\n [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(configRCCSorting[categoryConfigName][3][0])} {MT_Sort_Numbers_From_To.format('...', '...')}\n [{ANSI.FG.PINK}3{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(configRCCSorting[categoryConfigName][1])} {MT_Sort_By_Zero}\n')
+                                                                        cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, visualMenuName)}\n\n [{ANSI.FG.PINK}1{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(configRCCSorting[categoryConfigName][2][0])} {MT_Sort_Numbers_From.format('...')}\n [{ANSI.FG.PINK}2{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(configRCCSorting[categoryConfigName][3][0])} {MT_Sort_Numbers_From_To.format('...', '...')}\n [{ANSI.FG.PINK}3{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(configRCCSorting[categoryConfigName][1])} {MT_Sort_By_Zero}\n')
                                                                         if showOptionSortNames:
                                                                             cmdWriter(f' [{ANSI.FG.PINK}4{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(configRCCSorting[f'{categoryConfigName}_Names'])} {sortLabels[categoryMenuName]}\n')
                                                                         if showOptionSortPlaces:
@@ -7382,7 +7402,7 @@ async def mainMenu() -> None:
                                                                                 whileTrueStage6 = True
                                                                                 while whileTrueStage6:
                                                                                     sortValues = optionFunctions[settingsRCCGeneralSortCategoryTab][1](categoryConfigName)
-                                                                                    cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName)}\n\n')
+                                                                                    cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, visualMenuName)}\n\n')
                                                                                     optionFunctions[settingsRCCGeneralSortCategoryTab][2](sortValues, categoryConfigName)
                                                                                     cmdWriter(f'{f'  ┃\n [{ANSI.FG.GREEN}+{ANSI.FG.WHITE}] ┃ {MT_Enable_All}\n [{ANSI.FG.RED}-{ANSI.FG.WHITE}] ┃ {MT_Disable_All}\n  ┃\n' if sortValues else ''} [{ANSI.FG.YELLOW}A{ANSI.FG.WHITE}] ┃ {MT_Add_A_Parameter}\n [{ANSI.FG.YELLOW}S{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(configRCCSorting[categoryConfigName][indexOfValues][0])} {MT_Sort}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                                                                     settingsRCCSortNumberContextMenuTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
@@ -7396,7 +7416,7 @@ async def mainMenu() -> None:
                                                                                             whileTrueStage7 = True
                                                                                             while whileTrueStage7:
                                                                                                 fromOrFromToString = f'{MT_From.lower()} {sortValues[choice][0] if settingsRCCGeneralSortCategoryTab == '1' else f'{sortValues[choice][0][0]} {MT_To.lower()} {sortValues[choice][0][1]}'}'
-                                                                                                cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName, fromOrFromToString)}\n\n [{ANSI.FG.YELLOW}S{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(configRCCSorting[categoryConfigName][indexOfValues][1][choice][1])} {MT_Sort}\n [{ANSI.FG.RED}D{ANSI.FG.WHITE}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
+                                                                                                cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, visualMenuName, fromOrFromToString)}\n\n [{ANSI.FG.YELLOW}S{ANSI.FG.WHITE}] ┃ {enabledOrDisabledOption(configRCCSorting[categoryConfigName][indexOfValues][1][choice][1])} {MT_Sort}\n [{ANSI.FG.RED}D{ANSI.FG.WHITE}] ┃ {MT_Delete}\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Back}\n\n')
                                                                                                 settingsRCCGeneralSortValueContextMenuTab = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                                                                                 match settingsRCCGeneralSortValueContextMenuTab:
                                                                                                     case '0':
@@ -7408,7 +7428,7 @@ async def mainMenu() -> None:
                                                                                                             removeLines(7)
                                                                                                             whileTrueStage8 = True
                                                                                                             while whileTrueStage8:
-                                                                                                                cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName, str(sortValues[choice][0]))}\n\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃ {MT_Do_You_Sure}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.FG.WHITE}] ┃ {MT_I_Am_Sure}\n [{ANSI.FG.RED}N{ANSI.FG.WHITE}] ┃ {MT_Not_Yet}\n\n')
+                                                                                                                cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, visualMenuName, str(sortValues[choice][0]))}\n\n [{ANSI.FG.YELLOW}?{ANSI.FG.WHITE}] ┃ {MT_Do_You_Sure}\n  ┃ \n [{ANSI.FG.GREEN}Y{ANSI.FG.WHITE}] ┃ {MT_I_Am_Sure}\n [{ANSI.FG.RED}N{ANSI.FG.WHITE}] ┃ {MT_Not_Yet}\n\n')
                                                                                                                 confirmTheAction = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_Something}: ').upper().strip()
                                                                                                                 match confirmTheAction:
                                                                                                                     case 'Y' | 'Н':
@@ -7439,7 +7459,7 @@ async def mainMenu() -> None:
                                                                                                 configRCCSorting[categoryConfigName][indexOfValues][1][index][1] = False
                                                                                         case 'A' | 'Ф':
                                                                                             labelASCII()
-                                                                                            cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, categoryMenuName)}\n\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Cancel}\n\n')
+                                                                                            cmdWriter(f' {generateVisualPath(MT_Settings, MT_Roblox, MT_Cookie_Checker, MT_Sorting, visualMenuName)}\n\n [{ANSI.FG.YELLOW}0{ANSI.FG.WHITE}] ┃ {MT_Cancel}\n\n')
                                                                                             settingsRCCGeneralSortParameterAdd = input(f' [{ANSI.FG.GREEN}<{ANSI.FG.WHITE}] {MT_Enter_The_Parameter_Value}: ').strip()
                                                                                             match settingsRCCGeneralSortCategoryTab:
                                                                                                 case '1': addSortParameterFrom(  settingsRCCGeneralSortParameterAdd, configRCCSorting, categoryConfigName, categoryMenuName)
